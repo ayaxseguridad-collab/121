@@ -587,7 +587,10 @@ const CLAVES_CONFIG = new Set([
   "area_atcl", "hora_resumen", "silencio_desde", "silencio_hasta",
 ]);
 const CLAVES_SOLO_ADMIN = new Set(["pin_cierre", "resend_key", "correo_desde", "ultramsg_token", "ultramsg_instancia"]);
-const CLAVES_HORA = new Set(["hora_resumen", "silencio_desde", "silencio_hasta"]);
+const CLAVES_HORA = new Set(["hora_resumen", "silencio_desde", "silencio_hasta", "hora_fin_dia"]);
+// Plazos en horas (hasta un año, con hasta dos decimales) y preaviso en % (GAS-404).
+const CLAVES_PLAZO = new Set(["horas_u1", "horas_u3", "horas_u4"]);
+const plazoValido = (v) => /^(\d{1,4}(\.\d{1,2})?|\.\d{1,2})$/.test(v) && Number(v) > 0 && Number(v) <= 8760;
 
 const anotar = (itemId, texto, ts = Date.now()) =>
   db.prepare("INSERT INTO movimientos (item_id, texto, ts, usuario) VALUES (?,?,?,?)")
@@ -1827,6 +1830,10 @@ const rutas = {
       soloAdminSi(CLAVES_SOLO_ADMIN.has(k), "Cambiar las claves y el correo de envío");
       if (CLAVES_HORA.has(k) && !/^(1?\d|2[0-3])$/.test(String(body[k])))
         throw new Error("La hora tiene que ser un número entero de 0 a 23");
+      if (CLAVES_PLAZO.has(k) && !plazoValido(String(body[k])))
+        throw new Error("El plazo tiene que ser un número de horas mayor que 0");
+      if (k === "pct_preaviso" && !/^([1-9]|[1-9]\d)$/.test(String(body[k])))
+        throw new Error("El preaviso tiene que ser un número entero de 1 a 99");
     }
     soloAdminSi("pedir_ingreso" in body, "Encender o apagar el ingreso");
     soloAdminSi("modo_envio" in body, "Cambiar el modo de envío");
@@ -2413,6 +2420,8 @@ function cabecerasDeSeguridad(req, res) {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 }
 
+const TOPE_CUERPO = 1024 * 1024;
+
 const server = http.createServer((req, res) => {
   // Base fija: con el Host que manda el cliente, uno inválido («[») tiraba una
   // excepción fuera de todo try y se caía el CRM entero.
@@ -2423,9 +2432,26 @@ const server = http.createServer((req, res) => {
   cabecerasDeSeguridad(req, res);
 
   if (rutas[clave]) {
-    let cuerpo = "";
-    req.on("data", (c) => (cuerpo += c));
+    // Tope al cuerpo (GAS-403): sin él, un pedido enorme llenaba la memoria y
+    // tiraba el CRM, y eso pasa antes de saber quién es. Se corta en 1 MB.
+    let cuerpo = "", largo = 0, cortado = false;
+    // Lo que sigue llegando se descarta sin guardarlo; la conexión se cierra un
+    // momento después de responder, así el 413 llega aunque el cliente siga mandando.
+    const demasiado = () => {
+      cortado = true;
+      res.on("finish", () => setTimeout(() => req.destroy(), 2000).unref());
+      res.writeHead(413, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error: "El pedido es demasiado grande" }));
+    };
+    if (Number(req.headers["content-length"]) > TOPE_CUERPO) { demasiado(); return; }
+    req.on("data", (c) => {
+      if (cortado) return;
+      largo += c.length;
+      if (largo > TOPE_CUERPO) { cuerpo = ""; demasiado(); return; }
+      cuerpo += c;
+    });
     req.on("end", () => {
+      if (cortado) return;
       try {
         const body = cuerpo ? JSON.parse(cuerpo) : {};
         const quien = quienEs(req);
