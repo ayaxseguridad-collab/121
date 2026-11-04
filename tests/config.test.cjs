@@ -1,43 +1,9 @@
 // GAS-400 y GAS-402: qué se puede cambiar por «POST /api/config» y quién.
-// Levanta una copia temporal del CRM con el servidor simulado (sin WhatsApp, sin red)
-// y usuarios ficticios; las sesiones se cargan directo en la base de la copia.
+// Usa una copia temporal del CRM (ver crm-copia.cjs).
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { spawn } = require("node:child_process");
-const fs = require("node:fs"), path = require("node:path"), os = require("node:os");
-const { DatabaseSync } = require("node:sqlite");
-
-const repo = path.resolve(__dirname, "..");
-const pausa = ms => new Promise(r => setTimeout(r, ms));
-
-async function levantar(t) {
-  const copia = fs.mkdtempSync(path.join(os.tmpdir(), "crm-config-"));
-  const out = fs.mkdtempSync(path.join(os.tmpdir(), "crm-config-out-"));
-  for (const f of ["server.js", "altas.js", "package.json", "public"]) fs.cpSync(path.join(repo, f), path.join(copia, f), { recursive: true });
-  fs.writeFileSync(path.join(out, "transporte.json"), JSON.stringify({ fallar: [] }));
-  const puertoFile = path.join(out, "puerto.json");
-  const hijo = spawn(process.execPath, [path.join(__dirname, "servidor-simulado.cjs"), path.join(copia, "server.js")], {
-    cwd: copia, stdio: "ignore",
-    env: { PATH: process.env.PATH, PORT: "0", AUDIT_OUT: out, AUDIT_PORT_FILE: puertoFile } });
-  t.after(() => { hijo.kill(); fs.rmSync(copia, { recursive: true, force: true }); fs.rmSync(out, { recursive: true, force: true }); });
-  for (let n = 0; !fs.existsSync(puertoFile); n++) { if (n > 200 || hijo.exitCode !== null) throw Error("El CRM no arrancó"); await pausa(50); }
-  const base = "http://127.0.0.1:" + JSON.parse(fs.readFileSync(puertoFile, "utf8"));
-  const db = new DatabaseSync(path.join(copia, "datos/crm.db")); db.exec("PRAGMA busy_timeout=5000");
-  t.after(() => db.close());
-  const ahora = Date.now();
-  for (const [nombre, area, rol, token] of [["Admin ficticio", "", "admin", "s-admin"], ["ATC ficticio", "AT Cliente", "area", "s-atcl"]]) {
-    db.prepare("INSERT INTO usuarios(nombre,area,clave,rol,solo_su_area,activo,creado_en) VALUES(?,?,'x',?,0,1,?)").run(nombre, area, rol, ahora);
-    db.prepare("INSERT INTO sesiones(token,usuario,creada_en,ultimo_uso) VALUES(?,?,?,?)").run(token, nombre, ahora, ahora);
-  }
-  db.prepare("UPDATE config SET valor='1' WHERE clave='pedir_ingreso'").run();
-  const config = async (token, body) => {
-    const r = await fetch(base + "/api/config", { method: "POST", body: JSON.stringify(body),
-      headers: { Cookie: "crm_sesion=" + token, "Content-Type": "application/json" } });
-    return { status: r.status, ...(await r.json()) };
-  };
-  const valor = k => db.prepare("SELECT valor FROM config WHERE clave=?").get(k)?.valor;
-  return { config, valor };
-}
+const fs = require("node:fs"), path = require("node:path");
+const { levantar, repo } = require("./crm-copia.cjs");
 
 test("GAS-400: /api/config solo guarda claves conocidas, las secretas son del administrador y las horas se validan", async t => {
   const { config, valor } = await levantar(t);

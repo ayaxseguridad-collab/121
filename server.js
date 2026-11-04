@@ -254,7 +254,6 @@ const CONFIG_INICIAL = {
   area_atcl: "AT Cliente",     // área que recibe copia de los vencidos
   hora_resumen: "8",
   ultimo_resumen: "",
-  pin_cierre: "6887",          // hace falta para cerrar un pedido
   // Estado en el que queda un pedido cuando el área lo da por terminado: sale
   // del tablero y pasa a la bandeja del auditor, que es quien cierra de verdad.
   estado_cierre: "Resuelto (a confirmar)",
@@ -419,6 +418,16 @@ function sembrar() {
   }
   const insC = db.prepare("INSERT OR IGNORE INTO config (clave, valor) VALUES (?,?)");
   for (const [k, v] of Object.entries(CONFIG_INICIAL)) insC.run(k, v);
+  // La clave de cierre ya no viene fija en el código (GAS-401): una base nueva
+  // toma CRM_PIN_CIERRE (4 cifras) o una al azar. Una base con clave no cambia.
+  if (!db.prepare("SELECT 1 FROM config WHERE clave='pin_cierre'").get()) {
+    const delEntorno = process.env.CRM_PIN_CIERRE || "";
+    const pin = /^\d{4}$/.test(delEntorno) ? delEntorno
+      : String(require("node:crypto").randomInt(10000)).padStart(4, "0");
+    insC.run("pin_cierre", pin);
+    if (pin !== delEntorno)
+      console.log("  Clave de cierre nueva, al azar: definila con CRM_PIN_CIERRE o cargala como administrador");
+  }
 
   // El preaviso nació apagado, con un "a definir" al lado, y así quedó: el
   // primer aviso que recibía un área después del alta era el de vencido, o sea
@@ -935,6 +944,21 @@ function fallaIngreso(origen, quien) {
   };
   sumar(origen + "|" + quien, LIBRES);
   sumar(origen + "|*", TOPE_LUGAR);
+}
+
+// La clave de cierre (cerrar y anular) se frena igual que el ingreso (GAS-401),
+// con su propio contador («pin|lugar»): errarle acá no deja afuera del ingreso.
+// Sin clave cargada no se pide, como antes.
+function revisarPin(pin, req) {
+  const esperado = cfg("pin_cierre");
+  if (!esperado) return;
+  const origen = "pin|" + origenDe(req), quien = usuarioEnCurso || "-";
+  frenarIngreso(origen, quien);
+  if (String(pin || "") !== esperado) {
+    fallaIngreso(origen, quien);
+    throw new Error("Clave incorrecta");
+  }
+  fallos.delete(origen + "|" + quien);
 }
 
 // Cuando una persona cambia de sector o se da de baja, sus pedidos abiertos de
@@ -1575,10 +1599,10 @@ const rutas = {
     return { ok: true };
   },
 
-  "POST /api/items/anular": (body) => {
+  "POST /api/items/anular": (body, _u, req) => {
     const it = db.prepare("SELECT * FROM items WHERE id=?").get(body.id);
     if (!it) throw new Error("No existe el pedido");
-    if (String(body.pin || "") !== cfg("pin_cierre")) throw new Error("Clave incorrecta");
+    revisarPin(body.pin, req);
     const ahora = Date.now();
     db.prepare(`UPDATE items SET estado='Cerrado', cerrado_en=?, motivo_cierre='Anulado',
                 causa_raiz=? WHERE id=?`).run(ahora, body.motivo || "Cargado por error", body.id);
@@ -1588,12 +1612,11 @@ const rutas = {
     return { ok: true };
   },
 
-  "POST /api/items/cerrar": (body) => {
+  "POST /api/items/cerrar": (body, _u, req) => {
     const { id, aviso_cliente, pin } = body;
     // Cerrar un pedido necesita la clave: es la única acción que borra el
     // pedido del tablero, así que no puede quedar al alcance de cualquiera.
-    const esperado = cfg("pin_cierre");
-    if (esperado && String(pin || "") !== esperado) throw new Error("Clave incorrecta");
+    revisarPin(pin, req);
     if (!AVISO_CLIENTE.includes(aviso_cliente)) throw new Error("Falta decir por dónde se le avisó al cliente");
     const previo = db.prepare("SELECT estado, area_motivo, area_causa FROM items WHERE id=?").get(id);
     if (!previo) throw new Error("No existe el pedido");
