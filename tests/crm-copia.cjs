@@ -18,8 +18,10 @@ async function levantar(t, env = {}) {
     cwd: copia, stdio: "ignore",
     env: { PATH: process.env.PATH, PORT: "0", AUDIT_OUT: out, AUDIT_PORT_FILE: puertoFile, ...env } });
   t.after(() => { hijo.kill(); fs.rmSync(copia, { recursive: true, force: true }); fs.rmSync(out, { recursive: true, force: true }); });
-  for (let n = 0; !fs.existsSync(puertoFile); n++) { if (n > 200 || hijo.exitCode !== null) throw Error("El CRM no arrancó"); await pausa(50); }
-  const base = "http://127.0.0.1:" + JSON.parse(fs.readFileSync(puertoFile, "utf8"));
+  // El archivo del puerto puede existir y estar todavía vacío: se espera a poder leerlo entero.
+  const puerto = () => { try { return JSON.parse(fs.readFileSync(puertoFile, "utf8")); } catch { return null; } };
+  for (let n = 0; !puerto(); n++) { if (n > 200 || hijo.exitCode !== null) throw Error("El CRM no arrancó"); await pausa(50); }
+  const base = "http://127.0.0.1:" + puerto();
   const db = new DatabaseSync(path.join(copia, "datos/crm.db")); db.exec("PRAGMA busy_timeout=5000");
   t.after(() => db.close());
   const ahora = Date.now();
@@ -40,7 +42,7 @@ async function levantar(t, env = {}) {
     return Number(db.prepare(`INSERT INTO items(ticket_id,canal,tipo,descripcion,urgencia,area,estado,creado_en)
       VALUES(?,'Teléfono','Reclamo','Prueba ficticia',3,'Técnica','En curso',?)`).run(tk, ahora).lastInsertRowid);
   };
-  return { post, valor, pedido, estado: id => db.prepare("SELECT estado FROM items WHERE id=?").get(id)?.estado,
+  return { base, post, valor, pedido, estado: id => db.prepare("SELECT estado FROM items WHERE id=?").get(id)?.estado,
            config: (token, body) => post(token, "/api/config", body) };
 }
 
