@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>CRM Atención al Cliente — Manual de uso</title>
+<style>
+  @page { size: A4; margin: 14mm 13mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #1a2233;
+         font-size: 10.5pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 20pt; margin: 0 0 1.5mm; letter-spacing: -.3pt; }
+  .bajada { color: #5b6779; font-size: 10.5pt; margin: 0 0 6mm; }
+  h2 { font-size: 12pt; margin: 7mm 0 2.5mm; padding-bottom: 1.5mm;
+       border-bottom: 1.5pt solid #1a2233; }
+  h2 .paso { display: inline-block; width: 6mm; height: 6mm; line-height: 6mm; text-align: center;
+             background: #1a2233; color: #fff; border-radius: 50%; font-size: 9pt; margin-right: 2mm; }
+  h3 { font-size: 10pt; margin: 4mm 0 1.5mm; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin-bottom: 1.2mm; }
+  img { width: 100%; border: .5pt solid #cbd2de; border-radius: 1.5mm; margin: 1mm 0 2mm; }
+  img.chico { width: 62%; }
+  .pieimg { color: #7a8699; font-size: 8.5pt; margin: -1mm 0 3mm; }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 3mm; font-size: 9.5pt; }
+  th { text-align: left; background: #f0f2f6; padding: 1.8mm 2.5mm; border-bottom: 1pt solid #cbd2de;
+       font-size: 8.5pt; text-transform: uppercase; letter-spacing: .4pt; color: #46536b; }
+  td { padding: 1.8mm 2.5mm; border-bottom: .5pt solid #e2e6ee; vertical-align: top; }
+  .u { display: inline-block; width: 5.5mm; height: 5.5mm; line-height: 5.5mm; text-align: center;
+       border-radius: 1.4mm; font-weight: bold; color: #fff; font-size: 8.5pt; }
+  .r { background: #d92d20; } .a { background: #dc8100; } .v { background: #12924e; }
+  .caja { background: #f7f8fb; border-left: 2.5pt solid #1a2233; padding: 3mm 4mm; margin: 0 0 4mm; }
+  .ojo { background: #fff8e6; border-left: 2.5pt solid #dc8100; padding: 3mm 4mm; margin: 0 0 4mm; }
+  .msg { font-family: "Courier New", monospace; background: #f0f2f6; padding: 2.5mm 3mm;
+         border-radius: 1mm; font-size: 9pt; white-space: pre-line; margin: 0 0 3mm; }
+  .pie { margin-top: 6mm; padding-top: 2.5mm; border-top: .5pt solid #cbd2de;
+         color: #7a8699; font-size: 8.5pt; }
+  table, .caja, .ojo, .msg, img { break-inside: avoid; page-break-inside: avoid; }
+  h2, h3 { break-after: avoid; page-break-after: avoid; }
+  .dos { display: flex; gap: 6mm; break-inside: avoid; }
+  .dos > div { flex: 1; }
+  .tec { font-family: "Courier New", monospace; font-size: 9pt; }
+</style>
+</head>
+<body>
+
+<h1>Atención al Cliente — manual de uso</h1>
+<p class="bajada">Cómo cargar, seguir, corregir y cerrar los reclamos y pedidos. Para todas las áreas.</p>
+
+<div class="caja">
+  <b>Qué es.</b> Un tablero donde vive el seguimiento de todo lo que pide un cliente: qué está
+  pendiente, quién lo tiene y cuánto falta para que se venza. <b>No reemplaza a Bykom</b> — los datos
+  de los clientes siguen ahí. Esto resuelve lo otro: que no se pierda nada y que cada área se entere
+  de lo suyo.<br><br>
+  <b>Cómo se entra.</b> Siempre por la misma dirección, se esté donde se esté:
+  <span class="tec">https://crm-production-c825.up.railway.app</span><br>
+  Sirve igual desde la oficina, desde casa o desde el celular. El CRM ya no vive en una
+  máquina de la oficina, así que anda aunque esa PC esté apagada.
+</div>
+
+<h2>El circuito, en seis pasos</h2>
+<table>
+  <tr><td style="width:8mm"><b>1</b></td><td>Entra el pedido por WhatsApp, correo o teléfono, y <b>Atención al Cliente lo carga</b>.</td></tr>
+  <tr><td><b>2</b></td><td><b>Atención al Cliente le pone la urgencia y lo deriva</b> al área. Va a un área por vez.</td></tr>
+  <tr><td><b>3</b></td><td><b>El área recibe el aviso</b> por WhatsApp y correo, en el momento.</td></tr>
+  <tr><td><b>4</b></td><td><b>El área lo actualiza en el panel</b>: en curso, en espera, terminado.</td></tr>
+  <tr><td><b>5</b></td><td>Cuando termina, el área lo manda a <b>CERRADO</b> y queda esperando la revisión.</td></tr>
+  <tr><td><b>6</b></td><td><b>El auditor lo revisa y lo cierra</b> con motivo, causa raíz y clave.</td></tr>
+</table>
+
+<h2><span class="paso">1</span>Cargar un pedido</h2>
+<p>Pestaña <b>Nuevo pedido</b>. Son seis campos y casi todos se eligen de una lista.</p>
+<img class="chico" src="nuevo.png" alt="Formulario de carga">
+<table>
+  <tr><th style="width:36mm">Campo</th><th>Qué se pone</th></tr>
+  <tr><td><b>Abonado</b></td><td>El código del cliente. Si ya se cargó antes, el nombre aparece solo</td></tr>
+  <tr><td><b>Entra por</b></td><td>WhatsApp, correo o teléfono</td></tr>
+  <tr><td><b>Tipo de pedido</b></td><td>Falla de alarma, cámaras, facturación, etc.</td></tr>
+  <tr><td><b>Qué pide</b></td><td>Una línea alcanza. El detalle largo va en Bykom</td></tr>
+  <tr><td><b>Urgencia</b></td><td>Obligatoria. De ella sale el plazo y el color</td></tr>
+  <tr><td><b>Área</b></td><td>A quién se deriva</td></tr>
+  <tr><td><b>N° Bykom</b></td><td>Opcional. Es lo que une este pedido con el reclamo de Bykom</td></tr>
+</table>
+<p><b>Si el cliente ya tiene un pedido abierto, el nuevo se suma al mismo ticket.</b> Es a propósito:
+así todo lo de un cliente queda junto.</p>
+
+<h2>Las urgencias y sus plazos</h2>
+<table>
+  <tr><th style="width:20mm">Urgencia</th><th style="width:32mm">Plazo</th><th>Cuándo se usa</th></tr>
+  <tr><td><span class="u r">1</span></td><td>2 horas</td><td>Cliente sin servicio, equipo sin comunicación, robo o siniestro</td></tr>
+  <tr><td><span class="u r">2</span></td><td>Hasta el fin del día</td><td>Falla parcial: una zona, un sensor, control de acceso caído</td></tr>
+  <tr><td><span class="u a">3</span></td><td>24 horas</td><td>Configuraciones, alta o baja de usuario, cambio de tarjeta</td></tr>
+  <tr><td><span class="u a">4</span></td><td>48 horas</td><td>Consultas, presupuestos, mejoras</td></tr>
+  <tr><td><span class="u v">5</span></td><td>Con fecha acordada</td><td>Instalaciones y trabajos programados. Pide fecha obligatoria</td></tr>
+</table>
+
+<h2><span class="paso">2</span>Leer el tablero</h2>
+<img src="tablero.png" alt="Tablero">
+<p class="pieimg">Los botones de arriba filtran por área; los de abajo, por situación. Cada uno muestra su cantidad.</p>
+<ul>
+  <li><b>Las dos primeras columnas</b> dicen de dónde salió y dónde está: <b>Qué área pide</b> es
+  el área que lo recibió del cliente, y <b>Deriva a</b> la que lo tiene ahora.</li>
+  <li><b>La barra de la izquierda y el número</b> son la urgencia: <span class="u r">1</span> <span class="u r">2</span> rojo, <span class="u a">3</span> <span class="u a">4</span> amarillo, <span class="u v">5</span> verde.</li>
+  <li><b>El tiempo</b> dice “Faltan 5h 48m” o “Vencido hace 1h 20m”, y se actualiza solo.</li>
+  <li><b>Arriba siempre está lo que vence antes.</b> Si trabajás de arriba hacia abajo, vas bien.</li>
+  <li>Si filtrás por un área, <b>los números de abajo pasan a ser los de esa área</b>.</li>
+</ul>
+
+<h2><span class="paso">3</span>Trabajar el pedido</h2>
+<table>
+  <tr><th style="width:42mm">Qué querés hacer</th><th>Cómo</th></tr>
+  <tr><td><b>Tomarlo</b></td><td>Cambiar el estado a <b>En curso</b>. Al cambiarlo se pide una nota</td></tr>
+  <tr><td><b>Frenar el reloj</b></td><td><b>En espera de repuesto</b> o <b>En espera del cliente</b>. Ese tiempo no cuenta en contra</td></tr>
+  <tr><td><b>Mandarlo a otra área</b></td><td>Columna <b>Pasar a área</b></td></tr>
+  <tr><td><b>Darlo por terminado</b></td><td>En <b>Pasar a área</b>, elegir <b>CERRADO</b>. Sale del tablero y va a revisión</td></tr>
+  <tr><td><b>Corregir un error de carga</b></td><td>El botón <b>✎</b> al final de la fila</td></tr>
+</table>
+
+<h3>La nota: por qué cambiaste el estado</h3>
+<p>Cada vez que cambiás el estado se abre una ventanita para escribir <b>qué pasó</b>. Una línea
+alcanza. En el tablero, la columna <b>Qué se pide</b> muestra solo el pedido del cliente, para que
+se lea de un vistazo: todo lo que fueron escribiendo las áreas se abre con el botón <b>☰</b> de la
+fila.</p>
+<img src="filas.png" alt="Todo lo escrito en un pedido">
+<p class="pieimg">El botón ☰ al final de la fila abre todo lo escrito, en orden.</p>
+<ul>
+  <li><b>Es opcional</b>, pero es lo que evita la pregunta “¿en qué quedó esto?”.</li>
+  <li>Quedan guardadas <b>todas</b>, en orden, y también se ven en Seguimiento.</li>
+  <li>Si cancelás la ventanita, <b>el estado no cambia</b>.</li>
+</ul>
+<p>Sirve para lo que antes había que preguntar por teléfono: “el cliente no atiende, reintentar
+mañana”, “falta el comunicador, se pidió al proveedor”, “coordinada visita para el jueves”.</p>
+
+<div class="ojo">
+  <b>Dos cosas que el sistema no te va a dejar hacer, a propósito:</b><br>
+  · <b>Derivar un pedido sin decir en qué estado queda.</b> Si está sin tomar y lo mandás a otra área,
+  te va a pedir el estado. Es para que no pase de mano en mano figurando como nuevo.<br>
+  · <b>Volver un pedido a “Nuevo”</b> una vez que alguien lo tomó. Se perdería el rastro de que ya fue trabajado.
+</div>
+
+<div class="ojo">
+  <b>Pasar a otra área también pide la nota.</b> Al elegir el área sale la misma ventanita:
+  ahí se escribe <b>por qué pasa</b> —y si el pedido todavía está sin tomar, en qué estado queda—.
+  Esa nota es lo primero que ve el área que lo recibe, y queda guardada con el pedido.
+  Lo mismo cuando el auditor <b>devuelve</b> un pedido: la nota dice qué falta para poder cerrarlo.
+</div>
+
+<h2><span class="paso">4</span>Corregir o anular</h2>
+<p>El botón <b>✎</b> abre la corrección. Se puede cambiar el nombre del abonado, por dónde entró, el
+tipo, qué pide, la urgencia, el área y el N° de Bykom.</p>
+<ul>
+  <li><b>Todo cambio queda registrado</b> con el antes y el después, y se ve en Seguimiento.</li>
+  <li><b>Si cambiás la urgencia, el plazo se recalcula</b> desde que entró el pedido.</li>
+  <li><b>El código del abonado no se puede cambiar</b>: define a qué ticket pertenece. Si se cargó al
+  cliente equivocado, se usa <b>Anular pedido</b> (pide clave y motivo) y se carga de nuevo.</li>
+</ul>
+<p>Un pedido anulado no cuenta en la estadística —no era trabajo real— pero queda guardado con su
+motivo, para que se vea que existió.</p>
+
+<h2><span class="paso">5</span>Cerrar: la revisión final</h2>
+<img src="cerrar.png" alt="Bandeja del auditor">
+<p class="pieimg">Los pedidos que las áreas dieron por terminados esperan acá la revisión.</p>
+<p>Quien audita tiene dos caminos por pedido:</p>
+<ul>
+  <li><b>Cerrar</b> — pide motivo de cierre, causa raíz y una <b>clave de 4 dígitos</b>.</li>
+  <li><b>Devolver a…</b> — si falta algo, vuelve al área y sigue en el tablero.</li>
+</ul>
+<p><b>Mientras esperan la revisión, el reloj está frenado</b>: el tiempo que tarde el auditor no le
+cuenta como demora al área.</p>
+
+<div class="caja">
+  <b>Por qué la causa raíz es obligatoria.</b> Es el único dato que después dice qué se repite. Si todos
+  los meses la causa más común es “batería”, hay que stockear baterías; si es “mal uso”, hay que
+  capacitar al cliente. Sin ese dato la estadística no sirve para decidir nada.
+</div>
+
+<h2>Seguimiento: la historia de cada pedido</h2>
+<img src="seguimiento.png" alt="Seguimiento">
+<p class="pieimg">Cada ficha se despliega y muestra todo lo que pasó, en orden.</p>
+<p>Ahí queda registrado <b>todo</b>: cuándo entró y por dónde, a qué áreas pasó, cada cambio de estado,
+cada corrección, cada aviso que salió —con el texto exacto y si llegó— y con qué motivo se cerró.
+Es lo que permite reconstruir un reclamo cuando el cliente pregunta.</p>
+
+<h2>Los avisos</h2>
+<table>
+  <tr><th style="width:46mm">Cuándo</th><th style="width:36mm">A quién</th><th>Qué dice</th></tr>
+  <tr><td>Al cargarse el pedido</td><td>Al área que le toca</td><td>Cliente, urgencia, número y qué pide</td></tr>
+  <tr><td>Cuando queda el último 25% del plazo</td><td>Al área</td><td>Número y cuánto falta</td></tr>
+  <tr><td>Cuando vence</td><td>Al área <b>y</b> a Atención al Cliente</td><td>Número y hace cuánto venció</td></tr>
+  <tr><td>Todos los días a la mañana</td><td>A cada área lo suyo</td><td>Vencidos, por vencer, en plazo y con el reloj frenado</td></tr>
+</table>
+<div class="msg">🆕 Nuevo pedido — Técnica
+Libertador 5154 · Urgencia 2
+VV-D229-260812
+Pide crear un usuario Akuvox</div>
+<p>Llegan por <b>WhatsApp y por correo</b>. Entre las 22 y las 8 no sale nada, salvo urgencia 1.</p>
+<p><b>Lo que ya diste por terminado no te vuelve a aparecer.</b> Cuando mandás un pedido a
+revisión, sale de tu tablero y queda esperando que Atención al Cliente lo cierre: desde ese
+momento no entra más en tus avisos ni en el resumen de la mañana.</p>
+
+<p><b>Cada aviso trae un link al final</b> (👉 con la dirección del panel). Tocándolo desde el celular
+se abre el panel <b>directamente en ese pedido</b>: si está abierto queda marcado en el tablero, listo
+para cambiarle el estado; si ya se cerró, se abre su historia en Seguimiento. La primera vez el
+teléfono va a avisar que el sitio no es seguro —es el certificado propio, no un problema— y hay que
+aceptarlo una sola vez por teléfono.</p>
+
+<div class="ojo">
+  <b>Los avisos no se contestan.</b> Son de una sola vía: el sistema manda y nada vuelve por ahí.
+  Todo lo que pasa con un pedido se informa <b>en el panel</b>. Si respondés el WhatsApp del bot,
+  nadie lo va a leer.
+</div>
+
+<h2>Quién hizo cada cosa</h2>
+<p>Cada área tiene su usuario y su clave. Al abrir el panel se elige el área y se entra una sola vez:
+la sesión queda puesta un mes en esa computadora, así que en el día a día nadie tiene que volver a
+escribir la clave. Arriba a la derecha se ve siempre <b>con qué área se está trabajando</b>, y al lado
+el botón <b>Salir</b> para cuando la comparten varias personas.</p>
+<p>Desde ese momento, <b>cada movimiento queda firmado</b>: el alta, cada cambio de estado con su nota,
+las derivaciones, las correcciones, las anulaciones y el cierre. En <b>Seguimiento</b> aparece el área
+al final de cada línea de la historia. Eso es lo que permite, cuando algo salió mal, saber quién lo
+tocó y cuándo, sin tener que preguntar.</p>
+
+<div class="ojo">
+  <b>Por ahora identifica, no limita.</b> Cualquiera que entre puede trabajar cualquier pedido: el
+  usuario es para la auditoría, no para poner permisos. Los permisos por área vienen después, cuando
+  esté claro qué tiene que poder hacer cada uno.
+</div>
+
+<p>Las claves se cargan en <b>Configuración → Usuarios</b>: una por área, más la del
+<b>administrador</b>, que es el único que carga usuarios, toca la configuración y decide cuándo se
+empieza a pedir el ingreso. Las claves se guardan cifradas: no se pueden ver, solo cambiar.</p>
+
+<div class="ojo">
+  <b>El ingreso se enciende cuando vos querés.</b> Abajo de los usuarios hay una casilla:
+  <i>"Pedir área y clave al abrir el panel"</i>. Mientras esté apagada, el panel abre directo como
+  siempre y las claves quedan cargadas esperando. Se enciende recién cuando cada área tiene la suya
+  —si no, se quedan afuera— y hace falta un administrador cargado para poder encenderla.
+</div>
+
+<h2>Tres cosas para hacer bien</h2>
+<ol>
+  <li><b>Preguntar bien al recibir.</b> Si hubo corte de luz, qué luces tiene el panel, qué zona es,
+  si cambiaron el módem. La mitad de las visitas se evita preguntando bien la primera vez.</li>
+  <li><b>Marcar las esperas y dejar la nota.</b> Es lo que hace que los números reflejen el trabajo
+  real y que cualquiera pueda saber en qué quedó un pedido sin preguntar.</li>
+  <li><b>Corregir en vez de cargar de nuevo.</b> Si te equivocaste, usá el ✎: si cargás otro pedido
+  quedan dos por lo mismo y el cliente aparece reclamando el doble.</li>
+</ol>
+
+<div class="pie">
+  Sistema interno de Atención al Cliente · Los datos de los clientes siguen en Bykom ·
+  Dudas o cambios: hablar con Gastón.
+</div>
+
+</body>
+</html>

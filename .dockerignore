@@ -1,0 +1,5 @@
+# Nada de esto tiene que viajar a la nube.
+datos/
+node_modules/
+*.log
+.git/
