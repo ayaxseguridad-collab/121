@@ -5,22 +5,25 @@ const assert = require("node:assert/strict");
 const http = require("node:http");
 const { levantar } = require("./crm-copia.cjs");
 
-// Pedido por partes, sin Content-Length: el tope tiene que cortar igual. Se deja de
-// escribir en cuanto llega la respuesta; un cierre de la conexión después de eso no cuenta.
-function porPartes(base, ruta, partes, tam) {
+// Pedido por partes, sin Content-Length: el tope tiene que cortar igual. Sin `completo`,
+// deja de escribir en cuanto llega la respuesta y nunca cierra el pedido (un cliente que
+// queda colgado). Con `completo`, manda todo y cierra el pedido.
+function porPartes(base, ruta, partes, tam, { agent = new http.Agent({ keepAlive: true }), completo = false } = {}) {
   return new Promise((resolve, reject) => {
     let respuesta = null;
-    const req = http.request(base + ruta, { method: "POST", headers: { "Content-Type": "application/json" } }, res => {
-      respuesta = { status: res.statusCode, txt: "" };
+    // Con keep-alive el cliente no cierra solo: si la conexión se cierra, la cerró el servidor.
+    const req = http.request(base + ruta, { method: "POST", agent, headers: { "Content-Type": "application/json" } }, res => {
+      respuesta = { status: res.statusCode, txt: "", socket: req.socket, cerrada: new Promise(r => req.socket.once("close", () => r(true))) };
       res.on("data", c => (respuesta.txt += c));
-      res.on("end", () => resolve(respuesta)); res.on("error", () => resolve(respuesta));
+      res.on("end", () => resolve(respuesta)); res.on("error", reject);
     });
     req.on("error", e => (respuesta ? resolve(respuesta) : reject(e)));
     const trozo = "x".repeat(tam);
     let n = 0;
     const seguir = () => {
-      while (n < partes && !respuesta && !req.destroyed) { n++; if (!req.write(trozo)) return req.once("drain", seguir); }
-      if (!respuesta && !req.destroyed) req.end();
+      const parar = () => req.destroyed || (respuesta && !completo);
+      while (n < partes && !parar()) { n++; if (!req.write(trozo)) return req.once("drain", seguir); }
+      if (completo && !req.destroyed) req.end();
     };
     seguir();
   });
@@ -34,6 +37,25 @@ test("GAS-403: un pedido de más de 1 MB recibe 413 y el CRM sigue atendiendo", 
 
   const partes = await porPartes(base, "/api/ingresar", 40, 64 * 1024); // 2,5 MB sin Content-Length
   assert.equal(partes.status, 413); assert.match(partes.txt, /demasiado grande/);
+  // Quien sigue mandando después del 413 queda cortado a los 2 s.
+  const plazo = ms => new Promise(r => setTimeout(() => r(false), ms));
+  assert.equal(await Promise.race([partes.cerrada, plazo(4000)]), true, "cerró mientras seguía mandando");
+
+  // Quien terminó de mandar (1,1 MB) conserva la conexión: un pedido válido por esa
+  // misma conexión, pasados los 2 s, se atiende entero.
+  const agent = new http.Agent({ keepAlive: true, maxSockets: 1 });
+  const terminado = await porPartes(base, "/api/ingresar", 18, 64 * 1024, { agent, completo: true });
+  assert.equal(terminado.status, 413);
+  const otro = new Promise((resolve, reject) => {
+    const req = http.request(base + "/api/quien", { agent }, res => {
+      let txt = ""; res.on("data", c => (txt += c)); res.on("end", () => resolve({ status: res.statusCode, socket: req.socket }));
+      res.on("error", reject);
+    });
+    req.on("error", reject); setTimeout(() => req.end(), 2500);
+  });
+  const segundo = await otro;
+  assert.equal(segundo.status, 200); assert.equal(segundo.socket, terminado.socket, "reusó la misma conexión");
+  agent.destroy();
 
   // Un pedido normal sigue funcionando.
   assert.equal((await post("s-admin", "/api/config", { hora_resumen: "9" })).status, 200);

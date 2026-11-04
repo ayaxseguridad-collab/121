@@ -2435,11 +2435,18 @@ const server = http.createServer((req, res) => {
     // Tope al cuerpo (GAS-403): sin él, un pedido enorme llenaba la memoria y
     // tiraba el CRM, y eso pasa antes de saber quién es. Se corta en 1 MB.
     let cuerpo = "", largo = 0, cortado = false;
-    // Lo que sigue llegando se descarta sin guardarlo; la conexión se cierra un
-    // momento después de responder, así el 413 llega aunque el cliente siga mandando.
+    // Lo que sigue llegando se descarta sin guardarlo. Si 2 s después de responder
+    // el cliente sigue mandando, se corta la conexión; cerrarla enseguida (o con
+    // «Connection: close») hacía que el cliente perdiera el 413. Si ya terminó de
+    // mandar, la conexión queda sana y se puede reusar.
     const demasiado = () => {
       cortado = true;
-      res.on("finish", () => setTimeout(() => req.destroy(), 2000).unref());
+      res.on("finish", () => {
+        if (req.complete) return;
+        const corte = setTimeout(() => req.socket.destroy(), 2000);
+        corte.unref();
+        req.once("end", () => clearTimeout(corte));
+      });
       res.writeHead(413, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ error: "El pedido es demasiado grande" }));
     };
