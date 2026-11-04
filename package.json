@@ -7,7 +7,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "test": "node --test tests/altas.test.cjs tests/config.test.cjs",
+    "test": "node --test tests/altas.test.cjs tests/config.test.cjs tests/pin.test.cjs",
     "start": "node server.js"
   },
   "dependencies": {
