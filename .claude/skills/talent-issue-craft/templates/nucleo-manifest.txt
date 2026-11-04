@@ -1,0 +1,23 @@
+# nucleo-manifest.txt — fuente normativa del gate de paridad del núcleo
+# Una cláusula por línea. Deben existir LITERALMENTE en: (a) el bloque delimitado de
+# templates/00-nucleo.md (paridad bidireccional) y (b) cada plantilla templates/01-09
+# (salvo excepción declarada abajo).
+# Formato de excepción (línea exacta): EXCEPT <basename-sin-extension>:<cláusula>
+#   ejemplo: EXCEPT 09-contenido-datos:## Protocolo de cierre
+# Este manifest lo consume scripts/check_nucleo_parity.sh (correr desde la raíz del skill).
+<!-- issue-craft:v1
+## Contexto y origen
+## Baseline verificado
+## Anclas de contexto
+## Alcance
+### Fuera de alcance
+## Decisiones
+GATE DE DESPACHO: cero decisiones abiertas sin régimen.
+## Artefactos tocados
+## Invariantes que NO deben cambiar
+## Criterios de aceptación / DoD
+## Evidencias de cierre exigidas
+## Brief del ejecutor
+Si la premisa de esta issue contradice el código/docs/tests reales: PARAR y escalar con citas verificables — nunca fabricar cumplimiento.
+## Rúbricas de revisión aplicables
+## Protocolo de cierre

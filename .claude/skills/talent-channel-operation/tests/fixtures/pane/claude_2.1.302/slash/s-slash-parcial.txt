@@ -1,0 +1,30 @@
+ ▐▛███▛█   Claude Code v2.1.302
+▝▜██████▀  Sonnet 5.5 · Claude API
+ ▝▝   ▝▝   /…/Repo-Neutro
+
+  Get to finished work sooner with Opus 5.5. Switch anytime with /model.
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ /mod                       
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ❯ /model                      Set the AI model for Claude Code (currently Sonnet 5.5)                     
+    /auto-mode-setup            Teach auto mode about your environment, plus optional rule tweaks          
+    /code-review                Review the current diff, or a PR number/branch/path target, for correctness
+                                bugs (plus reuse/simplification/efficiency cleanups where the model's revie…
+    /plugin-authoring           Make a mod: a change to Claude's own interface or behaviour, such as a live
+                                pane or panel, a band above the prompt, a status line, a toast, a slash com…
+    /update-config              Use this skill to configure the Claude Code harness via settings.json.
+                                Automated behaviors ("from now on when X", "each time X", "whenever X", "be…
+    /doctor                     Health-check the user's Claude Code setup and fix issues: diagnose
+                                installation health — what the `claude doctor` terminal diagnostics cover —…
+    /loop                       Run a prompt or slash command on a recurring interval (e.g. /loop 5m /foo).
+                                Omit the interval to let the model self-pace.
+    /claude-api                 Reference for the Claude API / Anthropic SDK — model ids, pricing, params,
+                                streaming, tool use, MCP, agents, caching, token counting, model migration.…
+    /advisor                    Let Claude consult a stronger model at key moments
+    /effort                     Set effort level for model usage
+    /fast                       Toggle fast mode (Opus 5.5)
+    /status                     Show Claude Code status including version, model, account, API connectivity,
+                                and tool statuses
+    /voice                      Toggle voice mode
+    /plan                       Enable plan mode or view the current session plan

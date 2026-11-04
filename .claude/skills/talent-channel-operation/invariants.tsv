@@ -1,0 +1,167 @@
+INV-CO-001	references/02-pipeline-y-gates.md	MUST	verify-handoff	ADR-0043-entrega-draft-handoff
+INV-CO-002	references/02-pipeline-y-gates.md	MUST	SIN-AUDIT	TAL-3266-gate-hold-release
+INV-CO-003	references/12-refix-bounced.md	MUST	sigue vivo	C2-bounce-caduca-1170-1217
+INV-CO-004	scripts/00-config.sh	MUST	JAMÁS se asumen valores de otro repo	paquete-v1-D13-identidad
+INV-CO-005	scripts/00-config.sh	MUST_NOT	Talent-Academ[y]-2\.0|te-talentacademy|fpdbxlifsgxlfivlzfqj	paquete-v1-B1-core-sin-fundador
+INV-CO-006	scripts/00-config.sh	MUST	LINEAR_API_KEY\|GITHUB_TOKEN\|GH_TOKEN\|SUPABASE_ACCESS_TOKEN	ronda-P0-2-allowlist-tokens
+INV-CO-007	references/02-pipeline-y-gates.md	MUST	Scope ledger	paquete-v1-m2-scope-ledger
+INV-CO-008	tests/run-tests.sh	MUST	parse_verdict	TAL-1493-antiinyeccion-verdict
+INV-CO-009	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-CO-010	scripts/00-config.sh	MUST	tco_validate_env_rel	review-pr13-A1-traversal-loader
+INV-CO-011	scripts/00-config.sh	MUST	TCO_HOST_ENV_REL solo es identidad EXIGIDA	review-pr13-A3-precedencia-env
+INV-CO-012	references/09-gotchas.md	MUST	Umbral 60 %	reconciliacion-tal3394-compact-60-lead-2026-07-08
+INV-CO-013	references/09-gotchas.md	MUST_NOT	Umbral 70%, no antes	reconciliacion-tal3394-anti-regresion-umbral-70
+INV-CO-014	tests/run-tests.sh	MUST	TOTAL_ESPERADO=1002	conteo-completo-del-inventario-y-regresiones
+INV-CO-015	tests/run-tests.sh	MUST	rev-parse --show-toplevel	tal-3375-gate1-toplevel
+INV-CO-016	scripts/lib.sh	MUST	tco_model_picker_pick	TAL-3619-picker-por-numero-nunca-hardcodeado
+INV-CO-017	scripts/lib.sh	MUST_NOT	send-keys -t '\$pane' '/model \$model' C-m	TAL-3619-retira-envio-inline-de-model-noop
+INV-CO-018	scripts/lib.sh	MUST	tco_read_stop_audit_file	TAL-3619-contrato-informe-por-fichero
+INV-CO-019	scripts/lib.sh	MUST	tco_tui_anchor_from	TAL-3619-corte-por-chrome-no-por-guiones
+INV-CO-020	scripts/lib.sh	MUST_NOT	TCO_UNCALIBRATED_REQUIRE_CAPACITY	TAL-3619-r11-ningun-knob-autoriza-envio-bajo-rc2
+INV-CO-021	scripts/lib.sh	MUST_NOT	tco_pane_can_receive	TAL-3619-r11-eliminada-la-primitiva-puente
+INV-CO-022	scripts/lib.sh	MUST_NOT	tco_pane_busy(_from)? &&	TAL-3619-r13-set-e-mata-el-proceso-en-rc-no-cero-bare
+INV-CO-023	scripts/relay.sh	MUST_NOT	tco_pane_busy(_from)? &&	TAL-3619-r13-set-e-mata-el-proceso-en-rc-no-cero-bare
+INV-CO-024	scripts/dispatch.sh	MUST	no puedo probar causalmente	TAL-3619-r13-uuid-vacio-es-fail-closed-no-degradacion
+INV-CO-025	scripts/lib.sh	MUST	NO se rota la fuente remota	TAL-3619-r13-escribir-outfile-antes-de-rotar
+INV-CO-026	scripts/lib.sh	MUST	TCO_SESSION_STATUS_IDLE_VALUES	TAL-3619-r14-vocabulario-dual-desconocido-nunca-idle
+INV-CO-027	scripts/lib.sh	MUST	la sesión cambió entre el baseline	TAL-3619-r14-baseline-vacio-por-fallo-distinguible
+INV-CO-028	scripts/lib.sh	MUST	trc=.*_tco_transcript_lines.*\|\| return 1	TAL-3619-r15-lectura-transcript-comprobada-antes-de-marcar-exito
+INV-CO-029	scripts/relay.sh	MUST	SHA_EXP=.*\|\| SHA_EXP=""	lectura-head-guardada-ante-rc-no-cero-con-set-e;TAL-3619-audit-estacion-set-e-mata-en-rev-parse-HEAD-bare
+INV-CO-030	scripts/relay.sh	MUST	\*) tco_die.*busy_rc INESPERADO	rechaza-todo-estado-distinto-de-reposo-acreditado;TAL-3619-audit-estacion-case-busy-rc-fail-closed-default
+INV-CO-031	scripts/lib.sh	MUST	tco_delivery_baseline .*\|\| true	TAL-3619-re-despacho-sweep-sete-delivery-baseline-guardado
+INV-CO-032	scripts/lib.sh	MUST	_tco_procstat_starttime_from	TAL-3619-re-despacho-finding2-procstat-parser-robusto
+INV-CO-033	scripts/lib.sh	MUST	tco_stable_idle_capture	TAL-3619-re-despacho-finding4-toctou-post-snapshot-idle-check;TAL-3619-re-despacho-finding4-relay-delega-captura-estable
+INV-CO-034	scripts/relay.sh	MUST	tco_current_stop_audit	relevo-delega-extraccion-compartida-y-estable
+INV-CO-035	scripts/dispatch.sh	MUST	__STOP_AUDIT_FILE__	TAL-3619-re-despacho-finding5-render-stop-audit-file
+INV-CO-036	scripts/relay.sh	MUST	tco_frame .*\|\| tco_die	TAL-3619-re-despacho-sweep-sete-frame-fail-closed
+INV-CO-037	scripts/lib.sh	MUST	snap[12]="\$\(tco_cap_pane .*\|\| return 1	TAL-3619-re-despacho-nogo1-captura-fallida-propaga-nunca-se-compara
+INV-CO-038	tests/run-tests.sh	MUST	_MODEL_LITERAL_HITS	TAL-3619-re-despacho-nogo2-ratchet-cero-model-inline-en-superficie-operativa
+INV-CO-039	scripts/lib.sh	MUST	tco_valid_token "\$bin"	TAL-3619-bounce-r2-finding2-cli-version-bin-allowlist-antes-de-interpolar
+INV-CO-040	scripts/dispatch.sh	MUST	tco_abort_dev_dispatch	TAL-3619-bounce-r2-finding7-abortar-y-confirmar-antes-de-tco-die-modelo
+INV-CO-041	SKILL.md	MUST	re-seedear ese baseline EN LA ENTREGA	TAL-4731-pz3-pre-reseed-secdef-22ago
+INV-CO-042	references/04-protocolo-auditoria.md	MUST	RUN_ID\\"\[\^}\]\*\\"verdict	TAL-4731-pz4-nogo-r3-object-scoped-run-id-verdict-mismo-objeto
+INV-CO-043	references/11-modelo-effort-y-recycle.md	MUST	indistinguible de un contenedor caído	TAL-4731-pz11-park-sin-trabajo-deja-sesion
+INV-CO-044	references/04-protocolo-auditoria.md	MUST_NOT	grep -qF "\$RUN_ID"	TAL-4731-pz4-nogo-r3-prohibe-regresion-dos-greps-independientes
+INV-CO-045	references/02-pipeline-y-gates.md	MUST	\[TFM-HYGIENE\]	TAL-8040-higiene-git-manifiesto-del-canal
+INV-CO-046	references/02-pipeline-y-gates.md	MUST	tco_githooks_ensure	TAL-8040-hookspath-se-corrige-y-registra
+INV-CO-047	scripts/extract-plan.sh	MUST	tco_plan_from_transcript "\$carril"	TAL-8039-plan-primero-del-transcript-de-la-sesion-viva
+INV-CO-048	scripts/extract-plan.sh	MUST	PLAN-INICIO\[\[:space:\]\]\+" enc	TAL-8039-guarda-de-encargo-awk-de-anclas-intacto
+INV-CO-049	scripts/extract-plan.sh	MUST	el nivel disponible rechaza por contenido, sin caer a pantalla	TAL-8039-nivel-disponible-que-rechaza-no-cae
+INV-CO-050	scripts/lib.sh	MUST	_tco_carril_exitplan_records	TAL-8039-seam-abre-exactamente-sessionId-jsonl
+INV-CO-051	references/02-pipeline-y-gates.md	MUST_NOT	tco_cap_pane	TAL-8039-ref02-sin-captura-de-pane-del-plan
+INV-CO-052	SKILL.md	MUST	scripts/extract-plan\.sh	TAL-8039-regla-17-invoca-el-script
+INV-CO-053	scripts/extract-plan.sh	MUST_NOT	planFilePath|plans/	TAL-8039-el-md-de-disco-sigue-prohibido-como-fuente
+INV-CO-054	scripts/lib.sh	MUST	\$tr\.is_error==true	TAL-8039-acta-M2-exitplan-rechazado-no-se-gatea
+INV-CO-055	scripts/extract-plan.sh	MUST	return 19	TAL-8039-acta-M2-plan-rechazado-u-obsoleto-exit-19
+INV-CO-056	scripts/lib.sh	MUST	__corrupt__	TAL-8039-ronda2-centinela-conserva-posicion-ilegible
+INV-CO-057	scripts/extract-plan.sh	MUST	vigencia indeterminada: línea ilegible posterior al ExitPlanMode	TAL-8039-ronda2-indeterminada-negativa-exit-19
+INV-CO-058	references/02-pipeline-y-gates.md	MUST	Límite conocido del nivel 2	TAL-8039-ronda2-N-m4-intencion-de-las-anclas
+INV-CO-059	scripts/dispatch.sh	MUST	tco_pane_identity_preflight	TAL-8042-preflight-de-identidad-del-pane-antes-de-modelo-rol-brief
+INV-CO-060	scripts/lib.sh	MUST	_tf_kill_wait	TAL-8042-reciclaje-casa-ejecutable-no-linea-de-comandos
+INV-CO-061	scripts/lib.sh	MUST	tco_fixture_secret_scan	TAL-8042-fixtures-jamas-con-secretos-ni-cuentas
+INV-CO-062	scripts/00-config.sh	MUST	TCO_AUDIT_TOPOLOGY	TAL-8042-topologia-del-auditor-declarada-y-visible
+INV-CO-063	tests/run-tests.sh	MUST	process-unreadable.py	Enumeracion-omite-identidad-ilegible-solo-si-no-casa-y-falla-cerrado-si-casa
+INV-CO-064	tests/test-proc13-pointer-integrity.sh	MUST	anexo adjudicado con componente	anexo-sin-traversal-8041
+INV-CO-065	tests/test-proc13-pointer-integrity.sh	MUST	anexo fuera del skill	anexo-confinado-8041
+INV-CO-066	tests/run-tests.sh	MUST	launcher-identity-regressions.py	alias-sin-fichero-ausencia-ruta-absoluta-y-prioridad-del-lanzador-rechaza-builtin-y-funcion-con-cwd-homonimo-en-ambas-ramas
+INV-CO-067	scripts/lib.sh	MUST	tco_modelo_read	fases-desde-registro-vigente
+INV-CO-068	scripts/resolver-modelos.sh	MUST	modelUsage	resolucion-completa-desde-cli
+INV-CO-069	scripts/actualizar-modelos.sh	MUST	DIFERIDO	canales-ocupados-se-conservan
+INV-CO-070	scripts/audit-gate.sh	MUST	tco_ensure_audit_model	auditor-verificado-antes-del-veredicto
+INV-CO-071	scripts/lib-modelos.sh	MUST	tco_modelo_picker_alias	selector-derivado-del-registro-por-familia
+INV-CO-072	scripts/lib-modelos.sh	MUST	tco_modelo_version_visible	version-visible-unica-con-sufijos
+INV-CO-073	scripts/lib-modelos.sh	MUST	tco_modelo_etiqueta_is	version-contigua-sin-numeros-de-descripcion
+INV-CO-074	scripts/lib-modelos.sh	MUST	tco_modelo_require	modelo-comprobado-en-el-punto-de-uso
+INV-CO-075	scripts/lib.sh	MUST	tco_composer_echo_from	compositor-eco-normalizado-integro
+INV-CO-076	scripts/lib.sh	MUST	_tco_turn_records	transcript-orden-local-no-es-turno
+INV-CO-077	scripts/dispatch.sh	MUST	TF_GATE_CMD_	brief-gates-de-instancia
+INV-CO-078	tests/test-cli-current.sh	MUST	triplicado es pendiente ambiguo	compositor-duplicado-fail-closed
+INV-CO-079	tests/test-cli-current.sh	MUST	actividad con tareas anexas sigue ocupada	actividad-ultima-linea-en-columna-cero
+INV-CO-080	tests/test-cli-current.sh	MUST	ocupado independiente de locale	capturas-reales-en-c-y-utf8
+INV-CO-081	tests/test-cli-current.sh	MUST	funciones conservan locale del llamador	locale-limitada-al-clasificador
+INV-CO-082	scripts/capture-pane-fixtures.sh	MUST	tco_redraw_fixture_from	redraw-derivado-de-captura-real
+INV-CO-083	tests/test-cli-current.sh	MUST	extractor conserva separador de prosa y excluye compositor recto	extractor-corte-estructural-compartido
+INV-CO-084	tests/test-cli-current.sh	MUST	Kept con modelo activo distinto falla cerrado	modelo-pedido-confirmado-por-picker
+INV-CO-085	tests/test-cli-current.sh	MUST	eco al tercer sondeo entrega con un tecleo y un submit	eco-sondeo-acotado-sin-duplicar
+INV-CO-086	scripts/watch-carril.sh	MUST	tco_stop_audit_pattern	cabecera-compartida-brief-extractor-monitor
+INV-CO-087	tests/test-cli-current.sh	MUST	limpia con nounset tras éxito y retorno ajeno	baseline-limpieza-sin-trap-return-global
+INV-CO-088	scripts/lib.sh	MUST	tco_send_ready "\$1" "\$pane" \|\| return 2	envio-compositor-vacio-obligatorio
+INV-CO-089	tests/test-dispatch-safety.sh	MUST	bloque completo citado	anomalias-estructura-y-posicion
+INV-CO-090	tests/test-dispatch-safety.sh	MUST	eco tardío envía una vez sin reteclear	envio-eco-obligatorio-sin-repeticion
+INV-CO-091	scripts/capture-pane-fixtures.sh	MUST	captura ORIGINAL RECHAZADA	captura-escanea-antes-de-normalizar
+INV-CO-092	tests/test-dialog-autonomy.sh	MUST	modelo distinto autónomo por selector real	modelo-cambia-sin-intervencion-con-selector-real
+INV-CO-093	tests/test-dialog-autonomy.sh	MUST	plan y código aseguran modelo sin intervención	transiciones-autonomas-consecutivas
+INV-CO-094	tests/test-dialog-autonomy.sh	MUST	esfuerzo autónomo confirmación=	esfuerzo-con-y-sin-confirmacion
+INV-CO-095	tests/test-dialog-autonomy.sh	MUST	submit ajeno no pulsa envío	reenvio-claude-exige-eco-propio
+INV-CO-096	tests/test-dialog-autonomy.sh	MUST	conserva.*sin teclas	limpieza-preserva-input-desconocido-y-fantasma
+INV-CO-097	tests/sonda-modelos.sh	MUST	RESULTADO sonda	sonda-salud-vigente-sin-transporte-tras-retirada
+INV-CO-098	tests/pane-identity-regressions.py	MUST	vanished_stat	proceso-desaparecido-no-invalida-enumeracion
+INV-CO-099	tests/pane-identity-regressions.py	MUST	unreadable_exe	proceso-existente-ilegible-falla-cerrado
+INV-CO-100	tests/pane-identity-regressions.py	MUST	retry_audit	enumeracion-incompleta-se-reintenta
+INV-CO-101	tests/pane-identity-regressions.py	MUST	3 intentos	agotamiento-incompleto-no-acredita
+INV-CO-102	tests/pane-identity-regressions.py	MUST	wrong_after_retry	agente-equivocado-tras-reintentos-falla
+INV-CO-103	scripts/lib.sh	MUST	kind=="confirm-effort"	confirmacion-ligada-a-operacion
+INV-CO-104	tests/test-dialog-autonomy.sh	MUST	confirmación cruzada rechazada	cruces-de-modelo-y-esfuerzo-no-navegan
+INV-CO-105	tests/test-dialog-autonomy.sh	MUST	captura antes de envío con confirmación	confirmacion-recapatrura-antes-de-submit
+INV-CO-106	tests/test-dialog-autonomy.sh	MUST	relevo GO autónomo	relevo-espera-difiere-y-no-duplica
+INV-CO-107	scripts/relay.sh	MUST	tco_queue_dev_file_cycles	relevo-diferido-reintenta-sin-persona
+INV-CO-108	tests/test-dialog-autonomy.sh	MUST	aborto preserva compositor	aborto-no-borra-compositor
+INV-CO-109	tests/test-dialog-autonomy.sh	MUST	race\|race-deferred	go-reanuda-espera-si-vuelve-a-ocuparse-antes-del-tecleo
+INV-CO-110	scripts/preparar-sesiones.sh	MUST	tco_pane_identity_preflight	Preparacion-de-canales-exige-identidad-real-antes-del-doctor
+INV-CO-111	scripts/preparar-sesiones.sh	MUST	tco_lock_acquire	Preparacion-comparte-candado-con-despacho
+INV-CO-112	scripts/lib.sh	MUST	bin="\$\(_tco_pane_agent_exes	Captura-nombra-el-agente-con-identidad-acreditada
+INV-CO-113	scripts/00-config.sh	MUST	id -u.*-eq 0	Usuario-sudo-solo-en-root
+INV-CO-114	scripts/preparar-sesiones.sh	MUST	skipDangerousModePermissionPrompt	Baseline-aprobado-antes-de-arrancar-agentes
+INV-CO-115	scripts/preparar-sesiones.sh	MUST	sesión parada en un diálogo	Verificacion-rechaza-dialogos
+INV-CO-116	tests/test-dialog-autonomy.sh	MUST	bloque estructural.*niega texto sin título conocido	dialogo-bajo-compositor-bloquea-antes-del-tecleo
+INV-CO-117	tests/test-dialog-autonomy.sh	MUST	pie benigno.*permite envío normal	pistas-y-limite-semanal-conservan-envio
+INV-CO-118	tests/test-dialog-autonomy.sh	MUST	destino del selector en recaptura	modelo-unico-y-mismo-numero-inmediatamente-antes-del-digito
+INV-CO-119	tests/test-rest-without-state.sh	MUST	reposo sostenido sin patrón tiene rc propio	reposo-sin-estado-interrumpe-vigilancia
+INV-CO-120	tests/test-rest-without-state.sh	MUST	plan-listo con diálogo tiene prioridad	patron-esperado-precede-a-reposo
+INV-CO-121	tests/test-rest-without-state.sh	MUST	último texto es instrucción fija de reanudar	go-relevado-reanuda-orden-interrumpida
+INV-CO-122	tests/test-rest-without-state.sh	MUST	compositor ajeno no recibe reanudación	reanudacion-rechaza-compositor-ajeno
+INV-CO-123	tests/test-rest-without-state.sh	MUST	pantalla real neutralizada pasa escáner	pregunta-final-real-sin-parada-silenciosa
+INV-CO-124	tests/test-rest-without-state.sh	MUST	informe largo real en reposo detectado	informe-completo-fuera-de-ventana-corta
+INV-CO-125	tests/test-rest-without-state.sh	MUST	turno nuevo en disco impide rescate del pane viejo	informe-del-turno-actual
+INV-CO-126	tests/test-rest-without-state.sh	MUST	informe incompleto sin SHA no vale	informe-incompleto-no-confirma-estado
+INV-CO-127	scripts/lib.sh	MUST	tco_current_stop_audit	extraccion-compartida-por-vigilancia-y-relevo
+INV-CO-128	tests/test-rest-without-state.sh	MUST	de turno anterior rechazado	pr-y-merge-del-turno-actual
+INV-CO-129	scripts/lib.sh	MUST	cap=.*tco_stable_idle_capture.*\|\| return 1	extractor-compartido-exige-captura-estable-en-respaldo
+INV-CO-130	tests/test-text-stability.sh	MUST	texto creciendo.*es ocupado	reposo-vivo-exige-transcripcion-estable
+INV-CO-131	tests/test-text-stability.sh	MUST	espera no declara reposo durante flujo real	flujo-real-no-dispara-parada-silenciosa
+INV-CO-132	tests/test-text-stability.sh	MUST	pantalla creciente entre sondeos no declara reposo	sondeos-exigen-pantalla-identica
+INV-CO-133	tests/test-text-stability.sh	MUST	segunda captura fallida.*es desconocido	confirmacion-de-reposo-fail-closed
+INV-CO-134	scripts/lib.sh	MUST	tco_strip_ansi_from \| awk	ancla-estructural-limpia-con-indices-originales
+INV-CO-135	tests/test-composer-ansi.sh	MUST	ancla ANSI real mismos índices	captura-real-con-color-en-ambos-locales
+INV-CO-136	tests/test-composer-ansi.sh	MUST	fantasma no es eco propio	atenuado-no-acredita-contenido
+INV-CO-137	tests/test-composer-ansi.sh	MUST	ancla relevo con título	borde-etiquetado-con-estructura-completa
+INV-CO-138	tests/test-text-stability.sh	MUST	reposo estable con borde titulado	estabilidad-viva-compatible-con-ancla-ansi
+INV-CO-139	tests/test-text-stability.sh	MUST	captura real sin diálogo estructural	compositor-y-reposo-sin-falsos-dialogos
+INV-CO-140	scripts/lib.sh	MUST	tco_turn_identity	identidad-de-sesion-comienzo-y-tipo-de-turno
+INV-CO-141	scripts/lib.sh	MUST	tco_require_turn	identidad-reacreditada-antes-de-las-teclas
+INV-CO-142	scripts/lib.sh	MUST	tco_dialog_meaning_from	fila-unica-con-significado-afirmativo
+INV-CO-143	tests/test-turn-identity.sh	MUST	TOTAL_ESPERADO=213	matriz-causal-y-esperas-fail-closed
+INV-CO-144	tests/test-slash-composer.sh	MUST	texto normal exige pie	compositor-normal-no-admite-lista-falsa
+INV-CO-145	tests/test-slash-composer.sh	MUST	envío real un tecleo un Enter	orden-local-con-eco-y-submit-unicos
+INV-CO-146	tests/test-slash-composer.sh	MUST	sugerencias sin diálogo	lista-de-ordenes-no-es-dialogo
+INV-CO-147	tests/test-dialog-autonomy.sh	MUST	flujo real.*teclas exactas	modelo-y-esfuerzo-reales-sin-envio-adicional
+INV-CO-148	tests/test-dialog-autonomy.sh	MUST	Switch model.*sin teclas	confirmacion-unica-con-destino-y-negativa
+INV-CO-149	tests/test-dialog-autonomy.sh	MUST	efecto real.*solo	recibo-local-o-barra-actual-confirman-efecto
+INV-CO-150	scripts/lib-modelos.sh	MUST	IN\(	fase-exacta-validada-antes-de-emitir
+INV-CO-151	scripts/resolver-modelos.sh	MUST	cli_respuesta_exito	sonda-con-un-documento-exitoso
+INV-CO-152	scripts/lib-respuesta-cli.sh	MUST	length == 1	respuesta-unica-compartida
+INV-CO-153	tests/run-tests.sh	MUST	gh-dobles.sh	Dobles-gh-comparten-contrato-real
+INV-CO-154	tests/test-dialog-autonomy.sh	MUST	afirmativa genérica.*incompatible sin teclas	modelo-y-esfuerzo-exigen-destino-nombrado-sin-excepcion
+INV-CO-155	tests/test-dialog-autonomy.sh	MUST	esfuerzo nombrado distinto no pulsa afirmativa	nivel-pedido-exacto-antes-de-confirmar
+INV-CO-156	tests/test-dialog-autonomy.sh	MUST	clasificación tras dígito	redibujado-acotado-y-dialogo-identico-dos-veces-sin-teclas-en-transicion
+INV-CO-157	tests/test-dialog-autonomy.sh	MUST	fotogramas reales tras dígito	transcripcion-en-transicion-sin-teclas-y-anomalia-dos-capturas-consecutivas
+INV-CO-158	tests/test-code-audit-go.sh	MUST	TOTAL_ESPERADO=182	conteo-m8-tercera-via-code-audit-tal9011
+INV-CO-159	scripts/verify-code-audit-go.sh	MUST	tco_code_audit_go_verify\(\)	m8-code-audit-verificador-del-go-falla-cerrado-tal9011
+INV-CO-160	scripts/merge-gate.sh	MUST	tco_m8_compose_rev\(\)	m8-tercera-via-solo-con-revisor-code-audit-tal9011
+INV-CO-161	tests/test-slash-composer.sh	MUST	continuación en otra columna rechaza	lista-de-ordenes-2-1-302-columna-de-descripcion-derivada-no-fija
+INV-CO-162	tests/test-calibration-preflight.sh	MUST	sin calibrar	cli-sin-calibrar-error-claro-y-temprano-antes-de-teclear
+INV-CO-163	scripts/lib.sh	MUST	tco_pane_calibration_preflight\(\)	preflight-de-calibracion-de-los-panes-del-despacho
+INV-CO-164	scripts/dispatch.sh	MUST	tco_pane_calibration_preflight "\$CARRIL"	despacho-exige-par-cli-version-calibrado-antes-del-gate-de-modelo
+INV-CO-165	scripts/lib.sh	MUST	tco_tui_list_open_from\(\)	barra-solo-vale-con-la-lista-de-ordenes-abierta
+INV-CO-166	tests/capturas-codificadas.sh	MUST	tco_fixture_sweep\(\)	barrido-de-fixtures-cubre-nombres-del-manifiesto-y-rutas
+INV-CO-167	scripts/lib.sh	MUST	recycle suave rechazado por el preflight	reciclaje-suave-comprueba-calibracion-antes-de-teclear

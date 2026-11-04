@@ -1,0 +1,4 @@
+salida previa del agente (fixture SINTETICO, no es una captura real)
+
+╭──────────────────────────────────────╮
+│ > redibujado a medias

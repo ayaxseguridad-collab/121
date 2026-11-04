@@ -1,0 +1,36 @@
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+USER@channel-01:~/Repo-Neutro$ CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 claude-root  --model claude-sonnet-5-5
+ ▐▛███▛█   Claude Code v2.1.289
+▝▜██████▀  Opus 5.5 with xhigh effort · Claude API
+ ▝▝   ▝▝   ~/Repo-Neutro
+
+  Get to finished work sooner with Opus 5.5. Switch anytime with /model.
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Sonnet 5.5
+
+❯ /model                                                                                                      
+  ⎿  Set model to Opus 5.5 and saved as your default for new sessions
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Opus 5.5
+
+❯ /effort xhigh                                                                                               
+  ⎿  Set effort level to xhigh (saved as your default for new sessions): Deeper reasoning than high, just
+     below maximum (on supported models)
+
+● Auto mode lets Claude handle permission prompts automatically — Claude checks each tool call for            
+  risky actions and prompt injection before executing. Actions Claude identifies as safe are executed,
+  while actions Claude identifies as risky are blocked and Claude may try a different approach. Ideal         
+  for long-running tasks. Sessions are slightly more expensive. Claude can make mistakes that allow         
+  harmful commands to run, it's recommended to only use in isolated environments. Shift+Tab to change 
+  mode.
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ lee /home/USER/.tco-relay/dispatch.0123456789abcdef.txt — es tu brief de tarea; síguelo y presenta el
+  plan con ExitPlanMode                                                                                       
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Opus 5.5] ctx: N/A                                   
+  ⏸ plan mode on (shift+tab to cycle)

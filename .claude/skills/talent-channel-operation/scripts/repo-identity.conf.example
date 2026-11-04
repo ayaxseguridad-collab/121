@@ -1,0 +1,18 @@
+# repo-identity.conf.example — PLANTILLA de la identidad POR REPO de talent-channel-operation (data-only KEY=VALUE).
+# La distribución NO trae identidad de ninguna casa: cada instancia adjudica la suya.
+#   1. Copiar a repo-identity.conf (misma carpeta) y sustituir CADA marcador PENDIENTE-<CLAVE> por el valor adjudicado.
+#   2. O generarlo con `sync-package.sh --migrate-identity --authority <manifiesto> --approved <fragmento>`.
+# Un marcador PENDIENTE-* NO es un valor: sync-package.sh, 00-config.sh y validate-package.sh --estado instancia lo rechazan (fail-closed).
+# Claves: ver skill-creator/scripts/lib-package.sh (PKG_IDENTITY_KEYS). Con TCO_REPO_STACK=ninguno
+# (sin backend gestionado) TCO_SUPABASE_REF se OMITE; con =supabase es el ref del proyecto; con =convex, el literal no-aplica.
+PKG_IDENTITY_PROJECT=PENDIENTE-PKG_IDENTITY_PROJECT
+TCO_REPO_DIR=PENDIENTE-TCO_REPO_DIR
+TCO_REPO_SLUG=PENDIENTE-TCO_REPO_SLUG
+TCO_REPO_STACK=PENDIENTE-TCO_REPO_STACK
+TCO_ANEXO_FILE=PENDIENTE-TCO_ANEXO_FILE
+TCO_SUPABASE_REF=PENDIENTE-TCO_SUPABASE_REF
+TCO_LINEAR_INPROGRESS_STATE=PENDIENTE-TCO_LINEAR_INPROGRESS_STATE
+TCO_LINEAR_INREVIEW_STATE=PENDIENTE-TCO_LINEAR_INREVIEW_STATE
+TCO_POSTMERGE_CMD=PENDIENTE-TCO_POSTMERGE_CMD
+TCO_HOST_ENV_REL=PENDIENTE-TCO_HOST_ENV_REL
+TCO_TF_MANIFEST=PENDIENTE-TCO_TF_MANIFEST

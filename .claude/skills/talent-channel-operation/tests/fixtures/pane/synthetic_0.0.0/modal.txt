@@ -1,0 +1,7 @@
+salida previa del agente (fixture SINTETICO, no es una captura real)
+
+  Do you want to proceed?
+  ❯ 1. Yes
+    2. No
+
+  Enter to confirm · Esc to cancel

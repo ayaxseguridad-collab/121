@@ -1,0 +1,18 @@
+# canon-paquete.tsv — mapa PRODUCTO → PAQUETE de los artefactos IDENTICOS (TAL-8037).
+#
+# El canon de los IDENTICOS sale del PROPIO paquete de fábrica (el ZIP trae `githooks/`, `plantillas/` y
+# `scripts/…` con otros nombres que en el repo de producto): verify-repo-parity.sh traduce cada
+# `path_canonico` del parity-manifest.tsv a su ruta en el paquete con este mapa. Sin checkout de casa.
+# TAB-separado: <path_en_el_repo_de_producto> <path_en_el_paquete (relativo a la raíz del paquete)>.
+# Una fila IDENTICO del parity-manifest SIN fila aquí = ERROR (exit 2, fail-closed): el mapa cubre el manifiesto
+# entero o el verificador no corre. `TRO_CANON_REPO_DIR` (git) sigue siendo el override explícito.
+.githooks/pre-push	githooks/pre-push
+scripts/verify-handoff.sh	scripts/verify-handoff.sh
+scripts/cr-review.sh	scripts/cr-review.sh
+scripts/audit-go.sh	scripts/audit-go.sh
+scripts/check-push-audit.sh	scripts/check-push-audit.sh
+scripts/setup-githooks.sh	scripts/setup-githooks.sh
+docs/templates/handoff-pr-draft.md	plantillas/handoff-pr-draft.md
+scripts/github/validar-rama-pr.sh	scripts/github/validar-rama-pr.sh
+scripts/lib/handoff.sh	scripts/lib/handoff.sh
+scripts/lib/cr-finding-normalize.jq	scripts/lib/cr-finding-normalize.jq

@@ -1,0 +1,248 @@
+{
+  "_description": "Taxonomía de labels del workspace Talent Engine — AUTORIDAD interna de nombres y grupos de este skill. Refleja lo que EXISTE en Linear (verificado contra la API, ver bloque 'verified'), nunca lo que 'debería existir': el tracker es la fuente de verdad y este archivo se alinea al tracker, jamás al revés. talent-engine-config.json es una PROYECCIÓN de UUIDs de esta autoridad, no una segunda taxonomía. Paridad verificable con scripts/check-taxonomy-parity.sh.",
+  "verified": {
+    "date": "2026-09-05",
+    "method": "GraphQL issueLabels con paginación completa (pageInfo.hasNextPage=false); 108 labels en 2 páginas el 2026-09-05",
+    "receipt": "examples/label-taxonomy.receipt.json",
+    "gate": "scripts/check-taxonomy-parity.sh",
+    "descriptions_policy": "Las description de los grupos kind: y sev: (y las de labels vivos que la tienen, como vertical/fabrica y vertical/genius-arena) son las VIVAS del workspace, citadas textuales en la fecha del recibo — nunca semántica inventada. Donde el label vivo no tiene description, la de aquí es glosa de uso del skill y se marca como tal."
+  },
+  "principles": [
+    "Toda issue debe tener al menos un label vertical/* (qué plataforma)",
+    "Toda issue debería tener un label kind:* (qué tipo de trabajo)",
+    "Una issue tocada por un agente debe tener label actor/ai",
+    "El label sev:* es opcional y solo para issues con severidad notable (bugs/incidentes)",
+    "NO duplicar el campo priority de Linear con labels (Linear ya tiene Priority como campo nativo)",
+    "Un label que no aparece en el recibo verificado NO se referencia: si hace falta uno nuevo, primero se crea en Linear, luego se re-verifica el recibo y solo entonces se publica aquí",
+    "Un label puede existir solo por team (kind:test, vertical/fabrica, actor:needs-review): al aplicarlo se resuelve el UUID del team de la issue (duplicate_sites); jamás se elige un UUID arbitrario"
+  ],
+  "groups": {
+    "vertical": {
+      "_description": "A qué plataforma del negocio pertenece la issue. OBLIGATORIO en toda issue.",
+      "items": [
+        {
+          "name": "vertical/academy",
+          "scope": "workspace",
+          "description": "Plataforma de Academia Ejemplo (academia.example.invalid)"
+        },
+        {
+          "name": "vertical/bootcamp",
+          "scope": "workspace",
+          "description": "Plataforma del Bootcamp Cripto"
+        },
+        {
+          "name": "vertical/fabrica",
+          "scope": "team",
+          "duplicate": true,
+          "description": "Capa meta: fábrica portátil, motor talent-factory, skills de estaciones (existe por team TAL y BUG — ver duplicates)"
+        },
+        {
+          "name": "vertical/genius-arena",
+          "scope": "workspace",
+          "description": "Plataforma Genius Arena (SaaS de hackathones, reboot 2.0)"
+        },
+        {
+          "name": "vertical/land-es",
+          "scope": "team",
+          "duplicate": true,
+          "description": "Talent Land España (existe por team TAL y BUG — ver duplicates)"
+        },
+        {
+          "name": "vertical/land-mx",
+          "scope": "workspace",
+          "description": "Web de Talent Land MX (talent-land.com — el evento)"
+        },
+        {
+          "name": "vertical/land-online",
+          "scope": "workspace",
+          "description": "Plataforma 'Netflix de conferencias' de Talent Land"
+        },
+        {
+          "name": "vertical/media",
+          "scope": "workspace",
+          "description": "Tools internas para Talent Media (dashboards, automations)"
+        }
+      ]
+    },
+    "kind": {
+      "_description": "Qué tipo de trabajo es. ESPERADO en la mayoría de issues. Coincide con los prefijos de rama del flujo (feat/, fix/, refactor/, docs/, chore/, hotfix/) más los tipos de gestión (adr, decision-pending). kind:test existe por team, no en workspace (decisión del lead 2026-09-05: se modela como duplicado por team, sin promoverlo).",
+      "items": [
+        {
+          "name": "kind:feat",
+          "scope": "workspace",
+          "description": "Nueva funcionalidad"
+        },
+        {
+          "name": "kind:fix",
+          "scope": "workspace",
+          "description": "Bug fix"
+        },
+        {
+          "name": "kind:chore",
+          "scope": "workspace",
+          "description": "Mantenimiento, deps, scripts"
+        },
+        {
+          "name": "kind:refactor",
+          "scope": "workspace",
+          "description": "Refactor sin cambio funcional"
+        },
+        {
+          "name": "kind:docs",
+          "scope": "workspace",
+          "description": "Documentación"
+        },
+        {
+          "name": "kind:hotfix",
+          "scope": "workspace",
+          "description": "Hotfix urgente en producción"
+        },
+        {
+          "name": "kind:adr",
+          "scope": "workspace",
+          "description": "Architecture Decision Record"
+        },
+        {
+          "name": "kind:decision-pending",
+          "scope": "workspace",
+          "description": "Decisión P2/P3 pendiente de cerrar"
+        },
+        {
+          "name": "kind:test",
+          "scope": "team",
+          "duplicate": true,
+          "description": "Trabajo de pruebas (añadir o cablear red de tests). Existe POR TEAM (TAL y BUG, creado 2026-07-27), a diferencia del resto de kind:* que son de workspace — ver duplicates; se proyecta con id null + duplicate_sites"
+        }
+      ]
+    },
+    "actor": {
+      "_description": "Quién está haciendo el trabajo. CRÍTICO para distinguir trabajo de agente vs humano. Los nombres vivos con barra son actor/ai y actor/human (workspace); la señal post-mortem vive hoy como actor:needs-review (con dos puntos, por team — ver duplicates).",
+      "items": [
+        {
+          "name": "actor/human",
+          "scope": "workspace",
+          "description": "Trabajo realizado por humano. Es el default — no es obligatorio ponerlo si no hay actor/ai."
+        },
+        {
+          "name": "actor/ai",
+          "scope": "workspace",
+          "description": "Trabajo delegado a un agente. OBLIGATORIO si hay delegate agente."
+        },
+        {
+          "name": "actor:needs-review",
+          "scope": "team",
+          "duplicate": true,
+          "description": "Requiere revisión humana antes de cerrar (description viva). Uso en la casa: señal post-mortem que se añade JUNTO a actor/ai cuando el trabajo requirió rework humano significativo. Existe por team (TAL y BUG) y con namespace de dos puntos — la unificación con la familia actor/* es decisión del workspace pendiente (ver duplicates)."
+        }
+      ]
+    },
+    "sev": {
+      "_description": "Severidad del defecto/incidente. OPCIONAL — solo para issues con severidad notable.",
+      "items": [
+        {
+          "name": "sev:bloqueante",
+          "scope": "workspace",
+          "description": "Funcionalidad clave caída"
+        },
+        {
+          "name": "sev:capital",
+          "scope": "workspace",
+          "description": "Bug que mueve fondos reales (DeFi, pagos). Prioridad Urgent. No cierra sin evidencia empírica (regla #20)"
+        },
+        {
+          "name": "sev:degradado",
+          "scope": "workspace",
+          "description": "Funciona pero con pérdida de calidad"
+        },
+        {
+          "name": "sev:cosmetico",
+          "scope": "workspace",
+          "description": "UI / copy / typo"
+        }
+      ]
+    },
+    "legacy": {
+      "_description": "Labels heredadas del onboarding de Linear que siguen existiendo en el workspace. Se registran como hecho; su limpieza o deduplicación material es una decisión del workspace (lead), fuera del contrato de este skill.",
+      "items": [
+        {
+          "name": "Bug",
+          "scope": "workspace",
+          "description": "[LEGACY] heredada del onboarding; el tipo vigente se expresa con kind:fix"
+        },
+        {
+          "name": "Feature",
+          "scope": "workspace",
+          "description": "[LEGACY] heredada del onboarding; el tipo vigente se expresa con kind:feat"
+        },
+        {
+          "name": "Improvement",
+          "scope": "workspace",
+          "description": "[LEGACY] heredada del onboarding; el tipo vigente se expresa con kind:refactor"
+        }
+      ]
+    },
+    "coord": {
+      "_description": "Labels de coordinación de la fábrica (workspace). Marcan a qué coordinador pertenece una orden de trabajo; los gobierna talent-orchestrator, no este skill. Registrados como hecho verificado 2026-09-05.",
+      "items": [
+        {
+          "name": "coord-defi-c1",
+          "scope": "workspace",
+          "description": "Coordinador C1 del proyecto DeFi (creado 2026-07-29)"
+        },
+        {
+          "name": "coord-defi-c2",
+          "scope": "workspace",
+          "description": "Coordinador C2 del proyecto DeFi (creado 2026-07-29)"
+        }
+      ]
+    },
+    "reservado": {
+      "_description": "Reserva de encargos por coordinador (POR TEAM: TAL y BUG, creados 2026-09-02). Los gobierna talent-orchestrator/talent-channel-operation; se proyectan con id null + duplicate_sites.",
+      "items": [
+        {
+          "name": "reservado/C1",
+          "scope": "team",
+          "duplicate": true,
+          "description": "Encargo reservado por el coordinador C1"
+        },
+        {
+          "name": "reservado/C2",
+          "scope": "team",
+          "duplicate": true,
+          "description": "Encargo reservado por el coordinador C2"
+        }
+      ]
+    }
+  },
+  "out_of_contract": {
+    "_description": "Grupos adicionales que EXISTEN en el workspace pero que este skill no gobierna ni referencia en sus flujos (pertenecen a otros teams/procesos). Se listan como hecho verificado para que nadie los confunda con taxonomía muerta ni los reinvente.",
+    "groups_observed": [
+      "area:* (técnica, por team TAL/BUG y algunas de workspace — namespace de dos puntos)",
+      "subarea (familia del team de evento, namespace de barra)",
+      "componente:*",
+      "codigo:*",
+      "coord-*",
+      "modo-*",
+      "external/*",
+      "otros sueltos (agent-instructions, beta-feedback, bounced, carga-crm, issue-craft-gap, registry, Equipo *)"
+    ]
+  },
+  "duplicates": {
+    "_description": "Nombres con más de un label vivo (multiplicidad por team) u familias con doble namespace, registrados del recibo. REGLA FAIL-CLOSED: un nombre duplicado no se proyecta a un UUID único en talent-engine-config.json — se deja id null con los sites por team; la deduplicación material en Linear es decisión del workspace (lead), en follow-up.",
+    "by_team": [
+      "vertical/fabrica (TAL, BUG)",
+      "vertical/land-es (TAL, BUG)",
+      "kind:test (TAL, BUG)",
+      "actor:ai (TAL, BUG)",
+      "actor:human (TAL, BUG)",
+      "actor:needs-review (TAL, BUG)",
+      "area:* (la mayoría por TAL y BUG)",
+      "reservado/C1 (TAL, BUG)",
+      "reservado/C2 (TAL, BUG)"
+    ],
+    "double_namespace": [
+      "actor:ai vs actor/ai — el skill usa actor/ai (workspace, único)",
+      "actor:human vs actor/human — el skill usa actor/human (workspace, único)"
+    ]
+  }
+}

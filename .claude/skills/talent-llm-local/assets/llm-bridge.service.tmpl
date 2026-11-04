@@ -1,0 +1,27 @@
+[Unit]
+Description=Puente Anthropic Messages <-> motor local (Claude Code /model)
+After=network-online.target
+Wants=vllm.service
+
+[Service]
+User=@@LL_USER@@
+Environment=BRIDGE_PORT=@@PORT_PUENTE@@
+Environment=VLLM_URL=http://@@BIND_ADDR@@:@@PORT_MEDIDOR@@
+Environment=MAX_MODEL_LEN=@@MAX_MODEL_LEN@@
+Environment=LOCAL_MODEL_ID=@@LOCAL_MODEL_ID@@
+Environment=LOCAL_THINK_MODEL_ID=@@LOCAL_THINK_MODEL_ID@@
+Environment=THINK_MIN_TOKENS=@@THINK_MIN_TOKENS@@
+EnvironmentFile=@@KEYS_FILE@@
+ExecStart=/usr/bin/python3 @@LL_PREFIX@@/anthropic-bridge.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+# El puente apunta al MEDIDOR, no al motor: asi el consumo de tu sesion de Claude
+# Code aparece atribuido en /stats como el de cualquier otro usuario.
+#
+# Esta unidad es OPCIONAL. Solo hace falta si vas a usar el modelo local desde
+# Claude Code. Sin ella siguen funcionando el motor, los alias, el medidor y los
+# puestos de agente.

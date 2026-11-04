@@ -1,0 +1,50 @@
+
+  En el siglo XX surgieron nuevas familias: el vidrio borosilicatado (Pyrex), resistente a los cambios
+  térmicos; el vidrio templado y laminado, que protege automóviles y edificios; y las fibras ópticas, que
+  transportan datos de un continente a otro en haces de luz. Las pantallas de teléfonos, con vidrios
+  reforzados químicamente, cabe decir que se llevan en el bolsillo de miles de millones de personas.
+
+  Hoy el vidrio también se asocia a la sostenibilidad, porque se recicla indefinidamente sin perder calidad.
+  Un material descubierto en la prehistoria sigue siendo, cinco mil años después, una pieza clave de la
+  ciencia, la arquitectura y la vida diaria.                                                                  
+
+✻ Cogitated for 19s · done 7:37 AM                                                                            
+                                                              
+❯ Responde solo con la palabra: recibido-humo                                                                 
+
+● recibido-humo                                                                                               
+                      
+✻ Cogitated for 1s · done 11:38 AM                                                                            
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Sonnet 5.5
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ /model                                                                                                      
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  /model                            Set the AI model for Claude Code (currently Sonnet 5.5)                 
+  /auto-mode-setup                  Teach auto mode about your environment, plus optional rule tweaks       
+  /talent-channel-operation         Coordinador multi-canal de la 1ª estación de la fábrica (ADR-0043) que
+                                    lleva encargos de Linear a PR DRAFT + HANDOFF usando canales tmux en In…
+  /talent-llm-local                 Montar un servidor de IA local identico al de referencia:
+                                    Qwen3.6-35B-A3B (NVFP4) sobre vLLM con tensor parallel en 2 GPU Blackwe…
+  /code-review                      Review the current diff, or a PR number/branch/path target, for
+                                    correctness bugs (plus reuse/simplification/efficiency cleanups where t…
+  /stripe-skill                     Use this skill whenever the user needs to work with Stripe — both
+                                    programmatically AND for payment/billing architecture decisions. This i…
+  /talent-buzz                      Desplegar un equipo de agentes en Buzz (block/buzz) self-hosted identico
+                                    al de referencia: relay pinneado a commit y construido en local, orques…
+  /update-config                    Use this skill to configure the Claude Code harness via settings.json.
+                                    Automated behaviors ("from now on when X", "each time X", "whenever X",…
+  /loop                             Run a prompt or slash command on a recurring interval (e.g. /loop 5m
+                                    /foo). Omit the interval to let the model self-pace.
+  /claude-api                       Reference for the Claude API / Anthropic SDK — model ids, pricing,
+                                    params, streaming, tool use, MCP, agents, caching, token counting, mode…
+  /advisor                          Let Claude consult a stronger model at key moments
+  /effort                           Set effort level for model usage
+  /status                           Show Claude Code status including version, model, account, API
+                                    connectivity, and tool statuses
+
+
+
+

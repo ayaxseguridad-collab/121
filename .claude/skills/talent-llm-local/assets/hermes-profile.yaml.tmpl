@@ -1,0 +1,16 @@
+# Perfil aislado de un puesto de agente. Va en ~/.hermes/profiles/@@NOMBRE@@/config.yaml
+#
+# Cada puesto tiene su propio directorio de datos y su propia clave: asi el medidor
+# puede decir quien consumio que. Nunca dos instancias sobre el mismo directorio de
+# datos — el propio Hermes avisa de que corrompe el estado.
+model:
+  default: @@SERVED_NAME@@
+  provider: custom
+  base_url: http://@@BIND_ADDR@@:@@PORT_MEDIDOR@@/v1
+  api_key: @@API_KEY@@
+  context_length: @@CONTEXT_LENGTH@@
+
+delegation:
+  # Con 4 puestos y delegacion por defecto (3 hijos cada uno) salen hasta 16 flujos
+  # simultaneos contra un servidor dimensionado para 5. Uno por puesto.
+  max_concurrent_children: 1

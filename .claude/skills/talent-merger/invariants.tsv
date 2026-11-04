@@ -1,0 +1,412 @@
+INV-ME-001	SKILL.md	MUST	CLI limpio	ruling-2026-07-08-cli-autoriza
+INV-ME-002	SKILL.md	MUST	destructiv	GO-lead-destructivas
+INV-ME-003	SKILL.md	MUST	headRefOid	M4-1162-worktree-api
+INV-ME-004	references/01-rol-y-fronteras.md	MUST	MERGED	flock-nota-merged
+INV-ME-005	references/07-gotchas.md	MUST	cr-host\.lock	h2-mutex-cr-host-1170x1142
+INV-ME-006	SKILL.md	MUST	self-report	TAL-1596-no-self-report
+INV-ME-007	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-ME-008	references/01-rol-y-fronteras.md	MUST	Preaviso de draft	reconciliacion-tal3394-homonimo-reservado-flock
+INV-ME-009	SKILL.md	MUST	excepción trazada	TAL-3569-r4-waiver-excepcion-trazada
+INV-ME-010	SKILL.md	MUST	no-convergencia	TAL-3569-r9-rama-no-convergencia
+INV-ME-011	SKILL.md	MUST	PRECLAIM	TAL-3569-r5r6-preclaim-token
+INV-ME-012	SKILL.md	MUST	Guarda cruzada	TAL-3569-r13-guarda-cruzada
+INV-ME-013	SKILL.md	MUST	Eco de cumplimiento	TAL-3569-r14-eco-cumplimiento
+INV-ME-014	references/02-protocolo-por-pr.md	MUST	una de las TRES vías	TAL-3569-gate1-tres-vias
+INV-ME-015	references/02-protocolo-por-pr.md	MUST_NOT	una de las dos vías	TAL-3569-gate1-dos-vias-obsoleto
+INV-ME-016	references/02-protocolo-por-pr.md	MUST	cr-review-history	TAL-3569-r10-ledger-gate1
+INV-ME-017	references/02-protocolo-por-pr.md	MUST	context=="local-gates"	TAL-3569-r11-gate2-contexto
+INV-ME-018	references/03-superficies-sensibles.md	MUST	clasificación TRAZADA	TAL-3569-r9-nota-trazada
+INV-ME-019	references/04-coderabbit-cli-y-app.md	MUST	NO-convergencia	TAL-3569-r9-flipflop-noconvergencia
+INV-ME-020	references/06-migraciones-y-slots.md	MUST	mínimo privilegio	TAL-3569-r24clar-estacion
+INV-ME-021	references/07-gotchas.md	MUST	lado de lectura	TAL-3569-r16-lado-lectura
+INV-ME-022	references/07-gotchas.md	MUST	se envenena solo	TAL-3569-r17-detector-disjunto
+INV-ME-023	references/08-gates-locales.md	MUST	NO reserva	TAL-3569-r14-liberar-no-reserva
+INV-ME-024	references/08-gates-locales.md	MUST	Esperar por CAMBIO	TAL-3569-r13-cambio-no-existencia
+INV-ME-025	SKILL.md	MUST	assignees ≠ \[\]	TAL-4731-pz6-despacho-satelites-assignees-rest
+INV-ME-026	references/05-canales-de-refactorizacion.md	MUST	INDEPENDENCIA DE CONTEXTO, no tamaño del diff	TAL-4731-pz12-limite-inline-fix-tren-e-23ago
+INV-ME-027	references/09-trenes.md	MUST	TREN PADRE	TAL-5158-ref09-trenes
+INV-ME-028	references/09-trenes.md	MUST	MANIFEST\.md	TAL-5158-ref09-union-manifest
+INV-ME-029	references/09-trenes.md	MUST	EN ORDEN	TAL-5158-ref09-renumeracion-en-orden
+INV-ME-030	references/09-trenes.md	MUST	canal DUEÑO	TAL-5158-ref09-bounce-canal-dueno
+INV-ME-031	references/09-trenes.md	MUST	bundle integrado	TAL-5158-ref09-cr-solo-en-padre
+INV-ME-032	references/09-trenes.md	MUST	DUEÑA	TAL-5158-ref09-dueno-unico-simbolo
+INV-ME-033	references/09-trenes.md	MUST	SUPERSEDE	TAL-5158-ref09-sella-supersede
+INV-ME-034	references/09-trenes.md	MUST	cierra las N issues	TAL-5158-ref09-cierre-via-padre
+INV-ME-035	references/09-trenes.md	MUST	sub-trenes	TAL-5158-ref09-particion-cota-tamano
+INV-ME-036	references/09-trenes.md	MUST	flujo individual	TAL-5158-ref09-fallback-sin-particion
+INV-ME-037	references/09-trenes.md	MUST	superseded por padre	TAL-5158-ref09-sellado-hijos-cierre
+INV-ME-038	SKILL.md	MUST	Sonnet vigente	politica-rodante-merge
+INV-ME-039	SKILL.md	MUST	se REBOTA	TAL-5170-findings-funcional-rebota
+INV-ME-040	SKILL.md	MUST	hold» como estado	TAL-5170-regla15-prohibido-reserva-ligero-guardia-hold
+INV-ME-041	references/01-rol-y-fronteras.md	MUST	ACTO de merge	TAL-5170-serializador-es-el-acto-no-la-estacion
+INV-ME-042	references/02-protocolo-por-pr.md	MUST	Date-bombs	TAL-5170-gotcha-date-bombs
+INV-ME-043	references/03-superficies-sensibles.md	MUST	Code-gate de money-path	TAL-5170-money-path-5-gates
+INV-ME-044	references/05-canales-de-refactorizacion.md	MUST	se REBOTA	TAL-5170-findings-funcional-rebota-ref05
+INV-ME-045	references/06-migraciones-y-slots.md	MUST_NOT	SOLO M1 mergea Y aplica	TAL-5170-r12-must-not-solo-m1-ref06
+INV-ME-046	references/06-migraciones-y-slots.md	MUST	pg_get_functiondef	TAL-5170-tal5074-pg-get-functiondef-cuerpo-vivo
+INV-ME-047	references/07-gotchas.md	MUST_NOT	SOLO M1 mergea Y aplica	TAL-5170-r12-must-not-solo-m1-ref07
+INV-ME-048	references/08-gates-locales.md	MUST	MÁQUINA FÍSICA	TAL-5170-1-suite-por-maquina-fisica
+INV-ME-049	references/08-gates-locales.md	MUST	pendiente de cableado	TAL-5170-topologia-objetivo-no-operativa
+INV-ME-050	references/08-gates-locales.md	MUST	SIEMPRE por PID exacto	TAL-5170-kill-pid-exacto-heading-unico
+INV-ME-051	references/08-gates-locales.md	MUST	re-preflighta	TAL-5754-cr-t05-clase1-credencial-allowlist-explicita
+INV-ME-052	references/anexo-instancia.md	MUST	repinear	TAL-5170-golden-black-delta-cli-drift
+INV-ME-053	references/08-gates-locales.md	MUST	NUNCA es la acción de limpieza	TAL-5170-pkill-prohibido-explicito
+INV-ME-054	references/03-superficies-sensibles.md	MUST	ERROR TRANSITORIO reintentan	TAL-5170-money-path-gate-c-reintentos
+INV-ME-055	references/03-superficies-sensibles.md	MUST	FK `ON DELETE` probado	TAL-5170-money-path-gate-d-fk-ondelete
+INV-ME-056	references/03-superficies-sensibles.md	MUST	A/B EMPÍRICO base-main-puro	TAL-5170-money-path-gate-e-ab-empirico
+INV-ME-057	references/01-rol-y-fronteras.md	MUST	CUALQUIER estación \(M1-M5\) mergea y aplica a prod PRs con migraciones	TAL-5170-r12-ceo-doctrina-cualquier-estacion
+INV-ME-058	references/01-rol-y-fronteras.md	MUST	SEXTO token del flock	TAL-5170-r12-slot-claim-sexto-token
+INV-ME-059	references/01-rol-y-fronteras.md	MUST	Quien mergea, aplica	TAL-5170-r12-quien-mergea-aplica-ref01
+INV-ME-060	references/01-rol-y-fronteras.md	MUST	CEO-DOCTRINA-MIGRACIONES-5-ESTACIONES	TAL-5170-r12-ceo-doctrina-token-ref01
+INV-ME-061	references/01-rol-y-fronteras.md	MUST	aplicaron migraciones M1 Y M2	TAL-5170-r12-hecho-m1-y-m2-aplicaron
+INV-ME-062	references/01-rol-y-fronteras.md	MUST_NOT	M1 es la ÚNICA estación que mergea	TAL-5170-r12-must-not-m1-unica-regresion-ref01
+INV-ME-063	references/01-rol-y-fronteras.md	MUST	siete intentos previos	TAL-5170-r13-siete-intentos-cierre
+INV-ME-064	references/02-protocolo-por-pr.md	MUST	SIEMPRE especulativo por diseño	TAL-5170-r7-cr-cross-estacion-especulativo
+INV-ME-065	references/06-migraciones-y-slots.md	MUST	mergea Y aplica PRs que tocan	TAL-5170-par20-anclado-a-la-ocurrencia-normativa-no-a-la-nota-que-la-cita
+INV-ME-066	references/06-migraciones-y-slots.md	MUST	gh pr list` devuelve 30 resultados por defecto	TAL-5170-r12-gh-pr-list-default-30
+INV-ME-067	references/06-migraciones-y-slots.md	MUST	adquirir primero el gate	TAL-5170-r13-adquirir-gate-apply-run-ref06
+INV-ME-068	references/07-gotchas.md	MUST	Enumeración COMPLETA	TAL-5170-r12-ref07-gotcha-enumeracion
+INV-ME-069	references/02-protocolo-por-pr.md	MUST	CUALQUIER estación \(M1-M5\) mergea Y aplica	TAL-5170-r12-ref02-cualquier-estacion
+INV-ME-070	SKILL.md	MUST	mergea Y aplica\*\* PRs con migraciones	TAL-5170-par20-anclado-a-la-ocurrencia-del-pipeline
+INV-ME-071	SKILL.md	MUST	CEO-DOCTRINA-MIGRACIONES-5-ESTACIONES	TAL-5170-r12-skill-ceo-doctrina-token
+INV-ME-072	references/01-rol-y-fronteras.md	MUST	no es un mutex de apply ni siquiera entre slots distintos	TAL-5170-r13-no-mutex-ni-siquiera-slots-distintos-ref01
+INV-ME-073	references/01-rol-y-fronteras.md	MUST	Confirmación post-append, ANTES del push	TAL-5170-r12b-confirmacion-post-append
+INV-ME-074	references/01-rol-y-fronteras.md	MUST	Ciclo de vida del `SLOT-CLAIM`	TAL-5170-r12b-ciclo-de-vida-slot-claim
+INV-ME-075	references/01-rol-y-fronteras.md	MUST	Lo no clasificable se DENIEGA	TAL-5754-cr-t05-clase1-conjunto-permitido-fuente-unica
+INV-ME-076	references/06-migraciones-y-slots.md	MUST	NO es un mutex de apply, ni siquiera	TAL-5170-r13-no-mutex-ni-siquiera-ref06
+INV-ME-077	references/06-migraciones-y-slots.md	MUST	AUTORITATIVO independiente	TAL-5170-r12b-total-autoritativo-ref06
+INV-ME-078	references/07-gotchas.md	MUST	PROC-M13 aplica el gap COMPLETO	TAL-5170-r13-gotcha-proc-m13-gap-completo
+INV-ME-079	references/07-gotchas.md	MUST	fuente única: ref 01 §2	TAL-5754-cr-t05-clase1-gotcha-apunta-no-enumera
+INV-ME-080	SKILL.md	MUST	no basta para serializar el apply	TAL-5170-r13-skill-no-basta-serializar-apply
+INV-ME-081	references/01-rol-y-fronteras.md	MUST	hasta que aparece, para ese PR, .MERGED., .BOUNCED. \*\*o .CEO	TAL-5170-r12b-changelog-ciclo-vida
+INV-ME-082	references/01-rol-y-fronteras.md	MUST	state=CLOSED	TAL-5170-r13-pr-cerrado-sin-token
+INV-ME-083	references/01-rol-y-fronteras.md	MUST	los TRES son terminales	TAL-5170-r13-ceo-resuelto-tercer-terminal
+INV-ME-084	references/01-rol-y-fronteras.md	MUST	más de 30 minutos	TAL-5170-r14-timeout-30-min-investigar-no-forzar
+INV-ME-085	references/07-gotchas.md	MUST	Tras ~30 min sin cierre	TAL-5170-r14-gotcha-timeout-30-min
+INV-ME-086	SKILL.md	MUST	ninguna otra alternativa sirve	TAL-5170-r13-skill-enumeracion-solo-graphql
+INV-ME-087	references/01-rol-y-fronteras.md	MUST	'.files | length'	TAL-5170-r13-jq-files-length-fix
+INV-ME-088	references/01-rol-y-fronteras.md	MUST	\*\*Adquisición\*\*:	TAL-5170-r13-ref06-paso0-adquirir-gate
+INV-ME-089	references/01-rol-y-fronteras.md	MUST	VOID para todos los lectores por definición	TAL-5170-r15-run-void-por-definicion
+INV-ME-090	references/01-rol-y-fronteras.md	MUST	run_id EXACTO del RUN que cierran	TAL-5170-r16-cierre-run-id-exacto
+INV-ME-091	references/01-rol-y-fronteras.md	MUST	tokens EXACTOS	TAL-5170-r16-el-formato-del-flock-es-un-contrato-cerrado
+INV-ME-092	references/06-migraciones-y-slots.md	MUST	APPLY-FAILED	TAL-5170-r14-ref06-apply-failed
+INV-ME-093	references/07-gotchas.md	MUST	APPLY-FAILED	TAL-5170-r14-gotcha-apply-failed
+INV-ME-094	SKILL.md	MUST	APPLY-FAILED	TAL-5170-r14-skill-apply-failed
+INV-ME-095	references/01-rol-y-fronteras.md	MUST	state,mergedAt	TAL-5170-r14-gh-pr-view-mergedat-fix
+INV-ME-096	references/01-rol-y-fronteras.md	MUST	PRIMER `APPLY-RUN` tras el último cierre válido	TAL-5170-r15-primer-run-tras-cierre
+INV-ME-097	references/01-rol-y-fronteras.md	MUST	git merge-base --is-ancestor	TAL-5170-r16-apply-recovers-ancestor-check
+INV-ME-098	references/01-rol-y-fronteras.md	MUST	PIPESTATUS\[0\]	TAL-5170-r17-pipestatus-sin-trap
+INV-ME-099	references/01-rol-y-fronteras.md	MUST	necesidad de que el wrapper distinga QUÉ paso falló	TAL-5170-r16-sin-clasificar-fase
+INV-ME-100	references/07-gotchas.md	MUST	sin que `publish_close` esté definida en ningún fichero del paquete	TAL-5170-r17-gotcha-publish-close-no-definida
+INV-ME-101	references/06-migraciones-y-slots.md	MUST	wrapper EXTERNO a	TAL-5170-r15-ref06-wrapper-externo
+INV-ME-102	references/01-rol-y-fronteras.md	MUST	APPLY-RECOVERS #<PR-fallido> <nonce-fallido> #<PR-nuevo>	TAL-5170-r16-apply-recovers-token-formato
+INV-ME-103	references/01-rol-y-fronteras.md	MUST	SHA de merge REAL del PR fallido	TAL-5170-r16-apply-recovers-sha-real
+INV-ME-104	references/01-rol-y-fronteras.md	MUST	YA SIGNIFICA "ledger completo y advisors limpios"	TAL-5170-r16-exit0-significa-ledger-limpio
+INV-ME-105	references/01-rol-y-fronteras.md	MUST	termina en `exit 1` o `exit 2`	TAL-5170-r16-todo-fallo-exit1-o-exit2
+INV-ME-106	references/06-migraciones-y-slots.md	MUST	la recuperación NO siempre exige una migración nueva	TAL-5170-r17-ref06-no-siempre-migracion-nueva
+INV-ME-107	references/06-migraciones-y-slots.md	MUST	sin adivinar la fase	TAL-5170-r16-ref06-sin-adivinar-fase
+INV-ME-108	references/07-gotchas.md	MUST	Cierre por CÓDIGO DE SALIDA de PROC-M13	TAL-5170-r16-gotcha-cierre-codigo-salida
+INV-ME-109	references/07-gotchas.md	MUST	escalar a CEO/Orquestador — fail-closed, nunca asumir	TAL-5170-r17-re-anclado-r28-la-fila-ya-no-enumera-cuatro-condiciones-pero-el-escalado-fail-closed-que-esta-fila-protege-SIGUE
+INV-ME-110	SKILL.md	MUST	SOLO estas dos, nunca DEFECTO automáticamente	TAL-5170-r19-skill-categoria-dos-valores
+INV-ME-111	references/01-rol-y-fronteras.md	MUST	gh pr view <PR-fallido> --json mergeCommit	TAL-5170-r17-sha-comando-sin-hash
+INV-ME-112	references/01-rol-y-fronteras.md	MUST	.status == "added"	TAL-5170-r17-status-added-no-toca
+INV-ME-113	references/01-rol-y-fronteras.md	MUST	Debe leerse ANTES de reactivar	TAL-5170-r19-pipestatus-antes-de-set-e
+INV-ME-114	references/01-rol-y-fronteras.md	MUST	una LECTURA de solo-consulta falló	TAL-5170-r18-bucket-transitorio-solo-lectura
+INV-ME-115	references/01-rol-y-fronteras.md	MUST	hubo una MUTACIÓN con estado remoto incierto	TAL-5170-r19-bucket-escalar-v2
+INV-ME-116	references/01-rol-y-fronteras.md	MUST	Por qué DEFECTO CONFIRMADO ya no es un valor que el wrapper publique	TAL-5170-r19-defecto-no-automatico
+INV-ME-117	references/01-rol-y-fronteras.md	MUST	Confirmada la muerte, el CEO/Orquestador	TAL-5170-r17-cierre-run-huerfano
+INV-ME-118	references/07-gotchas.md	MUST	Ningún trap ni secuencia sobrevive un	TAL-5170-r17-gotcha-run-huerfano
+INV-ME-119	references/06-migraciones-y-slots.md	MUST	pulls/<PR-nuevo>/files	TAL-5170-r17-ref06-gh-api-status-added
+INV-ME-120	SKILL.md	MUST	exige una Señal de quiescencia REAL	TAL-5170-r19-skill-senal-quiescencia
+INV-ME-121	references/01-rol-y-fronteras.md	MUST	literal `TRANSITORIO` cae en `ESCALAR`	TAL-5170-r19-default-escalar-v2
+INV-ME-122	references/01-rol-y-fronteras.md	MUST	Señal de quiescencia — del lado que realmente decide	TAL-5170-r19-senal-quiescencia-heading
+INV-ME-123	references/01-rol-y-fronteras.md	MUST	retiene un lock exclusivo sobre	TAL-5170-r19-pg-locks-transaccion-abierta
+INV-ME-124	references/01-rol-y-fronteras.md	MUST	gh api --paginate repos	TAL-5170-r18-paginate
+INV-ME-125	references/01-rol-y-fronteras.md	MUST	ISO8601> <nonce> <CATEGORIA>	TAL-5170-r18-categoria-en-token
+INV-ME-126	references/06-migraciones-y-slots.md	MUST	gh api --paginate repos	TAL-5170-r18-ref06-paginate
+INV-ME-127	references/06-migraciones-y-slots.md	MUST	una Señal de quiescencia REAL —	TAL-5170-r19-ref06-senal-quiescencia
+INV-ME-128	references/07-gotchas.md	MUST	obtiene la Señal de quiescencia REAL antes de publicar nada	TAL-5170-r19-gotcha-senal-quiescencia
+INV-ME-129	references/07-gotchas.md	MUST	categoría como ÚLTIMO campo \(el quinto, tras el	TAL-5170-r18-gotcha-categoria-ultimo-campo-r27
+INV-ME-130	SKILL.md	MUST	protege TODA	TAL-5170-r19-skill-set-mas-set-menos
+INV-ME-131	references/01-rol-y-fronteras.md	MUST	join pg_class c on l.relation = c.oid	TAL-5170-r19-pg-locks-sql
+INV-ME-132	references/01-rol-y-fronteras.md	MUST	SOLO si la recuperación viene de un ERROR de advisors	TAL-5170-r19-recovers-condicion-5
+INV-ME-133	references/01-rol-y-fronteras.md	MUST	classify_log	TAL-5170-r19-classify-log-existe
+INV-ME-134	references/06-migraciones-y-slots.md	MUST	investigador LEE en	TAL-5170-r20-ref06-condicion-5-terna
+INV-ME-135	references/02-protocolo-por-pr.md	MUST	quiescencia REAL — consulta a	TAL-5170-r19-ref02-senal-quiescencia
+INV-ME-136	references/01-rol-y-fronteras.md	MUST	protege TODA la secuencia siguiente	TAL-5170-r19-set-mas-e-protege-toda
+INV-ME-137	references/anexo-instancia.md	MUST	lock table supabase_migrations.schema_migrations in exclusive mode;	TAL-5170-r20-anexo-lock-explicito
+INV-ME-138	references/anexo-instancia.md	MUST	class\(\) \{ printf	TAL-5170-r20-anexo-class-helper
+INV-ME-139	references/anexo-instancia.md	MUST	: "\$\{PROC_M13_CLASS_FILE:=/dev/null\}"	TAL-5170-r20-anexo-class-file-default
+INV-ME-140	references/01-rol-y-fronteras.md	MUST	content="\$\(cat "\$class_file"	TAL-5170-r21-ref01-classify-log-cuerpo-funcional
+INV-ME-141	references/01-rol-y-fronteras.md	MUST	\.metadata\.schema. \+ .\.metadata\.name. \+ .\.metadata\.type	TAL-5170-r20-ref01-terna-metadata
+INV-ME-142	SKILL.md	MUST	PROC_M13_CLASS_FILE	TAL-5170-r20-skill-class-file
+INV-ME-143	references/02-protocolo-por-pr.md	MUST	NUNCA `\$LOG`, que puede traer un cuerpo HTTP remoto	TAL-5170-r20-ref02-class-file
+INV-ME-144	references/07-gotchas.md	MUST	terna `schema`\+`name`\+`type`	TAL-5170-r20-gotcha-terna
+INV-ME-145	references/01-rol-y-fronteras.md	MUST	que el .trap. de PROC-M13 borra al salir el hijo	TAL-5170-r20-ref06-class-file-mktemp
+INV-ME-146	references/proc-m13.selftest.sh	MUST	T21h	TAL-5170-r20-selftest-t21h-adversarial
+INV-ME-147	references/proc-m13.selftest.sh	MUST	^echo "== T20:	TAL-5170-r20-selftest-t20-lock-order
+INV-ME-148	references/anexo-instancia.md	MUST	if exists \(select 1 from supabase_migrations.schema_migrations where version	TAL-5170-r21-anexo-guard-revalidacion
+INV-ME-149	references/01-rol-y-fronteras.md	MUST	importar quién llegó primero al lock	TAL-5170-r21-ref01-guard-narrativa
+INV-ME-150	references/01-rol-y-fronteras.md	MUST	DESPUÉS de ganar el gate — como hacía la ronda 20 — deja el token huérfano	TAL-5170-r21-ref01-mktemp-antes-de-apply-run
+INV-ME-151	SKILL.md	MUST	precondición local barata ANTES de tomar un	TAL-5170-r21-ref06-mktemp-antes-de-apply-run
+INV-ME-152	references/02-protocolo-por-pr.md	MUST	el cierre real es revalidar DENTRO DE LA	TAL-5170-r21-ref02-guard-revalidacion
+INV-ME-153	SKILL.md	MUST	payload se revalida DENTRO DE LA MISMA TRANSACCIÓN contra el ledger	TAL-5170-r21-skill-guard-revalidacion
+INV-ME-154	references/07-gotchas.md	MUST	no se reclama ningún gate que huérfanar	TAL-5170-r21-gotcha-mktemp-antes-de-apply-run
+INV-ME-155	references/proc-m13.selftest.sh	MUST	^echo "== T22:	TAL-5170-r21-selftest-t22-guard-revalidacion
+INV-ME-156	references/proc-m13.selftest.sh	MUST	classify_log\(\)	TAL-5170-r21-selftest-t21j-extrae-classifier
+INV-ME-157	references/03-superficies-sensibles.md	MUST	clave de idempotencia estable	TAL-5170-cr-idempotencia-money-path
+INV-ME-158	SKILL.md	MUST	claim propio gana \(primero tras el último cierre\), mergear	TAL-5170-cr-gate-antes-de-merge
+INV-ME-159	references/01-rol-y-fronteras.md	MUST	5 intentos de escritura al flock fallaron	TAL-5170-cr-publish-close-retry
+INV-ME-160	references/01-rol-y-fronteras.md	MUST	supersede <estación-anterior>	TAL-5170-cr-slot-claim-liveness
+INV-ME-161	references/06-migraciones-y-slots.md	MUST	PRIMER paso de esta	TAL-5170-cr-pull-antes-de-gate
+INV-ME-162	SKILL.md	MUST	APPLY-FAILED. sin .APPLY-DONE. posterior para ese gap — agnóstico de categoría	TAL-5170-r23-gate-cubre-apply-failed
+INV-ME-163	SKILL.md	MUST	el gate se RECLAMA aquí, no solo se	TAL-5170-r25-gate-se-reclama-antes-de-merge
+INV-ME-164	references/06-migraciones-y-slots.md	MUST	CLASS_FILE. y el claim de .APPLY-RUN. YA se hicieron	TAL-5170-r25-ref06-claim-movido-a-pre-merge
+INV-ME-165	references/01-rol-y-fronteras.md	MUST	Correlación por identidad COMPLETA — obligatoria en el paso 1, no opcional	TAL-5170-r25-re-anclado-r28-misma-propiedad-la-correlacion-del-paso-1-es-obligatoria-ahora-por-las-CUATRO-senas-no-por-tres
+INV-ME-166	references/apply-gate.sh	MUST	check-then-append ATÓMICO bajo el MISMO flock	TAL-5170-r25-r28-r33-re-anclado-otra-vez-misma-propiedad-check-then-append-atomico-la-forma-cambio-tres-veces-la-propiedad-no
+INV-ME-167	references/01-rol-y-fronteras.md	MUST	SLOT-CLAIM <slot> = #<PR> \[<estación>\] <ISO8601>	TAL-5170-r25-slot-claim-lleva-estacion-e-iso
+INV-ME-168	references/01-rol-y-fronteras.md	MUST	supersede <estación-anterior> <nonce-anterior>	TAL-5170-r25-takeover-lleva-generacion
+INV-ME-169	references/01-rol-y-fronteras.md	MUST	el problema ABA, M1→M2→M1	TAL-5170-r25-takeover-aba
+INV-ME-170	references/01-rol-y-fronteras.md	MUST	transfiere, en el MISMO acto y sin publicar un	TAL-5170-r25-takeover-transfiere-claim
+INV-ME-171	references/07-gotchas.md	MUST_NOT	NO cubre `SLOT-CLAIM`/`SLOT-CLAIM-TAKEOVER`	TAL-5754-cr-t05-clase1-anti-reenumeracion
+INV-ME-172	references/01-rol-y-fronteras.md	MUST	tres caras del mismo turno reservado, un solo mecanismo de cierre	TAL-5170-r25-turno-reservado-un-cierre-merge-incluido
+INV-ME-173	SKILL.md	MUST	NUNCA dejar el gate abierto esperando el timeout	TAL-5170-r25-merge-failure-libera-gate
+INV-ME-174	references/01-rol-y-fronteras.md	MUST	es lo que identifica de forma única ESTE intento	TAL-5170-r27-nonce-es-la-identidad
+INV-ME-175	references/01-rol-y-fronteras.md	MUST	se fija AQUÍ una sola vez y	TAL-5170-r27-run-nonce-generado-una-vez
+INV-ME-176	references/01-rol-y-fronteras.md	MUST	\$RUN_ISO \$RUN_NONCE\$extra	TAL-5170-r27-publish-close-linea-incluye-nonce
+INV-ME-177	references/01-rol-y-fronteras.md	MUST	fija la GENERACIÓN exacta que se sucede por su identidad ÚNICA	TAL-5170-r27-takeover-generacion-es-nonce
+INV-ME-178	SKILL.md	MUST	ANTES de cerrar, RECONCILIAR el estado autoritativo	TAL-5170-r27-skill-merge-reconciliacion
+INV-ME-179	references/01-rol-y-fronteras.md	MUST	gh pr view <PR> --json state,mergedAt,mergeCommit	TAL-5170-r27-ref01-merge-reconciliacion
+INV-ME-180	references/01-rol-y-fronteras.md	MUST	FAIL-CLOSED: NO liberar la reserva, escalar	TAL-5170-r27-merge-indeterminado-fail-closed
+INV-ME-181	references/proc-m13.selftest.sh	MUST	T21k \(ronda 27 BLOQUEANTE	TAL-5170-r27-selftest-t21k-colision-nonce
+INV-ME-182	SKILL.md	MUST	el merge OCURRIÓ: conservar el MISMO turno	TAL-5170-r27-merge-mergedat-continua-turno
+INV-ME-183	references/01-rol-y-fronteras.md	MUST_NOT	APPLY-FAILED \[<estación>\] #<PR> <ISO8601> <CATEGORIA>	TAL-5170-r28-ratchet-no-apply-failed-sin-nonce-ref01
+INV-ME-184	SKILL.md	MUST_NOT	APPLY-FAILED \[<estación>\] #<PR> <ISO8601> <CATEGORIA>	TAL-5170-r28-ratchet-no-apply-failed-sin-nonce-skill
+INV-ME-185	references/06-migraciones-y-slots.md	MUST_NOT	APPLY-FAILED \[<estación>\] #<PR> <ISO8601> <CATEGORIA>	TAL-5170-r28-ratchet-no-apply-failed-sin-nonce-ref06
+INV-ME-186	references/07-gotchas.md	MUST_NOT	APPLY-FAILED \[<estación>\] #<PR> <ISO8601> <CATEGORIA>	TAL-5170-r28-ratchet-no-apply-failed-sin-nonce-ref07
+INV-ME-187	references/01-rol-y-fronteras.md	MUST_NOT	APPLY-RECOVERS #<PR-fallido> <ISO8601-fallido>	TAL-5170-r28-ratchet-no-apply-recovers-sin-nonce-ref01
+INV-ME-188	references/06-migraciones-y-slots.md	MUST_NOT	APPLY-RECOVERS #<PR-fallido> <ISO8601-fallido>	TAL-5170-r28-ratchet-no-apply-recovers-sin-nonce-ref06
+INV-ME-189	references/07-gotchas.md	MUST_NOT	APPLY-RECOVERS #<PR-fallido> <ISO8601-fallido>	TAL-5170-r28-ratchet-no-apply-recovers-sin-nonce-ref07
+INV-ME-190	references/01-rol-y-fronteras.md	MUST_NOT	APPLY-DONE \[<estación>\] #<PR> <ISO8601>`	TAL-5170-r28-ratchet-no-apply-done-sin-nonce-ref01
+INV-ME-191	SKILL.md	MUST_NOT	APPLY-DONE \[<estación>\] #<PR> <ISO8601>`	TAL-5170-r28-ratchet-no-apply-done-sin-nonce-skill
+INV-ME-192	references/06-migraciones-y-slots.md	MUST_NOT	APPLY-DONE \[<estación>\] #<PR> <ISO8601>`	TAL-5170-r28-ratchet-no-apply-done-sin-nonce-ref06
+INV-ME-193	references/01-rol-y-fronteras.md	MUST_NOT	APPLY-RUN \[<estación>\] #<PR> <ISO8601>`	TAL-5170-r28-ratchet-no-apply-run-sin-nonce-ref01
+INV-ME-194	SKILL.md	MUST_NOT	APPLY-RUN \[<estación>\] #<PR> <ISO8601>`	TAL-5170-r28-ratchet-no-apply-run-sin-nonce-skill
+INV-ME-195	references/06-migraciones-y-slots.md	MUST_NOT	APPLY-RUN \[<estación>\] #<PR> <ISO8601>`	TAL-5170-r28-ratchet-no-apply-run-sin-nonce-ref06
+INV-ME-196	references/01-rol-y-fronteras.md	MUST	RUN_NONCE. DEBE ser EXACTAMENTE el .<nonce-nuevo>	TAL-5170-r29-apply-recovers-vincula-nonce-nuevo-al-run
+INV-ME-197	references/01-rol-y-fronteras.md	MUST	<nonce-fallido>. citado DEBE ser EXACTAMENTE el nonce	TAL-5170-r29-apply-recovers-vincula-nonce-fallido
+INV-ME-198	references/01-rol-y-fronteras.md	MUST_NOT	[Nn][Oo] [Ee][Ss] ([Cc][Ii][Ee][Rr][Tt][Oo]|[Oo][Bb][Ll][Ii][Gg][Aa][Tt][Oo][Rr][Ii][Oo]) [Qq][Uu][Ee].{0,60}(RUN_NONCE|nonce-fallido|nonce-nuevo|APPLY-RUN)	TAL-5170-r30-guarda-negativa-acotada-polaridad-insensible-al-caso-por-esqueleto-unico-ref01
+INV-ME-199	SKILL.md	MUST_NOT	[Nn][Oo] [Ee][Ss] ([Cc][Ii][Ee][Rr][Tt][Oo]|[Oo][Bb][Ll][Ii][Gg][Aa][Tt][Oo][Rr][Ii][Oo]) [Qq][Uu][Ee].{0,60}(RUN_NONCE|nonce-fallido|nonce-nuevo|APPLY-RUN)	r30-guarda-negativa-acotada-polaridad-insensible-al-caso-por-esqueleto-unico-skill
+INV-ME-200	references/06-migraciones-y-slots.md	MUST_NOT	[Nn][Oo] [Ee][Ss] ([Cc][Ii][Ee][Rr][Tt][Oo]|[Oo][Bb][Ll][Ii][Gg][Aa][Tt][Oo][Rr][Ii][Oo]) [Qq][Uu][Ee].{0,60}(RUN_NONCE|nonce-fallido|nonce-nuevo|APPLY-RUN)	r30-guarda-negativa-acotada-polaridad-insensible-al-caso-por-esqueleto-unico-ref06
+INV-ME-201	references/01-rol-y-fronteras.md	MUST	Límite conocido: ciclo de vida de .APPLY-RECOVERS	TAL-5296-limite-conocido-declarado-en-el-ref
+INV-ME-202	references/02-protocolo-por-pr.md	MUST	el gate .APPLY-RUN. se RECLAMA antes de mergear	TAL-5170-poda3-receta-completa-reclama-el-gate-antes-del-merge
+INV-ME-203	references/01-rol-y-fronteras.md	MUST	NO se regenera DENTRO del mismo intento	TAL-5170-nonce-unico-por-intento-no-por-turno
+INV-ME-204	references/01-rol-y-fronteras.md	MUST	repite \*\*desde el paso 0, con identidad NUEVA\*\*	perdedor-reintenta-desde-el-paso-0-identidad-nueva
+INV-ME-205	references/02-protocolo-por-pr.md	MUST	reconstruye byte a byte el artefacto	TAL-5170-par15-la-equivalencia-se-nombra-con-exactitud-y-se-demuestra
+INV-ME-206	references/02-protocolo-por-pr.md	MUST	TM_GATE_SHA='[0-9a-f]{64}'	par10-ancla-del-artefacto-completo-no-de-dos-funciones
+INV-ME-207	references/02-protocolo-por-pr.md	MUST	if \[ "\$\{CLAIM_GANADO:-0\}" -ne 1 \] && \[ -n "\$\{CLASS_FILE:-\}" \]; then rm -f "\$CLASS_FILE"; fi	par12-limpieza-pre-claim-con-su-polaridad-en-el-trap-unico
+INV-ME-208	references/02-protocolo-por-pr.md	MUST	eval "\$_gate_src"	par14-se-evalua-la-cadena-leida-una-vez-sin-reabrir-fichero
+INV-ME-209	references/proc-m13.selftest.sh	MUST	bash "\$WORK/skill/references/proc-m13\.selftest\.sh" &	par15-el-padre-lanza-al-hijo-desde-el-congelado
+INV-ME-210	references/proc-m13.selftest.sh	MUST	_enlaces="\$\(find "\$WORK/skill" -type l -print 2>/dev/null\)" \|\| \{	par14-enlaces-en-la-copia-con-el-rc-de-find-validado
+INV-ME-211	references/proc-m13.selftest.sh	MUST	_crudo="\$\(sha256sum < "\$GATE_LIB"	par11-ancla-contrastada-contra-el-sha-crudo-no-solo-el-normalizado
+INV-ME-212	references/proc-m13.selftest.sh	MUST	if \[ "\$HERE" != "\$SKILLROOT/references" \]	par13-el-marcador-de-congelado-no-se-cree-por-si-solo
+INV-ME-213	references/02-protocolo-por-pr.md	MUST	LO QUE ESTO \*\*NO\*\* CIERRA	par13-la-ventana-entre-hash-y-source-se-declara-no-se-finge
+INV-ME-214	references/02-protocolo-por-pr.md	MUST	head -c "\$_n_dif" /dev/zero \| tr	par14-se-demuestra-que-lo-evaluado-reconstruye-el-artefacto
+INV-ME-215	references/proc-m13.selftest.sh	MUST_NOT	^[[:space:]]*(kill|[^#[:space:]].*[^A-Za-z0-9_]kill) +(--|-[^0[:space:]]|[^-[:space:]])	par21-CONTRATO-ACOTADO-invocaciones-literales-directas-en-lineas-ejecutables-amenaza-error-no-sabotaje
+INV-ME-216	references/proc-m13.selftest.sh	MUST_NOT	_ancestros_selftest	par17-el-detector-falsificable-no-vuelve-el-control-no-se-omite
+INV-ME-217	references/02-protocolo-por-pr.md	MUST	deja el árbol de git limpio\*\*, esquivando revisión y ratchet	par14-la-sustancia-del-limite-no-solo-su-encabezado
+INV-ME-218	references/06-migraciones-y-slots.md	MUST_NOT	SOLO M1/M2 mergean PRs que tocan	par19-capa-exacta-de-formulaciones-retiradas-CONOCIDAS-una-a-una
+INV-ME-219	references/proc-m13.selftest.sh	MUST	exit 129	par15-codigos-de-salida-distinguibles-por-senal
+INV-ME-220	references/proc-m13.selftest.sh	MUST	DETECTA, REPORTA Y ESCALA	par19-la-decision-sellada-de-no-matar-esta-escrita-donde-se-ejecuta
+INV-ME-221	references/proc-m13.selftest.sh	MUST	trap - EXIT	par16-el-cierre-desarma-su-trap-y-corre-una-sola-vez
+INV-ME-222	references/proc-m13.selftest.sh	MUST	HIJO="\$\(jobs -p 2>/dev/null \| tail -1\)"	par16-cierra-la-ventana-entre-el-lanzamiento-y-la-identidad
+INV-ME-223	references/proc-m13.selftest.sh	MUST	la duda cuenta como QUEDAN	TAL-5170-par16-la-duda-cuenta-como-quedan-nunca-como-cero
+INV-ME-224	references/proc-m13.selftest.sh	MUST	_sujetos "\$_pg"	TAL-5170-par19-la-escalada-nombra-SUJETOS-no-un-numero-agregado
+INV-ME-225	references/proc-m13.selftest.sh	MUST	_supervivientes\(\)	TAL-5170-par16-supervivientes-del-ARBOL-no-solo-del-grupo
+INV-ME-226	references/07-gotchas.md	MUST_NOT	Rebotar a la cola de M1/M2	TAL-5170-par19-capa-exacta-de-formulaciones-retiradas-CONOCIDAS-una-a-una
+INV-ME-227	references/06-migraciones-y-slots.md	MUST_NOT	competencia exclusiva	TAL-5170-par19-evasion-medida-en-par18-como-formulacion-conocida
+INV-ME-228	references/07-gotchas.md	MUST_NOT	competencia exclusiva	TAL-5170-par19-evasion-medida-en-par18-como-formulacion-conocida
+INV-ME-229	references/proc-m13.selftest.sh	MUST_NOT	_rc_marcador=omitido	TAL-5170-par17-ninguna-rama-suma-ni-PASS-ni-FAIL-sin-verde-silencioso
+INV-ME-230	references/proc-m13.selftest.sh	MUST	-o pgid=	TAL-5170-par17-supervivientes-por-GRUPO-union-ascendencia-el-lider-puede-morir
+INV-ME-231	references/proc-m13.selftest.sh	MUST	while kill -0 "\$HIJO"	TAL-5170-par17-el-wait-del-cierre-va-ACOTADO-nunca-indefinido
+INV-ME-232	references/06-migraciones-y-slots.md	MUST	la REVISIÓN HUMANA, no el gate	TAL-5170-par19-la-doctrina-la-protege-la-revision-y-eso-se-escribe-no-se-finge
+INV-ME-233	references/proc-m13.selftest.sh	MUST	_sujetos\(\)	TAL-5170-par18-orden-destructiva-con-SUJETO-no-conteo-agregado
+INV-ME-234	references/proc-m13.selftest.sh	MUST_NOT	_rc_pre" -ne 0	TAL-5170-par18-fallar-la-observacion-significa-NO-MATAR-nunca-fail-open
+INV-ME-235	references/proc-m13.selftest.sh	MUST_NOT	kill -(KILL|TERM) "\$HIJO"	TAL-5170-par18-sin-fallback-al-PID-positivo-un-numero-suelto-no-acredita-sujeto
+INV-ME-236	SKILL.md	MUST	mergea Y aplica\*\*, como una sola operación indivisible	TAL-5170-par20-la-SEGUNDA-ocurrencia-del-checklist-tambien-esta-protegida
+INV-ME-237	references/01-rol-y-fronteras.md	MUST	mergea Y aplica\*\*, sin estación fija ni turno	TAL-5170-par20-la-SEGUNDA-ocurrencia-de-ref01-tambien-esta-protegida
+INV-ME-238	references/06-migraciones-y-slots.md	MUST	las CUATRO superficies normativas	TAL-5170-par20-la-revision-humana-cubre-las-cuatro-superficies-no-dos
+INV-ME-239	references/proc-m13.selftest.sh	MUST	potencialmente NO ACOTADA	TAL-5170-par20-el-coste-se-describe-como-fuga-no-acotada-no-como-recurso-acotado
+INV-ME-240	references/proc-m13.selftest.sh	MUST	Modelo de amenaza declarado: error e implementacion perezosa	TAL-5170-par21-el-limite-del-ratchet-esta-escrito-no-en-la-cabeza-de-nadie
+INV-ME-241	references/proc-m13.selftest.sh	MUST	_acreditado_vacio\(\)	TAL-5170-par21-puerta-UNICA-al-borrado-imposible-salir-sin-acreditar
+INV-ME-242	references/proc-m13.selftest.sh	MUST	_PG_HIJO="\$HIJO"	TAL-5170-par21-el-grupo-se-recuerda-aparte-HIJO-se-vacia-y-de-ahi-salia-el-fail-open
+INV-ME-243	references/06-migraciones-y-slots.md	MUST	SIETE ocurrencias	TAL-5170-par21-el-inventario-cuenta-siete-no-seis
+INV-ME-244	references/06-migraciones-y-slots.md	MUST	Presencia de la formulación canónica positiva	TAL-5170-par21-la-SEPTIMA-ocurrencia-la-cita-de-la-nota-va-partida-en-dos-lineas-y-se-ancla-aqui
+INV-ME-245	references/08-gates-locales.md	MUST_NOT	EXCLUYE los runners por convención de nombre	TAL-5754-cr-t05-clase1-anti-exclusion-por-nombre-prescriptiva
+INV-ME-246	references/apply-gate.sh	MUST_NOT	^[^#]*flock[^#]*-c[[:space:]]+"	TAL-5170-r28-critical7-dato-interpolado-en--c-vuelve-a-ser-codigo-el-dato-va-por-argv
+INV-ME-247	references/apply-gate.sh	MUST	flock "\$FLOCK_FILE" bash -c '	TAL-5170-r28-critical7-append-y-guarda-pasan-el-dato-por-argv-con-programa-fijo
+INV-ME-248	references/apply-gate.sh	MUST	EL GATE SOLO LO LIBERA QUIEN LO TOMO	TAL-5170-r28-critical3-guarda-de-dueno-si-mi-APPLY-RUN-no-esta-no-publico-cierre
+INV-ME-249	references/01-rol-y-fronteras.md	MUST	EL GATE SOLO LO LIBERA QUIEN LO TOM	TAL-5170-r28-critical3-doctrina-de-cierre-por-identidad-COMPLETA-cuatro-senas
+INV-ME-250	references/01-rol-y-fronteras.md	MUST_NOT	sobre todo el mismo	TAL-5170-r28-critical3-la-enumeracion-de-tres-senas-omitia-la-estacion-y-soltaba-el-gate-ajeno
+INV-ME-251	references/01-rol-y-fronteras.md	MUST	rc_close=\$\?	TAL-5170-r28-major2-el-rc-de-publish-close-se-captura-o-errexit-se-salta-la-limpieza
+INV-ME-252	references/07-gotchas.md	MUST	lista COMPLETA de condiciones de	TAL-5170-r28-major8-la-fila-CITA-la-lista-de-ref-06-como-fuente-unica-la-propiedad-es-la-COMPLETUD-no-el-rango-a-h-que-caduca-si-ref-06-crece
+INV-ME-253	references/07-gotchas.md	MUST_NOT	verificar CUATRO condiciones	TAL-5170-r28-major8-cuatro-escritas-a-mano-al-lado-de-ocho-son-cuatro-de-divergir
+INV-ME-254	references/proc-m13.selftest.sh	MUST_NOT	^[^#]*\|\| echo 0	TAL-5170-r28-major5-grep--c-imprime-0-y-devuelve-rc-1-el-fallback-apendizaba-un-segundo-cero
+INV-ME-255	references/proc-m13.selftest.sh	MUST	exec "\$@"	TAL-5170-r28-el-mock-de-flock-ejecuta-por-ARGV-igual-que-el-gate-real
+INV-ME-256	references/proc-m13.selftest.sh	MUST_NOT	\{2:-\}" = "-c"	TAL-5170-r28-un-mock-que-solo-reconoce--c-mediria-una-forma-que-ya-no-existe
+INV-ME-257	references/10-estaciones-en-paralelo.md	MUST	RUTA APAGADA	TAL-5446-r28-critical6-la-via-apagada-se-marca-EN-SU-PUNTO-DE-USO-no-solo-en-el-0-que-el-lector-puede-saltarse
+INV-ME-258	references/10-estaciones-en-paralelo.md	MUST	NO SE EMITE	TAL-5446-r28-critical6-la-linea-de-batching-del-sello-no-se-emite-mientras-la-puerta-este-cerrada
+INV-ME-259	SKILL.md	MUST	CADA PR corre su suite	TAL-5446-r28-major1-instruccion-fail-closed-en-la-seccion-Merge-cada-PR-su-suite-completa-sobre-su-head
+INV-ME-260	SKILL.md	MUST_NOT	pueden fundirse SIN REPETIR SUITES	TAL-5446-r28-major1-veta-la-PRESCRIPCION-retirada-de-fundir-por-disjuncion-sin-repetir-suites-la-mencion-no
+INV-ME-261	references/02-protocolo-por-pr.md	MUST	rc_close=\$\?	TAL-5170-r28-major2-el-EJECUTABLE-captura-el-rc-y-limpia-por-la-misma-via-antes-de-propagar-el-testigo-es-T24f
+INV-ME-262	references/01-rol-y-fronteras.md	MUST	RUTA APAGADA	TAL-5446-r29-clase-todo-punto-de-uso-que-autorice-fundir-sin-repetir-suites-lleva-el-guard-el-testigo-real-es-el-oraculo-de-intake
+INV-ME-263	references/02-protocolo-por-pr.md	MUST	RUTA APAGADA	TAL-5446-r29-idem-incluido-el-paso-8-que-es-PROCEDIMIENTO-operativo-no-doctrina
+INV-ME-264	SKILL.md	MUST	RUTA APAGADA	TAL-5446-r29-idem-dentro-del-fence-bash-de-la-seccion-Merge
+INV-ME-265	references/10-estaciones-en-paralelo.md	MUST	ventana	TAL-5446-CEO-LEY-BATCHING-ventana-de-merge
+INV-ME-266	SKILL.md	MUST	estaciones-en-paralelo	TAL-5446-pipeline-declara-la-ventana
+INV-ME-267	SKILL.md	MUST	CEO-RULING-MAJOR4-T05-BATCHING-OFF-PARALELA-NO-ES-BATCHING-1625	TAL-5446-cr-t05-major4-guard-batching-off
+INV-ME-268	references/10-estaciones-en-paralelo.md	MUST	LA VENTANA PARALELA NO ES BATCHING	TAL-5446-cr-t05-major4-ventana-no-es-batching
+INV-ME-269	references/10-estaciones-en-paralelo.md	MUST	esa serialización es de la ESCRITURA, no «un solo PR autorizado por	TAL-5446-cr-t05-major2-termino-en-el-ejecutable
+INV-ME-270	references/01-rol-y-fronteras.md	MUST	el default es ESCALAR ante lo que	t05v6-t05v19-coherencia-el-default-normativo-de-2-sigue-ahi-reanclado-tras-cerrar-a-solo-b-y-c-siguen-abiertos
+INV-ME-271	references/01-rol-y-fronteras.md	MUST	default es ESCALAR\*\* \(§2, «Límite conocido	t05v6-coherencia-el-resumen-1-nombra-el-MISMO-default
+INV-ME-272	references/02-protocolo-por-pr.md	MUST	^[^#]*N_MIG=\$\(git diff --name-only	t05v6-8.0-el-predicado-es-LINEA-DE-CODIGO-no-comentario
+INV-ME-273	references/02-protocolo-por-pr.md	MUST	^[^#]*N_MIG=-1	t05v6-8.0-el-indeterminado-existe-como-codigo-y-reserva-fail-closed
+INV-ME-274	SKILL.md	MUST	la estación \*\*escala en vez de	t05v6-coherencia-3o-sitio-SKILL-nombra-el-MISMO-default
+INV-ME-275	references/06-migraciones-y-slots.md	MUST	estación ESCALA — la cardinalidad	t05v6-coherencia-4o-sitio-ref06-nombra-el-MISMO-default
+INV-ME-276	references/apply-gate.sh	MUST	^titular_vigente\(\)	t05v7-la-cadena-de-sucesion-tiene-implementacion-EJECUTABLE-unica
+INV-ME-277	references/02-protocolo-por-pr.md	MUST	^[^#]*if \[ "\${CLAIM_GANADO:-0}" -ne 1 \]; then	t05v7-la-rama-de-diagnostico-no-toca-CLASS_FILE-sin-turno-reservado
+INV-ME-278	references/proc-m13.selftest.sh	MUST	^[^#]*acq_u  "	t05v7-el-crash-por-set-u-tiene-observable-propio-no-solo-MERGE-LOCK
+INV-ME-279	references/01-rol-y-fronteras.md	MUST	lo resuelve \*\*`titular_vigente\(\)`\*\*	t05v8-ruling-CEO-el-texto-CITA-la-fuente-ejecutable-no-la-redefine
+INV-ME-280	references/01-rol-y-fronteras.md	MUST_NOT	gana el PRIMERO que cita esa generación exacta	t05v8-el-algoritmo-no-vuelve-a-vivir-en-la-prosa-de-ref01
+INV-ME-281	references/01-rol-y-fronteras.md	MUST	cita SUSTITUYE al enunciado, no lo acompaña	t05v8-la-forma-del-ruling-queda-escrita-donde-se-aplica
+INV-ME-282	references/01-rol-y-fronteras.md	MUST_NOT	(SLOT-CLAIM-TAKEOVER|cadena de sucesi|generaci[óo]n vigente|nonce-anterior).*(VOID|first-claim-wins|gana el|se descarta|descartad|extiende la cadena|no es la vigente|el PRIMERO)	t05v9-CEO-reenunciar-es-reproducir-una-CONDICION-el-MUST_NOT-ancla-TOKENS-no-redaccion
+INV-ME-283	references/01-rol-y-fronteras.md	MUST	devuelve \*\*`"<estación> <nonce>"`\*\*	t05v9-la-seccion-describe-ENTRADA-y-SALIDA-punto-b-del-ruling
+INV-ME-284	references/01-rol-y-fronteras.md	MUST_NOT	RUN_NONCE="\$\(cat /proc	s05v10-ref01-no-transcribe-el-paso-0-sin-su-validacion
+INV-ME-285	references/apply-gate.sh	MUST_NOT	>> "\$LOG"	s05v10-el-canal-durable-usa-el-default-LOG-dev-null-como-52-lineas-mas-arriba
+INV-ME-286	references/apply-gate.sh	MUST	^  return 0$	s05v10-titular_vigente-NADIE-no-es-error-no-mata-al-llamante-bajo-set-e
+INV-ME-287	references/02-protocolo-por-pr.md	MUST_NOT	^RE_[A-Z]+=.*\\	s05v10-ninguna-ERE-canonica-lleva-backslashes-porque-viaja-por--v
+INV-ME-288	references/proc-m13.selftest.sh	MUST	YA NO ES SÓLO EL RC	s05v11-la-afirmacion-no-se-sobrevende-el-rc-sigue-discriminando
+INV-ME-289	references/02-protocolo-por-pr.md	MUST_NOT	^[^#]*printf .*\| grep -Eq	s05v11-la-validacion-de-identidad-no-vuelve-a-anclar-por-LINEA-ni-a-tuberia
+INV-ME-290	references/proc-m13.selftest.sh	MUST	SE EXIGE LA ESCRITURA DEL DATO	s05v12-el-predicado-exige-la-escritura-del-DATO-no-literal-mas-emisor
+INV-ME-291	references/02-protocolo-por-pr.md	MUST_NOT	base64 -w0	s05v12-nada-de-banderas-GNU-el-arnes-corre-en-contenedores
+INV-ME-292	references/01-rol-y-fronteras.md	MUST	el corte NO es «con migraciones vs sin»: es LEER vs ESCRIBIR	s05v12-la-excepcion-del-espejo-se-acota-por-el-eje-correcto
+INV-ME-293	references/apply-gate.sh	MUST	NO reimplementa la regla	t05v13-t26-intake-slot-invoca-la-cadena-no-la-copia
+INV-ME-294	references/apply-gate.sh	MUST	FAIL-CLOSED: sin cadena no hay slot que operar	t05v13-t26-sin-cadena-se-rechaza-no-se-admite-por-ausencia
+INV-ME-295	references/01-rol-y-fronteras.md	MUST	el primero en aparecer es la estación MUERTA	t05v13-t26-la-admision-la-decide-la-cadena-no-el-orden-de-aparicion
+INV-ME-296	references/proc-m13.selftest.sh	MUST	Y se exige la EXPANSIÓN, no la PALABRA	t05v13-t27-el-ratchet-acredita-la-escritura-del-dato-no-el-nombre
+INV-ME-297	references/proc-m13.selftest.sh	MUST	ef = sin_comentario	t05v13-t27-la-cola-de-comentario-no-acredita-flock-ni-token
+INV-ME-298	SKILL.md	MUST	CADA UNA con su suite COMPLETA	t05v13-t28-el-quick-start-no-prescribe-la-via-apagada
+INV-ME-299	references/01-rol-y-fronteras.md	MUST	cada una con su suite COMPLETA sobre su propio head	t05v13-t28-la-ventana-no-exime-de-suite
+INV-ME-300	references/02-protocolo-por-pr.md	MUST	se registra como tal, no se	t05v13-t28-la-via-apagada-se-registra-no-se-instruye
+INV-ME-301	references/01-rol-y-fronteras.md	MUST_NOT	el gate se libera mecánicamente	t05v14-b-la-tabla-no-puede-contradecir-al-ejecutable
+INV-ME-302	references/01-rol-y-fronteras.md	MUST	EL COSTE, que va escrito y no en una nota al pie	t05v14-b-el-coste-del-ruling-va-escrito-no-insinuado
+INV-ME-303	references/01-rol-y-fronteras.md	MUST	APPLY-ESCALAR-GO	t05v14-b-el-token-de-autorizacion-existe-en-la-tabla
+INV-ME-304	references/02-protocolo-por-pr.md	MUST	APPLY-ESCALAR-GO	t05v14-b-el-contrato-ejecutable-exige-la-acreditacion
+INV-ME-305	references/02-protocolo-por-pr.md	MUST	El calendario se valida por ARITMÉTICA	t05v14-a-sin-date-d-la-receta-corre-tambien-en-busybox
+INV-ME-306	references/02-protocolo-por-pr.md	MUST	_max=31	t05v14-a-el-calendario-es-ejecutable-no-solo-prosa
+INV-ME-307	references/02-protocolo-por-pr.md	MUST	GATE-ESTADO	t05v14-b-observabilidad-el-resolvedor-publica-su-estado
+INV-ME-308	references/apply-gate.sh	MUST	CERRADO POR CITA	t05v14-c-el-hallazgo-se-cierra-citando-el-limite-declarado
+INV-ME-309	references/01-rol-y-fronteras.md	MUST	recuperación tiene un dueño	t05v15-una-recuperacion-tiene-un-dueno-nunca-dos
+INV-ME-310	references/01-rol-y-fronteras.md	MUST	solo transfiere después de	t05v15-la-transferencia-exige-medir-que-la-original-no-vuelve
+INV-ME-311	references/02-protocolo-por-pr.md	MUST	sufijo de transferencia malformado	t05v15-un-sufijo-a-medias-no-autoriza-a-nadie
+INV-ME-312	references/02-protocolo-por-pr.md	MUST	TRANSFERIDA por el GO	t05v15-el-rechazo-a-la-original-tiene-razon-propia-no-la-generica
+INV-ME-313	references/02-protocolo-por-pr.md	MUST	goest=	t05v15-observabilidad-el-estado-nombra-al-dueno-de-la-recuperacion
+INV-ME-314	references/01-rol-y-fronteras.md	MUST	12 tokens EXACTOS	t05v15-cr7-el-contrato-cuenta-los-tokens-que-hay
+INV-ME-315	references/01-rol-y-fronteras.md	MUST	se actualiza EN EL MISMO CAMBIO	t05v15-cr7-anadir-un-token-obliga-a-actualizar-el-numero
+INV-ME-316	references/apply-gate.sh	MUST	VOID no es NEGATIVO	t05v15-cr6-el-rc-se-lee-no-se-niega-en-bloque
+INV-ME-317	references/apply-gate.sh	MUST	NO SE PUDO LEER	t05v15-cr6-un-flock-ilegible-no-es-una-ausencia
+INV-ME-318	references/anexo-instancia.md	MUST	GUARDA DE FORMA	t05v15-cr1-ts-y-name-se-validan-por-forma-y-abortan
+INV-ME-319	references/anexo-instancia.md	MUST	no se interpola en SQL	t05v15-cr1-la-entrada-invalida-nunca-llega-al-literal
+INV-ME-320	references/apply-gate.sh	MUST	no esta acreditada por leerla a solas	t05v16-cr3-el-contexto-del-llamador-es-parte-del-sujeto
+INV-ME-321	references/apply-gate.sh	MUST	El contexto es parte	t05v16-cr3-la-guarda-no-depende-del-set-e-del-llamador
+INV-ME-322	references/01-rol-y-fronteras.md	MUST	EXACTAMENTE UNA COSA: LEER	t05v16-cr1-el-espejo-cubre-solo-lectura
+INV-ME-323	references/01-rol-y-fronteras.md	MUST	en caso de duda NO cae en el espejo	t05v16-cr1-fail-closed-lo-dudoso-exige-flock-canonico
+INV-ME-324	references/apply-gate.sh	MUST	un parametro, es una CREDENCIAL	t05v17-cr3-el-flock-que-elige-el-llamador-es-una-credencial
+INV-ME-325	references/apply-gate.sh	MUST	mismo dispositivo e inodo	t05v17-cr3-la-procedencia-se-compara-por-fichero-no-por-cadena
+INV-ME-326	references/anexo-instancia.md	MUST	TM_FLOCK_CANONICO_TRUSTED	t05v17-cr3-la-instancia-declara-su-flock-canonico
+INV-ME-327	references/02-protocolo-por-pr.md	MUST	TM_FLOCK_CANONICO_TRUSTED	t05v17-cr2-el-intake-exige-EL-flock-canonico-no-un-flock
+INV-ME-328	references/10-estaciones-en-paralelo.md	MUST	Doctrina que se contradice a sí misma no es doctrina	t05v17-cr1-doctrina-que-se-contradice-no-es-doctrina
+INV-ME-329	references/10-estaciones-en-paralelo.md	MUST	no decide.*rechaza y rebota	t05v17-cr1-el-espejo-no-autoriza-a-decidir
+INV-ME-330	references/apply-gate.sh	MUST	^  exec 8< "\$f" \|\| return 2$	t05v19-la-apertura-real-reemplaza-al--r-y-sigue-sin-matar-al-llamante
+INV-ME-331	references/apply-gate.sh	MUST	titular="\$\(titular_vigente .*\)" \|\| _tv=\$\?	t05v18-t05v20-re-anclado-CLASE2-anadio-el-arg-slot-la-propiedad-es-el-\|\|-captura-no-los-argumentos-exactos
+INV-ME-332	references/apply-gate.sh	MUST	NUNCA SE INVOCA DESNUDA BAJO EL	t05v18-clase-set-e-intake-slot-desnuda-bajo-errexit-mata-el-cede
+INV-ME-333	references/01-rol-y-fronteras.md	MUST	Su rc se CAPTURA, NUNCA se invoca DESNUDA	t05v18-clase-set-e-la-doctrina-prescribe-la-forma-de-la-llamada
+INV-ME-334	references/02-protocolo-por-pr.md	MUST	^flock_acreditado \\$	t05v19-CRITICAL-la-reserva-acredita-antes-de-escribir-no-solo-el-cierre
+INV-ME-335	references/apply-gate.sh	MUST	\[ "\$g" -ge 2 \] && exit 2	t05v19-REAL-rc-2-del-grep-no-es-rc-1-no-pude-verificar-no-es-exito
+INV-ME-336	references/01-rol-y-fronteras.md	MUST	\(a\) \*\*RESUELTO — CADUCADO por la ronda 30	t05v19-la-clausula-caducada-se-marca-resuelta-no-se-deja-viva
+INV-ME-337	references/01-rol-y-fronteras.md	MUST	«Autorización de otra estación» YA NO es una de estas caras	t05v19-con-GO-transferido-la-nombrada-ejecuta-no-escala
+INV-ME-338	SKILL.md	MUST	Que la autorización sea de otra estación NO escala	t05v19-mismo-par-en-SKILL-md-la-transferencia-no-escala
+INV-ME-339	references/01-rol-y-fronteras.md	MUST	intake_slot "\$FLOCK_FILE" "\$ESTACION" "\$SLOT" \|\| rc_adm=\$\?	t05v20-re-anclado-CLASE2-la-llamada-de-v19-era-incompleta-le-faltaba-el-slot
+INV-ME-340	references/apply-gate.sh	MUST	identidad_slot_valida\(\)	t05v20-CLASE1-validador-de-forma-para-el-slot-claim-existe
+INV-ME-341	references/01-rol-y-fronteras.md	MUST	identidad_slot_valida "\$ESTACION" "\$SLOT" "\$PR" "\$RUN_ISO" "\$NONCE" "\$ARCHIVO"	t05v20-CLASE1-escritura-la-forma-se-valida-ANTES-de-interpolar
+INV-ME-342	references/apply-gate.sh	MUST	identidad_slot_valida "\$cand_est" "\$cand_slot" "\$cand_pr" "\$cand_iso" "\$cand_nonce" "\$cand_archivo" \|\| continue	t05v21-re-anclado-CLASE1-ronda35-cobertura-de-v20-era-INCOMPLETA-solo-est+nonce-ahora-invoca-EL-MISMO-predicado-de-6-campos-que-la-escritura-no-2
+INV-ME-343	references/apply-gate.sh	MUST	\[ "\$cand_slot" = "\$slot" \] \|\| continue	t05v23-ronda37-B01-RE-ANCLADO-la-propiedad-es-el-FILTRO-por-slot-que-SIEMPRE-se-aplica-B01-retiro-la-rama-z-sin-filtro-ver-INV-390-el-literal-viejo-con-z-ya-no-existe
+INV-ME-344	references/apply-gate.sh	MUST	LIMITE DECLARADO, no disimulado \(M-01, ronda 34, MAYOR	t05v20-M01-la-referencia-que-se-mueve-con-el-sujeto-no-comprueba-nada-declarado-en-el-codigo
+INV-ME-345	references/anexo-instancia.md	MUST	PROCEDENCIA INDEPENDIENTE: NO MEDIDA, NO GARANTIZABLE DESDE ESTE ARTEFACTO	t05v21-re-anclado-CLASE3-ronda35-el-titulo-de-M-01-sobreclamaba-logro-el-renombrado-NO-crea-canal-de-confianza-se-declara-NO-MEDIDO-no-cerrado
+INV-ME-346	references/apply-gate.sh	MUST	identidad_takeover_valida\(\)	t05v21-CLASE1-ronda35-la-forma-del-TAKEOVER-tambien-se-valida-con-un-predicado-compartido-no-solo-el-SLOT-CLAIM
+INV-ME-347	references/apply-gate.sh	MUST	\[ "\$recon" = "\$line" \] \|\| continue	t05v21-CLASE1-ronda35-round-trip-byte-a-byte-cierra-separadores-extra-y-campos-insertados-que-un-check-campo-a-campo-no-nota
+INV-ME-348	references/apply-gate.sh	MUST	local LC_ALL=C	t05v21-CLASE1-ronda35-hallazgo-propio-bracket-expression-A-Za-z-colaciona-unicode-bajo-locale-no-C-ARCHIVO-unicode-casaba
+INV-ME-349	references/apply-gate.sh	MUST	TM_RE_TERMINAL='	t05v21-CLASE2-ronda35-los-tres-terminales-MERGED-BOUNCED-CEO-RESUELTO-en-UN-solo-regex-no-una-lista-de-case-separados
+INV-ME-350	references/apply-gate.sh	MUST	\[\[ "\$line" =~ \$TM_RE_TERMINAL \]\] \|\| continue	t05v21-CLASE2-ronda35-titular_vigente-reconoce-y-procesa-los-terminales-antes-solo-SLOT-CLAIM-y-TAKEOVER
+INV-ME-351	references/apply-gate.sh	MUST	est=""; nonce=""; pr=""	t05v21-CLASE2-ronda35-un-terminal-CIERRA-la-cadena-un-SLOT-CLAIM-posterior-sobre-el-mismo-slot-reabre-limpio
+INV-ME-352	references/anexo-instancia.md	MUST	Se declara NO MEDIDO, no cerrado, y así se mantiene	t05v21-CLASE3-ronda35-ningun-cambio-de-codigo-de-este-skill-puede-convertir-esta-zona-en-MEDIDA-vive-en-la-capa-de-despliegue
+INV-ME-353	references/01-rol-y-fronteras.md	MUST_NOT	intake_slot "\$flock" "\$ESTACION" \|\| rc_adm=\$\?	t05v21-CLASE4-ronda35-la-forma-vieja-de-DOS-argumentos-sin-SLOT-en-la-prosa-normativa-reabre-la-regresion-de-CLASE2-sin-error-visible
+INV-ME-354	references/apply-gate.sh	MUST	\[ "\$#" -eq 3 \] \|\| \{ echo "intake_slot: se requieren 3 argumentos	t05v22-re-anclado-CLASE2-ronda36-la-restriccion-de-ronda35-era-solo-comentario-ahora-es-guarda-ejecutable-que-RECHAZA-rc-3-si-se-omite-el-slot
+INV-ME-355	references/apply-gate.sh	MUST	TM_RE_SLOT='\^\[0-9\]\{1,6\}\$'	t05v21-MENOR-p1-M02-ronda35-SLOT-acotado-un-slot-de-10000-digitos-se-aceptaba-con-rc-0
+INV-ME-356	references/apply-gate.sh	MUST	TM_RE_ARCHIVO='\^\[A-Za-z0-9_\.-\]\{1,200\}	t05v21-MENOR-p1-M02-ronda35-ARCHIVO-acotado-mismo-hallazgo-que-SLOT
+INV-ME-357	references/apply-gate.sh	MUST	^  local -x LC_ALL=C	t05v23-ronda37-B02-RE-ANCLADO-locale-fijado-en-el-AMBITO-de-cada-comparacion-titular_vigente-usa-local-x-para-cubrir-el-sed-el-export-del-modulo-no-sobrevivia-a-reasignacion-del-llamador-tras-el-source
+INV-ME-358	references/apply-gate.sh	MUST	\[ "\$#" -eq 2 \] \|\| \{ echo "titular_vigente: se requieren 2 argumentos	t05v22-CLASE2-ronda36-titular_vigente-tambien-exige-declarar-el-slot-explicito-mismo-tratamiento-que-intake_slot
+INV-ME-359	references/proc-m13.selftest.sh	MUST_NOT	intake_slot "\$f" "\$d" >	t05v22-CLASE2-ronda36-la-llamada-de-2-args-en-el-arnes-ya-declara-slot-vacio-explicito-si-reaparece-sin-el-tercer-arg-es-la-regresion
+INV-ME-360	references/apply-gate.sh	MUST	\[ "\$cand_pr" = "\$pr" \] \|\| continue	t05v22-CLASE3-ronda36-el-takeover-debe-suceder-al-MISMO-PR-que-abrio-la-cadena-no-a-otro
+INV-ME-361	references/apply-gate.sh	MUST	\[ "\$cand_prev_est" = "\$est" \] \|\| continue	t05v22-CLASE3-ronda36-el-takeover-debe-citar-a-quien-REALMENTE-ostentaba-la-cadena-no-a-cualquiera
+INV-ME-362	references/proc-m13.selftest.sh	MUST	intake_slot <ruta-al-flock> <estacion> <slot>	t05v22-CLASE2-ronda36-ADDENDUM-T26-re-anclado-al-contrato-de-TRES-argumentos-el-de-dos-bendecia-la-forma-insegura-como-requisito
+INV-ME-363	references/proc-m13.selftest.sh	MUST_NOT	regresión de compatibilidad	t05v22-CLASE2-ronda36-ADDENDUM-T29-retiro-el-bloque-que-protegia-sin-slot-admite-como-regresion-un-fixture-que-bendice-la-forma-equivocada-es-peor-que-no-tenerlo
+INV-ME-364	references/proc-m13.selftest.sh	MUST	tv_ck.*titular_vigente "\$f" 42	t05v22-CLASE2-ronda36-ADDENDUM-T25-usa-el-slot-REAL-no-la-forma-sin-filtro
+INV-ME-365	references/proc-m13.selftest.sh	MUST	_t33_digitos=\('٣' '۲' '３' '④' '²'\)	t05v22-CLASE1-ronda36-ADDENDUM-T33-cubre-la-CLASE-de-digitos-unicode-no-un-ejemplo-suelto-dos-pasadas-cazaron-caracteres-distintos-sin-leerse
+INV-ME-366	references/apply-gate.sh	MUST_NOT	^export LC_ALL=C$	t05v23-ronda37-B02-el-export-del-modulo-se-RETIRA-no-se-conserva-como-red-lo-pisa-el-llamador-tras-el-source-y-taparia-en-silencio-un-local-olvidado
+INV-ME-367	references/apply-gate.sh	MUST	titular_vigente: slot vacío/no-numérico	t05v23-ronda37-B01-titular_vigente-valida-que-el-slot-sea-numerico-contar-argumentos-no-es-filtrar-el-slot-vacio-ya-no-abre-el-recorrido-sin-filtro
+INV-ME-368	references/apply-gate.sh	MUST	intake_slot: slot vacío/no-numérico	t05v23-ronda37-B01-intake_slot-valida-que-el-slot-sea-numerico-el-modo-sin-filtro-declarando-comillas-vacias-era-una-escapatoria-que-el-llamador-controla
+INV-ME-369	references/proc-m13.selftest.sh	MUST_NOT	compat explícita intacta	t05v23-ronda37-B01-RETIRADA-la-bendicion-de-slot-vacio-como-compat-valida-un-fixture-que-bendice-la-forma-equivocada-la-convierte-en-requisito
+INV-ME-370	references/apply-gate.sh	MUST_NOT	\[ -z "\$slot" \]	t05v23-ronda37-B01-el-no-filtro-por-slot-vacio-se-RETIRA-del-codigo-el-filtro-por-slot-SIEMPRE-se-aplica-no-hay-rama-sin-filtro
+INV-ME-371	references/02-protocolo-por-pr.md	MUST	^  LC_ALL=C awk 	t05v24-ronda37-B02-el-awk-parser-de-la-receta-casa-RE_EST-RE_ISO-RE_NONCE-con-tilde-locale-sensible-el-septimo-sitio-va-prefijado-LC_ALL=C
+INV-ME-372	references/02-protocolo-por-pr.md	MUST	^  local LC_ALL=C$	t05v24-ronda37-B02-identidad_canonica-fija-su-propio-ambito-C-la-sexta-comparacion-heredaba-el-C-del-export-del-modulo-retirado-en-v23
+INV-ME-373	references/proc-m13.selftest.sh	MUST	comparaciones de titularidad FUERA de C	t05v24-ronda37-B02-VERIFICABLE-el-check-T36-enumera-TODAS-las-comparaciones-de-titularidad-y-falla-si-alguna-corre-fuera-de-C-para-que-no-haya-septimo
+INV-ME-374	references/proc-m13.selftest.sh	MUST	DESCUBRIMIENTO POR EJECUCION	t05v29-ronda17-la-clase-el-censo-DESCUBRE-los-comparadores-POR-EJECUCION-recorrido-real-bajo-trap-y-shim-no-grepea-formas-literales-completo-o-fail-closed-de-verdad
+INV-ME-375	references/proc-m13.selftest.sh	MUST	clave unica	t05v28-ronda16-B02-identidad-por-comparador-con-CLAVE-UNICA-por-sitio-linea-ocurrencia-nunca-por-posicion-de-argumento-que-colisiona
+INV-ME-376	references/proc-m13.selftest.sh	MUST	jamas verde	t05v28-ronda16-M01-FALLA-CERRADO-EJERCIDO-NO-MEDIDO-sin-locales-danger-o-sin-probe-da-rc2-rojo-jamas-verde-el-control-recorre-la-ruta-real
+INV-ME-377	references/proc-m13.selftest.sh	MUST	shim de PATH	t05v29-ronda17-B01-los-subprocesos-grep-awk-se-descubren-y-miden-por-un-shim-de-PATH-que-registra-el-LC_ALL-efectivo-del-hijo-forma-agnostico-variable-continuada-v
+INV-ME-378	references/proc-m13.selftest.sh	MUST	no-ejercida	t05v29-ronda17-fail-closed-de-verdad-toda-funcion-de-titularidad-con-comparador-que-ningun-entry-point-ejercita-va-rc2-no-ejercida-jamas-verde
+INV-ME-379	references/proc-m13.selftest.sh	MUST	oneline_conC	t05v28-ronda16-control-no-regresion-de-v25-un-local-LC_ALL=C-en-la-MISMA-linea-de-apertura-mide-COVERED
+INV-ME-380	references/proc-m13.selftest.sh	MUST	incl. TERMINAL	t05v29-ronda17-el-comparador-de-linea-TERMINAL-de-titular_vigente-se-descubre-al-ejecutar-la-cadena-slot-claim-takeover-terminal-del-flock-forjado
+INV-ME-381	references/proc-m13.selftest.sh	MUST	c-samepos	t05v29-ronda17-B02-dos-comparadores-en-la-MISMA-posicion-dan-DOS-mediciones-aisladas-por-clave-linea-seq-no-re-ejecutan-la-funcion-sobre-una-posicion-compartida
+INV-ME-382	references/proc-m13.selftest.sh	MUST	--extended-regexp	t05v28-ronda16-B01-el-ledger-reconoce-grep-de-titularidad-en-TODA-forma-ERE-qE-q-E-extended-regexp-no-solo-grep-E-inmediato
+INV-ME-383	references/proc-m13.selftest.sh	MUST	then exit 2	t05v28-ronda16-M01-rc2-implementado-de-verdad-nomedido-mayor-que-cero-hace-salir-la-suite-con-rc2-NO-MEDIDO-no-rc1
+INV-ME-384	references/proc-m13.selftest.sh	MUST	DEBUG trap	t05v29-ronda17-B01-los-comparadores-bash-se-descubren-por-un-DEBUG-trap-que-captura-BASH_COMMAND-con-tilde-y-el-LC_ALL-efectivo-del-sitio-forma-agnostico
+INV-ME-385	references/proc-m13.selftest.sh	MUST	LC_ALL EFECTIVO	t05v29-ronda17-la-efectividad-de-C-es-el-LC_ALL-EFECTIVO-observado-en-ejecucion-no-proximidad-textual-builtin-por-trap-subproceso-por-shim
+INV-ME-386	references/proc-m13.selftest.sh	MUST	insumo validado no-vacio	t05v29-ronda17-M01-cada-insumo-gate-lib-acq-rec01-idc-se-valida-no-vacio-y-con-ancla-dev-null-o-vacio-da-rc2-el-control-lo-ejerce
+INV-ME-387	references/proc-m13.selftest.sh	MUST	AISLADA por sitio	t05v29-ronda17-B02-cada-comparador-se-mide-en-su-propio-arnes-minimo-aislado-forja-valido-bajo-el-locale-efectivo-capturado-no-mutando-una-posicion-compartida
+INV-ME-388	SKILL.md	MUST	Escalado obligatorio al bus	TAL-8043-escalado-obligatorio-al-bus
+INV-ME-389	SKILL.md	MUST	prohibido en estaciones	TAL-8043-clear-prohibido-en-actores-persistentes
+INV-ME-390	SKILL.md	MUST	NO ACREDITADO hasta re-acreditar	TAL-8043-tras-clear-reinicio-o-sesion-nueva-no-acreditado
+INV-ME-391	references/proc-m13.selftest.sh	MUST	mkdir -p "\$box/\$MIGRACIONES_DIR"	TAL-8044-fixtures-en-rutas-del-bloque-adjudicado
+INV-ME-392	references/proc-m13.selftest.sh	MUST	version 20270101000000 ya aplicada	TAL-8044-excepcion-activa-en-el-guard-con-version-exacta-y-prefijo-libre
+INV-ME-393	references/proc-m13.selftest.sh	MUST	def tokens\(sql\):	TAL-8044-payload-decodificado-con-cadenas-comentarios-y-cuerpos-SQL
+INV-ME-394	references/proc-m13.selftest.sh	MUST	payload_sql "\$dump"	TAL-8044-T20-y-T22-miden-sentencias-activas-y-su-orden
+INV-ME-395	references/proc-m13.selftest.sh	MUST	guard, version, exception = found	TAL-8044-propiedades-del-mismo-guard
+INV-ME-396	references/proc-m13.selftest.sh	MUST	TAG.match\(sql, i\)	TAL-8044-tokenizacion-sin-copiar-sufijos
+INV-ME-397	references/proc-m13.selftest.sh	MUST	value = ''.join\(parts\)	TAL-8044-cadenas-acumuladas-por-tramos
+INV-ME-398	references/proc-m13.selftest.sh	MUST	inner\[r\+2\]\[0\] in \('string', 'body'\)	TAL-8044-mensaje-con-comillas-o-dolar
+INV-ME-399	references/proc-m13.selftest.sh	MUST	inner\[r\+3:\].*== tail	TAL-8044-guard-con-sufijo-canonico-completo
+INV-ME-400	references/proc-m13.selftest.sh	MUST	A-Za-z_0-9\$	TAL-8044-identificadores-consumidos-con-dolar
+INV-ME-401	references/proc-m13.selftest.sh	MUST	símbolo SQL no reconocido	TAL-8044-lexico-no-reconocido-rechazado
+INV-ME-402	references/proc-m13.selftest.sh	MUST	escape SQL no reconocido	TAL-8044-escapes-no-interpretados-rechazados
+INV-ME-403	references/proc-m13.selftest.sh	MUST	frontera numérica SQL no reconocida	TAL-8044-numeros-sin-fronteras-artificiales
+INV-ME-404	references/proc-m13.selftest.sh	MUST	value.isascii\(\)	TAL-8044-palabras-clave-plegadas-solo-en-ASCII
+INV-ME-405	references/proc-m13.selftest.sh	MUST	espacio SQL ASCII	TAL-8044-espacios-SQL-sin-identificadores-Unicode
+INV-ME-406	references/proc-m13.selftest.sh	MUST	gh-dobles.sh	Dobles-gh-comparten-contrato-real
+INV-ME-407	references/08-gates-locales.md	MUST	El agregador nunca acepta evidencia de otra tupla	contrato-evidencia-a-identidad-y-sellado
+INV-ME-408	references/08-gates-locales.md	MUST	Cualquier rechazo o fallo del intento en otro grupo conserva la evidencia	contrato-evidencia-b-conservacion-entre-grupos
+INV-ME-409	references/08-gates-locales.md	MUST	MISMA tupla sigue siendo válida	contrato-evidencia-c-conservacion-misma-tupla
+INV-ME-410	references/08-gates-locales.md	MUST	fallo accidental, no un actor con el mismo UID	contrato-evidencia-modelo-de-amenaza
+INV-ME-411	references/08-gates-locales.md	MUST	un proceso con el mismo UID puede borrar o fabricar marcadores	contrato-evidencia-riesgo-residual
+INV-ME-412	references/08-gates-locales.md	MUST	un identificador de intento recibido del llamador permitiría invalidar evidencia previa; no se implementa en 1\.7\.2	contrato-evidencia-mejora-diferida

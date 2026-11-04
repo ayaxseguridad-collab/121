@@ -1,0 +1,26 @@
+INV-ME-001	SKILL.md	MUST	gana la mas reciente	D1-recencia-como-desempate
+INV-ME-002	references/02-pipeline-de-reparacion.md	MUST	ANTES[*]* del texto muerto	D2-marca-antes-del-muerto
+INV-ME-003	SKILL.md	MUST	append-only	D3-nunca-borrar-historico
+INV-ME-004	references/02-pipeline-de-reparacion.md	MUST	ALIAS-STUB	D4-stub-preserva-enlaces
+INV-ME-005	references/03-salvaguardas-y-verificacion.md	MUST	en positivo Y en negativo	D5-indice-doble-grep
+INV-ME-006	scripts/verificar.sh	MUST	grep -F -x -q --	D5-s6-linea-exacta
+INV-ME-007	scripts/diagnostico.sh	MUST_NOT	\brm\b	D6-diagnostico-no-escribe
+INV-ME-008	scripts/salvaguarda.sh	MUST	tm_manifest	D7-snapshot-con-manifiesto
+INV-ME-009	SKILL.md	MUST	NO VERIFICADA	D8-honestidad-de-verificacion
+INV-ME-010	SKILL.md	MUST_NOT	HOLD	D9-sin-capa-de-fabrica
+INV-ME-011	references/03-salvaguardas-y-verificacion.md	MUST	fail-closed	D10-verificacion-fail-closed
+INV-ME-012	references/02-pipeline-de-reparacion.md	MUST	placeholder	D11-pendiente-no-se-inventa
+INV-ME-013	scripts/diagnostico.sh	MUST_NOT	\b(curl|wget)\b	D12-cero-red
+INV-ME-014	scripts/salvaguarda.sh	MUST_NOT	\b(curl|wget)\b	D12-cero-red
+INV-ME-015	scripts/verificar.sh	MUST_NOT	\b(curl|wget)\b	D12-cero-red
+INV-ME-016	references/02-pipeline-de-reparacion.md	MUST	recencia es SOLO entre	M1-recencia-no-cruza-niveles
+INV-ME-017	references/02-pipeline-de-reparacion.md	MUST	no se modifica ninguna de las dos fuentes	M1-cross-level-fail-closed
+INV-ME-018	scripts/verificar.sh	MUST	mundo cerrado	M2-universo-de-cambios-cerrado
+INV-ME-019	SKILL.md	MUST	^ +2\. dedupe .*\(paso 1\)$	M3-numeracion-paso-1
+INV-ME-020	SKILL.md	MUST	^ +3\. contradicciones .*\(paso 2\)$	M3-numeracion-paso-2
+INV-ME-021	SKILL.md	MUST	^ +4\. superadas .*\(paso 3\)$	M3-numeracion-paso-3
+INV-ME-022	SKILL.md	MUST	^ +5\. caducadas .*\(paso 4\)$	M3-numeracion-paso-4
+INV-ME-023	SKILL.md	MUST	^ +6\. pendientes .*\(paso 5\)$	M3-numeracion-paso-5
+INV-ME-024	SKILL.md	MUST	^ +7\. sync realidad .*\(paso 6\)$	M3-numeracion-paso-6
+INV-ME-025	SKILL.md	MUST	^ +8\. espejos .*\(paso 7\)$	M3-numeracion-paso-7
+INV-ME-026	SKILL.md	MUST	2-8 = pasos 1-7	M3-numeracion-leyenda

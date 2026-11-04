@@ -1,0 +1,36 @@
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+␛[1m␛[32mUSER@channel-01␛[0m:␛[1m␛[34m~/Repo-Neutro␛[0m$ CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 claude-root  --model claude-sonnet-5-5
+␛[38;5;174m ▐␛[48;5;16m▛███▛█␛[39m␛[49m   ␛[1mClaude␛[0m ␛[1mCode␛[0m ␛[38;5;246mv2.1.289
+␛[38;5;174m▝▜␛[48;5;16m█████␛[49m█▀␛[39m  ␛[38;5;246mOpus 5.5 with xhigh effort · Claude API
+␛[38;5;174m ▝▝␛[39m   ␛[38;5;174m▝▝␛[39m   ␛[38;5;246m~/Repo-Neutro
+
+␛[39m  Get to finished work sooner with Opus 5.5. Switch anytime with ␛[38;5;153m/model␛[39m.
+
+␛[38;5;246m␛[48;5;237m❯␛[39m ␛[38;5;231m/model␛[39m ␛[49m                                                                                                     
+␛[38;5;246m  ⎿  ␛[39mKept model as ␛[38;5;153mSonnet 5.5
+
+␛[38;5;246m␛[48;5;237m❯␛[39m ␛[38;5;231m/model␛[39m                                                                                                      
+␛[38;5;246m␛[49m ␛[39m ␛[38;5;246m⎿␛[39m  Set model to ␛[38;5;153mOpus␛[39m ␛[38;5;153m5.5␛[39m and saved as your default for new sessions
+
+␛[38;5;246m␛[48;5;237m❯␛[39m ␛[38;5;231m/model␛[39m ␛[49m                                                                                                     
+␛[38;5;246m  ⎿  ␛[39mKept model as ␛[38;5;153mOpus 5.5
+
+␛[38;5;246m␛[48;5;237m❯␛[39m ␛[38;5;231m/effort xhigh␛[39m                                                                                               
+␛[38;5;246m␛[49m ␛[39m ␛[38;5;246m⎿␛[39m  Set effort level to xhigh (saved as your default for new sessions): Deeper reasoning than high, just
+     below maximum (on supported models)
+
+␛[38;5;246m●␛[39m ␛[38;5;246mAuto mode lets Claude handle permission prompts automatically — Claude checks each tool call for ␛[39m           
+  ␛[38;5;246mrisky actions and prompt injection before executing. Actions Claude identifies as safe are executed,
+␛[39m  ␛[38;5;246mwhile actions Claude identifies as risky are blocked and Claude may try a different approach. Ideal␛[39m         
+  ␛[38;5;246mfor long-running tasks. Sessions are slightly more expensive. Claude can make mistakes that allow ␛[39m        
+  ␛[38;5;246mharmful commands to run, it's recommended to only use in isolated environments. Shift+Tab to change 
+␛[39m  ␛[38;5;246mmode.
+
+␛[38;5;244m──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+␛[39m❯ lee /home/USER/.tco-relay/dispatch.0123456789abcdef.txt — es tu brief de tarea; síguelo y presenta el
+  plan con ExitPlanMode                                                                                       
+␛[38;5;244m──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+␛[39m  ␛[38;5;246m[Opus 5.5] ctx: N/A␛[39m                                   
+  ␛[38;5;73m⏸␛[39m ␛[38;5;73mplan␛[39m ␛[38;5;73mmode␛[39m ␛[38;5;73mon␛[38;5;246m (shift+tab␛[39m ␛[38;5;246mto␛[39m ␛[38;5;246mcycle)

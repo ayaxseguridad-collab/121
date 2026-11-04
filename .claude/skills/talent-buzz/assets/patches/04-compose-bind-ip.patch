@@ -1,0 +1,23 @@
+# 04-compose-bind-ip.patch — sobre block/buzz commit 4a1ebf2
+#
+# Frontera de red del relay (cierre de M2, lado servidor): el compose upstream
+# publica el puerto en todas las interfaces. Este patch introduce BUZZ_BIND_IP
+# (SIN default: la variable es OBLIGATORIA — un default abierto ya mordio en produccion, ronda de seguridad hallazgo 4) para que el modo
+# Tailscale del skill fije el bind EXCLUSIVAMENTE a la IP del tailnet.
+# verificar.sh comprueba el efecto real: compose config renderizado, docker
+# inspect (HostConfig.PortBindings[].HostIp) y prueba negativa de conectividad
+# contra el puerto publicado del relay desde otra interfaz.
+diff --git a/deploy/compose/compose.yml b/deploy/compose/compose.yml
+index bc3c275..f2259b3 100644
+--- a/deploy/compose/compose.yml
++++ b/deploy/compose/compose.yml
+@@ -19,7 +19,8 @@ services:
+       BUZZ_AUTO_MIGRATE: ${BUZZ_AUTO_MIGRATE:-false}
+       BUZZ_GIT_CONFORMANCE_PROBE: ${BUZZ_GIT_CONFORMANCE_PROBE:-true}
+     ports:
+-      - "${BUZZ_HTTP_PORT:-3000}:3000"
++      - "${BUZZ_BIND_IP:?BUZZ_BIND_IP requerido - frontera M2, sin default abierto}:${BUZZ_HTTP_PORT:-3000}:3000"
++      - "127.0.0.1:9102:9102"
+     volumes:
+       - buzz-git-data:/data/git
+     depends_on:

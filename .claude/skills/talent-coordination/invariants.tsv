@@ -1,0 +1,44 @@
+INV-CD-001	SKILL.md	MUST	capture-pane	TAL-3269-anti-menu
+INV-CD-002	SKILL.md	MUST	09-supervision-activa	dieta-v500-puntero-ref09
+INV-CD-003	references/09-supervision-activa.md	MUST	barre	loop-supervision-activa
+INV-CD-004	references/09-supervision-activa.md	MUST	Compact-60	compact-60-cascada
+INV-CD-005	SKILL.md	MUST	fuera de banda	provenance-rulings
+INV-CD-006	SKILL.md	MUST	una pregunta	regla-22-una-pregunta
+INV-CD-007	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-CD-008	SKILL.md	MUST	Eco de cumplimiento	TAL-3569-r1-eco-cumplimiento
+INV-CD-009	references/09-supervision-activa.md	MUST	lado de lectura	TAL-3569-r16-lado-lectura
+INV-CD-010	references/09-supervision-activa.md	MUST	se envenena solo	TAL-3569-r17-detector-disjunto
+INV-CD-011	references/09-supervision-activa.md	MUST	Supervisor de flota	TAL-4731-pz2-supervisor-flota-22-23ago
+INV-CD-012	references/09-supervision-activa.md	MUST	Rulings anti-stale	TAL-4731-pz5-anti-stale-tal4735
+INV-CD-013	references/09-supervision-activa.md	MUST	canal único, insistencia, cero-parados	TAL-4731-pz8-escalada-lead-22ago
+INV-CD-014	references/10-estacion-analista-produccion.md	MUST	jamás se imprime	tal4730-token-nunca-impreso
+INV-CD-015	references/10-estacion-analista-produccion.md	MUST	ticker infinito	tal4730-ticker-infinito
+INV-CD-016	references/10-estacion-analista-produccion.md	MUST	único vigilante	tal4730-monitor-externo
+INV-CD-017	references/10-estacion-analista-produccion.md	MUST	cursor propio	tal4730-cursor-propio
+INV-CD-018	references/10-estacion-analista-produccion.md	MUST	tick vivo	tal4730-tick-vivo-no-shell
+INV-CD-019	references/10-estacion-analista-produccion.md	MUST	done \) &	tal4730-r3-ticker-background-real
+INV-CD-020	references/10-estacion-analista-produccion.md	MUST	echo TICK \| tee -a	tal4730-r3-ticker-eco-observable
+INV-CD-021	references/10-estacion-analista-produccion.md	MUST_NOT	\) >> "\$TICK_LOG" 2>&1 &	tal4730-r3-anti-log-only-regression
+INV-CD-022	references/10-estacion-analista-produccion.md	MUST	do echo TICK \| tee -a "\$TICK_LOG"; sleep 300	tal4730-r4-tick-antes-de-sleep
+INV-CD-023	references/10-estacion-analista-produccion.md	MUST_NOT	do sleep 300; echo TICK	tal4730-r4-anti-tick-tras-sleep-regression
+INV-CD-024	references/10-estacion-analista-produccion.md	MUST	abortando alta	tal4730-r5-fail-closed-tick-assert
+INV-CD-025	references/10-estacion-analista-produccion.md	MUST	ticker murió	tal4730-r5-fail-closed-ps-assert
+INV-CD-026	references/10-estacion-analista-produccion.md	MUST	TICK_LOG="\$\(mktemp	tal4730-r7-log-mktemp-incondicional
+INV-CD-027	references/10-estacion-analista-produccion.md	MUST_NOT	\$\{TICK_LOG:-|analista-produccion/tick\.log\}"	tal4730-r7-anti-condicional-o-fija-regression
+INV-CD-028	references/10-estacion-analista-produccion.md	MUST	no se pudo crear el log del ticker \(mktemp\)	tal4730-r8-mktemp-failcheck-explicito
+INV-CD-029	references/10-estacion-analista-produccion.md	MUST	NEGATIVO VERIFICABLE	tal4730-r8-negativo-mktemp-falla-aborta
+INV-CD-030	SKILL.md	MUST	relay\.sh	tal5141-relay-obligatorio
+INV-CD-031	references/09-supervision-activa.md	MUST	composer-con-texto-sin-enviar	tal5141-estado-composer-sin-enviar
+INV-CD-032	references/09-supervision-activa.md	MUST	300 s	tal5141-ventana-300s
+INV-CD-033	scripts/relay.sh	MUST_NOT	[Cc]odex|[Cc]laude|[Gg][Pp][Tt]|[Cc]opilot	tal5141-regla6-ratchet-scripts
+INV-CD-034	scripts/idle-check.sh	MUST_NOT	[Cc]odex|[Cc]laude|[Gg][Pp][Tt]|[Cc]opilot	tal5141-regla6-ratchet-scripts
+INV-CD-035	scripts/selftest-relay.sh	MUST_NOT	[Cc]odex|[Cc]laude|[Gg][Pp][Tt]|[Cc]opilot	tal5141-regla6-ratchet-scripts
+INV-CD-036	references/09-supervision-activa.md	MUST	Parches locales sin publicar	tal5204-inventario-parches-doctrina
+INV-CD-037	references/09-supervision-activa.md	MUST	patch guardado en	tal5204-inventario-parches-regla-normativa
+INV-CD-038	references/09-supervision-activa.md	MUST	issue el mismo día	tal5204-inventario-parches-regla-normativa-segunda-mitad
+INV-CD-039	references/09-supervision-activa.md	MUST	Escalado obligatorio al bus	TAL-8043-escalado-obligatorio-al-bus
+INV-CD-040	references/09-supervision-activa.md	MUST	Prohibido .{0,2}/clear.{0,2} en actores persistentes	TAL-8043-clear-prohibido-en-actores-persistentes
+INV-CD-041	references/09-supervision-activa.md	MUST	NO ACREDITADO.{0,2} hasta re-acreditar	TAL-8043-tras-clear-reinicio-o-sesion-nueva-no-acreditado
+INV-CD-042	prompts/plantillas.md	MUST	ESCALA-<ROL>-<ref>	TAL-8043-plantilla-del-sello-de-escalado
+INV-CD-043	scripts/idle-check.sh	MUST	ENVIRON\["IC_MENU_RE"\]	expresiones-dinamicas-literales-en-awk
+INV-CD-044	scripts/selftest-relay.sh	MUST	regex dinámica rechaza otro carácter sin avisos	punto-literal-y-salida-limpia

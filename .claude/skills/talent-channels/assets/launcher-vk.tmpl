@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# vk <XY>  -> mata la sesión tmux '__SESSION__' de __PREFIX__<XY> (cierra Claude/Codex; el contenedor sigue).
+# Acceso: Tailscale SSH si la ACL lo permite; si no, FALLBACK LOCAL via incus exec.
+set -uo pipefail
+XY="${1:?uso: vk <XY>}"
+HOST="__PREFIX__${XY}"
+CMD="tmux kill-session -t __SESSION__ 2>/dev/null && echo 'sesion __SESSION__ eliminada' || echo 'no habia sesion __SESSION__'"
+
+if ssh -o ConnectTimeout=5 -o BatchMode=yes "__CUSER__@${HOST}" true 2>/dev/null; then
+  exec ssh "__CUSER__@${HOST}" "$CMD"
+fi
+if incus info "$HOST" >/dev/null 2>&1; then IX=(incus); else IX=(sudo incus); fi
+exec "${IX[@]}" exec "$HOST" -- su - "__CUSER__" -c "$CMD"

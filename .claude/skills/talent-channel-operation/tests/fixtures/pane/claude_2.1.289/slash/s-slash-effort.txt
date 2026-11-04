@@ -1,0 +1,50 @@
+
+  En el siglo XX surgieron nuevas familias: el vidrio borosilicatado (Pyrex), resistente a los cambios
+  térmicos; el vidrio templado y laminado, que protege automóviles y edificios; y las fibras ópticas, que
+  transportan datos de un continente a otro en haces de luz. Las pantallas de teléfonos, con vidrios
+  reforzados químicamente, cabe decir que se llevan en el bolsillo de miles de millones de personas.
+
+  Hoy el vidrio también se asocia a la sostenibilidad, porque se recicla indefinidamente sin perder calidad.
+  Un material descubierto en la prehistoria sigue siendo, cinco mil años después, una pieza clave de la
+  ciencia, la arquitectura y la vida diaria.                                                                  
+
+✻ Cogitated for 19s · done 7:37 AM                                                                            
+                                                              
+❯ Responde solo con la palabra: recibido-humo                                                                 
+
+● recibido-humo                                                                                               
+                      
+✻ Cogitated for 1s · done 11:38 AM                                                                            
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Sonnet 5.5
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ /effort                                                                                                     
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  /effort                           Set effort level for model usage                                        
+  /talent-channel-operation         Coordinador multi-canal de la 1ª estación de la fábrica (ADR-0043) que  
+                                    lleva encargos de Linear a PR DRAFT + HANDOFF usando canales tmux en In…
+  /code-review                      Review the current diff, or a PR number/branch/path target, for
+                                    correctness bugs (plus reuse/simplification/efficiency cleanups where t…
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

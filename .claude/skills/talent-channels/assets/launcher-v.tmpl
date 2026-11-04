@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# v <XY>  -> conecta a __PREFIX__<XY> y abre tmux: Claude (izq) | Codex auditor (der). Re-acopla si ya existe.
+# Acceso: Tailscale SSH si la ACL lo permite; si no, FALLBACK LOCAL via incus exec (solo desde el host anfitrión).
+set -uo pipefail
+XY="${1:?uso: v <XY>  (XY = maquina+channel, p.ej. 01)}"
+HOST="__PREFIX__${XY}"
+REPO="/home/__CUSER__/__REPO_DIR__"
+LEFT_INPUT='__LEFT__'; RIGHT_INPUT='__RIGHT__'
+# Solo Claude requiere el registro del usuario que lanza; otro proveedor conserva su orden.
+launcher_model_args() {
+  local cmd="$1" role="$2" exe model
+  exe="${cmd%% *}"; exe="${exe##*/}"
+  case "$exe" in
+    claude|claude-root)
+      # shellcheck source=/dev/null
+      . '__MODELOS_LIB__' || return 1
+      model="$(tco_modelo_read "$role")" && [ -n "$model" ] || return 1
+      printf '%s --model %s' "$cmd" "$model" ;;
+    *) printf '%s' "$cmd" ;;
+  esac
+}
+
+# Orquestación tmux (se ejecuta DENTRO del canal). El panel der arranca Codex con su rol de auditor INMEDIATO
+# (serializa el argumento completo en el canal antes de enviarlo al shell del panel).
+read -r -d '' REMOTE <<'REMOTE_EOF' || true
+# [TAL-2294] FREEZE de MOVE de credenciales: si un MOVE transaccional tiene congelado este
+# endpoint, NO se arranca ningún agente (arrancar cargaría/escribiría un auth en tránsito y
+# destruiría la credencial que se está moviendo). El MOVE usa su propia vía autorizada (no este
+# launcher); el freeze se retira solo al cerrar (auth-move.sh resume <tx>). Fail-closed: se
+# revisa el freeze en el canal, no en el host.
+for _fz in ~/.codex/.move-freeze ~/.claude/.move-freeze; do
+  if [ -f "$_fz" ]; then
+    echo "v: canal CONGELADO por un MOVE de credenciales en curso (tx $(head -1 "$_fz" 2>/dev/null)). No arranco los agentes; el freeze se retira al cerrar el MOVE (auth-move.sh resume <tx> en la estación)." >&2
+    exit 1
+  fi
+done
+if tmux has-session -t __SESSION__ 2>/dev/null; then
+  tmux attach -t __SESSION__
+else
+  if [ ! -s ~/.codex/role-prompt.txt ]; then
+    echo "v: falta ~/.codex/role-prompt.txt en el canal; no arranco el panel auditor SIN rol (correría genérico en silencio)." >&2
+    exit 1
+  fi
+  guardar_fase() {
+    local cmd="$1" pane="$2" phase="$3" exe="${1%% *}" tmp
+    case "${exe##*/}" in claude|claude-root) ;; *) return 0 ;; esac
+    mkdir -p ~/.claude
+    [ ! -L ~/.claude/tf-phase-"$pane".json ] || return 1
+    tmp=$(mktemp ~/.claude/.phase.XXXXXX) || return 1
+    printf '{"phase":"%s"}\n' "$phase" > "$tmp" &&
+      chmod 600 "$tmp" && mv "$tmp" ~/.claude/tf-phase-"$pane".json
+  }
+  guardar_fase "$LEFT" __SESSION__:.0 "$PHASE" &&
+    guardar_fase "$RIGHT" __SESSION__:.1 audit || exit 1
+  tmux new-session -d -s __SESSION__ -c "$REPO"
+  tmux split-window -h -t __SESSION__ -c "$REPO"
+  tmux select-pane -t __SESSION__:.0
+  tmux send-keys -t __SESSION__:.0 "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 $LEFT" C-m
+  ROLE="$(cat ~/.codex/role-prompt.txt && printf '.')" || exit 1
+  ROLE="${ROLE%.}"
+  printf -v ROLE_ARG '%q' "$ROLE"
+  tmux send-keys -t __SESSION__:.1 "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 $RIGHT -- $ROLE_ARG" C-m
+  tmux attach -t __SESSION__
+fi
+REMOTE_EOF
+REMOTE_BASE="$REMOTE"
+launcher_remote_command() {
+  local LEFT RIGHT VARS PHASE="${TC_CLAUDE_PHASE:-coding}"
+  LEFT="$(launcher_model_args "$LEFT_INPUT" "${TC_CLAUDE_PHASE:-coding}")" || return 1
+  RIGHT="$(launcher_model_args "$RIGHT_INPUT" audit)" || return 1
+  printf -v VARS 'REPO=%q; LEFT=%q; RIGHT=%q; PHASE=%q; ' "$REPO" "$LEFT" "$RIGHT" "$PHASE"
+  REMOTE="$VARS$REMOTE_BASE"
+}
+
+# 1) Tailscale SSH (remoto, requiere regla ssh en la ACL del tailnet)
+if ssh -o ConnectTimeout=5 -o BatchMode=yes "__CUSER__@${HOST}" true 2>/dev/null; then
+  launcher_remote_command || exit 1
+  exec ssh -t "__CUSER__@${HOST}" "$REMOTE"
+fi
+# 2) Fallback LOCAL (incus exec) — solo funciona en el host que hospeda los canales
+echo "v: Tailscale SSH a ${HOST} no disponible (¿falta la regla ssh en la ACL del tailnet?). Uso acceso LOCAL via incus exec." >&2
+if incus info "$HOST" >/dev/null 2>&1; then IX=(incus); else IX=(sudo incus); fi
+launcher_remote_command || exit 1
+exec "${IX[@]}" exec "$HOST" -- su - "__CUSER__" -c "$REMOTE"

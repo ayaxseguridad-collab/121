@@ -1,0 +1,554 @@
+{
+  "_description": "Recibo sanitizado de la autoridad viva: respuesta completa de issueLabels del workspace Talent Engine. Sin credenciales. Es la evidencia contra la que scripts/check-taxonomy-parity.sh valida label-taxonomy.json y talent-engine-config.json. Regenerar: bash scripts/check-taxonomy-parity.sh --live --emit-receipt (escritura atómica sobre este archivo — jamás redirigir salida aquí); revisar el diff en git y re-correr el gate sin flags.",
+  "generated_at": "2026-09-05",
+  "workspace": "Talent Engine",
+  "query": "query($after:String){ issueLabels(first:100, after:$after){ pageInfo{hasNextPage endCursor} nodes{ id name team{ key } } } }",
+  "pagination": {
+    "pages": 2,
+    "page_size": 100,
+    "complete": true
+  },
+  "total": 108,
+  "labels": [
+    {
+      "id": "4e83fd50-ad51-4943-916b-3f29d64b487c",
+      "name": "Bug",
+      "team": null
+    },
+    {
+      "id": "e5d98c0f-ed5c-43a2-b9be-4efb4dd262fa",
+      "name": "Equipo",
+      "team": null
+    },
+    {
+      "id": "86ecc1bc-f5d0-4728-89e7-12d9f35f81b2",
+      "name": "Equipo 1 · Gamificación",
+      "team": null
+    },
+    {
+      "id": "f70a63b4-df50-49f2-8279-998b51051c95",
+      "name": "Equipo 2 · Foro",
+      "team": null
+    },
+    {
+      "id": "f07b465b-b452-4e00-89a7-2f5340c7979a",
+      "name": "Equipo 3 · Embajadores",
+      "team": null
+    },
+    {
+      "id": "643f1386-b915-4147-a9a1-942bb22154c8",
+      "name": "Equipo 4 · Recursos + Comms",
+      "team": null
+    },
+    {
+      "id": "e8292f81-d2a0-4c33-b909-113652c03506",
+      "name": "Feature",
+      "team": null
+    },
+    {
+      "id": "5c114a74-9f66-4f85-b923-40f393e52592",
+      "name": "Improvement",
+      "team": null
+    },
+    {
+      "id": "388c4d1e-ff5f-4f54-933b-cb3e11bfc8a8",
+      "name": "actor/ai",
+      "team": null
+    },
+    {
+      "id": "9025c3df-3e83-498f-aa60-fb9426d4aae9",
+      "name": "actor/human",
+      "team": null
+    },
+    {
+      "id": "ad93e852-4501-4892-bfb9-89e400d103b8",
+      "name": "actor:ai",
+      "team": "BUG"
+    },
+    {
+      "id": "9dba009a-b2ca-4868-be0b-de4a63b1222d",
+      "name": "actor:ai",
+      "team": "TAL"
+    },
+    {
+      "id": "4112e795-2659-4aca-8752-1029aeedac4c",
+      "name": "actor:human",
+      "team": "BUG"
+    },
+    {
+      "id": "a48d81c5-d03f-442b-ae74-778f8198fa24",
+      "name": "actor:human",
+      "team": "TAL"
+    },
+    {
+      "id": "a1c31ac2-3589-4e7d-937d-f4d302f6339e",
+      "name": "actor:needs-review",
+      "team": "BUG"
+    },
+    {
+      "id": "7bc5436b-05fd-4523-a364-1de3220c8e67",
+      "name": "actor:needs-review",
+      "team": "TAL"
+    },
+    {
+      "id": "e928e5cb-290c-4e71-90b8-fc185f4029dc",
+      "name": "agent-instructions",
+      "team": null
+    },
+    {
+      "id": "e6bd2f04-af2c-4792-bc1f-eab53d996a79",
+      "name": "area:admin",
+      "team": "BUG"
+    },
+    {
+      "id": "00e42f76-492f-43b1-a265-df5796ca0739",
+      "name": "area:admin",
+      "team": "TAL"
+    },
+    {
+      "id": "5e859eca-9b89-4879-a0ac-77017a40ec86",
+      "name": "area:auth",
+      "team": "BUG"
+    },
+    {
+      "id": "0d3ad999-f7cc-4b33-b345-0ad829bec2d9",
+      "name": "area:auth",
+      "team": "TAL"
+    },
+    {
+      "id": "8e489f48-98f5-40ab-ad23-59de1a5f5a4d",
+      "name": "area:chatbot",
+      "team": "BUG"
+    },
+    {
+      "id": "4a70af22-e0e5-45f1-9fd2-7703c5df11ab",
+      "name": "area:chatbot",
+      "team": "TAL"
+    },
+    {
+      "id": "08f52677-736f-4baf-a444-a7a9d4a24db9",
+      "name": "area:community",
+      "team": null
+    },
+    {
+      "id": "f8adc01a-1e64-4627-9d62-834748344ecd",
+      "name": "area:configuracion",
+      "team": null
+    },
+    {
+      "id": "bc044ac7-4f24-4d68-8573-123182d3cea3",
+      "name": "area:content",
+      "team": "BUG"
+    },
+    {
+      "id": "f7b5be59-af26-4db3-9249-d33667f83be3",
+      "name": "area:content",
+      "team": "TAL"
+    },
+    {
+      "id": "0fb7a073-43b5-4407-ac0c-12fc925905c7",
+      "name": "area:dashboard",
+      "team": null
+    },
+    {
+      "id": "d0f0489c-f1ce-4785-bfff-617cc6b76aae",
+      "name": "area:db",
+      "team": "BUG"
+    },
+    {
+      "id": "5e47b35c-5f27-4a6c-9769-39c7da7c2bef",
+      "name": "area:db",
+      "team": "TAL"
+    },
+    {
+      "id": "b7b69677-20d7-4816-86bf-4484cd67611a",
+      "name": "area:email",
+      "team": "BUG"
+    },
+    {
+      "id": "1b155883-d690-499f-91b7-0a506d6c6853",
+      "name": "area:email",
+      "team": "TAL"
+    },
+    {
+      "id": "2c863eab-fb66-4ae6-be0f-51e5dd03fe92",
+      "name": "area:i18n",
+      "team": "BUG"
+    },
+    {
+      "id": "2aae8656-f16f-49d9-acb6-66dc11f91581",
+      "name": "area:i18n",
+      "team": "TAL"
+    },
+    {
+      "id": "3c0a9abb-4fe3-4803-8c3d-4d3ff9cd29c7",
+      "name": "area:inteligencia",
+      "team": null
+    },
+    {
+      "id": "9a5541bf-8eff-4ef0-b674-2551fbb31944",
+      "name": "area:landing",
+      "team": "BUG"
+    },
+    {
+      "id": "bf7ebb74-adeb-4f08-8c71-f9dbeaa2d695",
+      "name": "area:landing",
+      "team": "TAL"
+    },
+    {
+      "id": "86f230fd-2677-49a0-9730-0d690dfae4d9",
+      "name": "area:ops",
+      "team": null
+    },
+    {
+      "id": "7dc8be25-895f-41df-92fb-19721dbfdba6",
+      "name": "area:payments",
+      "team": "BUG"
+    },
+    {
+      "id": "548844fd-39af-47ca-8b05-e663b0aee715",
+      "name": "area:payments",
+      "team": "TAL"
+    },
+    {
+      "id": "4942f43b-c6a3-454e-979f-fe9cd58e6c02",
+      "name": "area:performance",
+      "team": null
+    },
+    {
+      "id": "0266537d-e309-4550-94a1-2b1b866f3f32",
+      "name": "area:portal",
+      "team": "BUG"
+    },
+    {
+      "id": "62d64bb7-acda-4768-8482-88e8e49bc425",
+      "name": "area:portal",
+      "team": "TAL"
+    },
+    {
+      "id": "e4c93e43-3a43-4480-9144-6beae84a23fd",
+      "name": "area:redaccion",
+      "team": null
+    },
+    {
+      "id": "abe574ce-79d3-4ddf-beaf-cd7074eb6a06",
+      "name": "area:talent-land",
+      "team": null
+    },
+    {
+      "id": "0f9947fb-fb6f-4d06-b480-5e5a2e10f9d1",
+      "name": "beta-feedback",
+      "team": "CHA"
+    },
+    {
+      "id": "0645ed22-eeb6-4d80-b280-47bcfb94db77",
+      "name": "bounced",
+      "team": "BUG"
+    },
+    {
+      "id": "7ef208b7-6815-43c0-bd0b-342046da0573",
+      "name": "bounced",
+      "team": "TAL"
+    },
+    {
+      "id": "fd546502-b503-4b2e-b264-b15576acd941",
+      "name": "carga-crm",
+      "team": "BUG"
+    },
+    {
+      "id": "5b4063a1-bec2-4682-b03f-ed3d86dabe6b",
+      "name": "carga-crm",
+      "team": "TAL"
+    },
+    {
+      "id": "d0cd4e64-573b-4c5a-a7ad-2901e9146a01",
+      "name": "codigo:nuevo",
+      "team": "BUG"
+    },
+    {
+      "id": "2324604b-d19d-45be-bb95-95a5de2d062e",
+      "name": "codigo:nuevo",
+      "team": "TAL"
+    },
+    {
+      "id": "afff8eaf-d968-454a-bb6c-701952aa308c",
+      "name": "codigo:ok",
+      "team": "BUG"
+    },
+    {
+      "id": "59b640cf-242d-40c3-8e19-1bf3c04b0b73",
+      "name": "codigo:ok",
+      "team": "TAL"
+    },
+    {
+      "id": "01ae3b1d-f24f-4e27-80e1-ad82e6983c52",
+      "name": "codigo:parcial",
+      "team": "BUG"
+    },
+    {
+      "id": "cdaa2122-74d5-4434-80b6-f15748e1608f",
+      "name": "codigo:parcial",
+      "team": "TAL"
+    },
+    {
+      "id": "67560d63-626f-41c2-b902-0b810f060b60",
+      "name": "componente:admin",
+      "team": null
+    },
+    {
+      "id": "b5087a13-05d7-4355-af77-be9ac4a9ad19",
+      "name": "componente:campaigns",
+      "team": null
+    },
+    {
+      "id": "a51344e4-73f2-4c5a-98ba-5e2d787752d2",
+      "name": "componente:convex",
+      "team": null
+    },
+    {
+      "id": "64b34dd3-10c6-433b-aa74-d7c49dc1dbae",
+      "name": "componente:defi",
+      "team": null
+    },
+    {
+      "id": "ba984dfe-742b-4dbf-b02d-769955a9d080",
+      "name": "componente:email",
+      "team": null
+    },
+    {
+      "id": "c6b043ce-701a-401f-95d8-d1505352af8f",
+      "name": "componente:landing",
+      "team": null
+    },
+    {
+      "id": "3145c969-cde3-4322-8a41-a1b22b2bb6ab",
+      "name": "componente:ops",
+      "team": null
+    },
+    {
+      "id": "e8992439-a51a-45ae-9973-179256dbaf0b",
+      "name": "componente:portal",
+      "team": null
+    },
+    {
+      "id": "e20aa3d9-6492-4f7e-abf3-d5f4745149c0",
+      "name": "componente:whatsapp",
+      "team": null
+    },
+    {
+      "id": "7f5ba9b1-f132-4e5b-b918-6f96fbeda531",
+      "name": "coord-bootcamp",
+      "team": "BUG"
+    },
+    {
+      "id": "c59a6392-4ab3-4b48-9383-6be560833a42",
+      "name": "coord-bootcamp",
+      "team": "TAL"
+    },
+    {
+      "id": "05866459-86ec-469d-9ed4-b90540e8f6d9",
+      "name": "coord-defi-c1",
+      "team": null
+    },
+    {
+      "id": "ac2e197e-126b-489c-8ab3-c114bf1c6b0a",
+      "name": "coord-defi-c2",
+      "team": null
+    },
+    {
+      "id": "0cb414e1-6a20-4550-8778-da5d85b03325",
+      "name": "coord-talent",
+      "team": null
+    },
+    {
+      "id": "2aa8f8b8-a2e1-4b62-8052-a88c6b1f98e7",
+      "name": "external/raul-ticketing",
+      "team": "CHA"
+    },
+    {
+      "id": "b3e61d6b-804f-4943-bca6-775dc5a88e07",
+      "name": "external/tss-comercial",
+      "team": "CHA"
+    },
+    {
+      "id": "453c3c9e-2b6e-48cd-9a05-8683dc45aede",
+      "name": "issue-craft-gap",
+      "team": "BUG"
+    },
+    {
+      "id": "9012aa97-16d8-4c73-ab4e-b43617602db5",
+      "name": "issue-craft-gap",
+      "team": "TAL"
+    },
+    {
+      "id": "4551d48a-dab3-44d0-a24a-3f8258bf30c1",
+      "name": "kind:adr",
+      "team": null
+    },
+    {
+      "id": "09a82488-88e5-431a-9a76-d5f01075025a",
+      "name": "kind:chore",
+      "team": null
+    },
+    {
+      "id": "8f97f4de-73b8-4894-8081-297a36c0cecb",
+      "name": "kind:decision-pending",
+      "team": null
+    },
+    {
+      "id": "fbf3af70-813d-4bbb-9524-076072c1bdaf",
+      "name": "kind:docs",
+      "team": null
+    },
+    {
+      "id": "69adc6b3-e3d2-4519-8925-5d2976bf3e11",
+      "name": "kind:feat",
+      "team": null
+    },
+    {
+      "id": "45a98b6e-79b4-41d2-b65a-05cd35d43307",
+      "name": "kind:fix",
+      "team": null
+    },
+    {
+      "id": "1bcf99e7-9617-400a-bc85-1e9eca0e1949",
+      "name": "kind:hotfix",
+      "team": null
+    },
+    {
+      "id": "6edf0a2f-1e11-4992-b22a-7f4fd6932b1c",
+      "name": "kind:refactor",
+      "team": null
+    },
+    {
+      "id": "778f8b56-9187-4469-ba0a-3973f2a2715d",
+      "name": "kind:test",
+      "team": "BUG"
+    },
+    {
+      "id": "8a612199-590c-4762-b468-81e9986651f8",
+      "name": "kind:test",
+      "team": "TAL"
+    },
+    {
+      "id": "d2185455-8dce-49f2-b2a3-92b415dfbd27",
+      "name": "modo-evento",
+      "team": "CHA"
+    },
+    {
+      "id": "dfe79653-3d0c-45e2-98ae-3d4a1683b8b1",
+      "name": "modo-resto-ano",
+      "team": "CHA"
+    },
+    {
+      "id": "eca49b37-184a-4759-937e-96b13cb56387",
+      "name": "registry",
+      "team": null
+    },
+    {
+      "id": "f09e7f95-f2a6-4e20-a6fd-f6f742a28a2c",
+      "name": "reservado/C1",
+      "team": "BUG"
+    },
+    {
+      "id": "d4cc43ab-cf9e-432c-a745-a91f453c908d",
+      "name": "reservado/C1",
+      "team": "TAL"
+    },
+    {
+      "id": "a47a3b9b-b990-4895-baf2-c2d64c26d098",
+      "name": "reservado/C2",
+      "team": "BUG"
+    },
+    {
+      "id": "aea741ea-158d-4aac-9fee-6de3f29b9ccf",
+      "name": "reservado/C2",
+      "team": "TAL"
+    },
+    {
+      "id": "d9c27075-cf92-410b-aed5-b0a41819375e",
+      "name": "sev:bloqueante",
+      "team": null
+    },
+    {
+      "id": "c29d906b-c60f-4e15-a7dd-c944828090b5",
+      "name": "sev:capital",
+      "team": null
+    },
+    {
+      "id": "635512d5-a3fb-4ed6-88c4-766b9f7fd505",
+      "name": "sev:cosmetico",
+      "team": null
+    },
+    {
+      "id": "9f38a089-7779-4d01-9c0a-3d6e132eb5d5",
+      "name": "sev:degradado",
+      "team": null
+    },
+    {
+      "id": "5208210e-2a3b-4794-a413-f2db04fcbb22",
+      "name": "subarea/audiovisual",
+      "team": "CHA"
+    },
+    {
+      "id": "5fc73c83-84f5-453c-a077-48fca4e4b599",
+      "name": "subarea/camping",
+      "team": "CHA"
+    },
+    {
+      "id": "88dc8d0a-8089-4d6c-ae65-82b93dba6e4e",
+      "name": "subarea/catering",
+      "team": "CHA"
+    },
+    {
+      "id": "f929db9c-ad84-43c7-b34d-e32479eef0b3",
+      "name": "vertical/academy",
+      "team": null
+    },
+    {
+      "id": "73a406f8-4bfb-4971-9ba3-0a55433d46ee",
+      "name": "vertical/bootcamp",
+      "team": null
+    },
+    {
+      "id": "95e01fa6-f02f-411f-96fc-9cc89bccfc60",
+      "name": "vertical/fabrica",
+      "team": "BUG"
+    },
+    {
+      "id": "185bfac2-c2b2-4f43-a674-0609c2d5f2ad",
+      "name": "vertical/fabrica",
+      "team": "TAL"
+    },
+    {
+      "id": "097dfdd5-62aa-41e0-bed8-61301a5aafd4",
+      "name": "vertical/genius-arena",
+      "team": null
+    },
+    {
+      "id": "f3bf0256-e2e7-477a-b5d8-7abc9212871e",
+      "name": "vertical/land-es",
+      "team": "BUG"
+    },
+    {
+      "id": "7dd2c9ca-3485-49ae-b3a8-e24bb60365bf",
+      "name": "vertical/land-es",
+      "team": "TAL"
+    },
+    {
+      "id": "00311d24-5d51-4fd8-a5b5-cb36b71c52b1",
+      "name": "vertical/land-mx",
+      "team": null
+    },
+    {
+      "id": "35cbcefd-4cff-47d6-bab6-9a6a44c5ad43",
+      "name": "vertical/land-online",
+      "team": null
+    },
+    {
+      "id": "0a3941c1-a73b-4a18-b880-f0fc00830066",
+      "name": "vertical/media",
+      "team": null
+    }
+  ]
+}

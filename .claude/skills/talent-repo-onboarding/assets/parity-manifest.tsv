@@ -1,0 +1,56 @@
+# parity-manifest.tsv — manifiesto de paridad repo→fábrica (gobierna a verify-repo-parity.sh)
+#
+# UNA fila por artefacto. TAB-separado. Las lineas que empiezan por '#' y las vacias se ignoran.
+# Un `artefacto` (col 1) repetido = fila duplicada = ERROR (exit 2): el manifiesto es la fuente
+# unica y no admite ambiguedad.
+#
+# Columnas:
+#   1 artefacto           id logico estable (clave; unico).
+#   2 clase               IDENTICO | EQUIVALENTE | ENTORNO.
+#   3 path_canonico       ruta en el repo TA (fuente canonica) o clave de entorno para ENTORNO.
+#   4 expected_git_mode   modo del indice esperado (git ls-files -s), o n/a para ENTORNO puro.
+#   5 verificaciones      tokens separados por '|':
+#                           hash            -> bytes idem a git show <ref>:path del repo canonico
+#                           tipo            -> tipo de archivo (shebang para scripts, no-binario para resto)
+#                           modo            -> mode del indice == expected_git_mode
+#                           exec            -> bit ejecutable en el working tree (test -x)
+#                           estructura:<id> -> contrato estructural cerrado (matcher bespoke en checker)
+#                           entorno:<id>    -> contrato de entorno (git config / skill / perfil)
+#
+# IDENTICOS: paridad de BYTES + tipo + modo (+ exec donde modo es 100755).
+# El cierre transitivo se DERIVA por grep de invocaciones sobre el repo canonico (no lista manual):
+#   verify-handoff -> {validar-rama-pr, lib/handoff}
+#   draft-handoff  -> validar-rama-pr
+#   cr-review      -> lib/cr-finding-normalize.jq
+#
+pre-push	IDENTICO	.githooks/pre-push	100755	hash|tipo|modo|exec
+verify-handoff	IDENTICO	scripts/verify-handoff.sh	100755	hash|tipo|modo|exec
+cr-review	IDENTICO	scripts/cr-review.sh	100755	hash|tipo|modo|exec
+audit-go	IDENTICO	scripts/audit-go.sh	100755	hash|tipo|modo|exec
+check-push-audit	IDENTICO	scripts/check-push-audit.sh	100755	hash|tipo|modo|exec
+setup-githooks	IDENTICO	scripts/setup-githooks.sh	100755	hash|tipo|modo|exec
+handoff-template	IDENTICO	docs/templates/handoff-pr-draft.md	100644	hash|tipo|modo
+validar-rama-pr	IDENTICO	scripts/github/validar-rama-pr.sh	100755	hash|tipo|modo|exec
+lib-handoff	IDENTICO	scripts/lib/handoff.sh	100755	hash|tipo|modo|exec
+cr-finding-normalize	IDENTICO	scripts/lib/cr-finding-normalize.jq	100644	hash|tipo|modo
+#
+# EQUIVALENTES: contrato estructural cerrado (no paridad de bytes: cada repo tiene sus propios
+# gates/reglas). draft-handoff es SOLO equivalente (gates propios; estructura+sentinel+validador).
+#
+draft-handoff	EQUIVALENTE	scripts/draft-handoff.sh	100755	estructura:draft_handoff
+coderabbit-yaml	EQUIVALENTE	.coderabbit.yaml	100644	estructura:coderabbit
+claude-md-reglas	EQUIVALENTE	CLAUDE.md	100644	estructura:reglas_md
+agents-md-reglas	EQUIVALENTE	AGENTS.md	100644	estructura:reglas_md
+pr-template	EQUIVALENTE	.github/PULL_REQUEST_TEMPLATE.md	100644	estructura:pr_template
+# gitignore-sentinels exige LOS 6 patrones literales (TAL-8040): .claude/.cr-review-ok (o cubierto por
+# .claude/.cr-review-*), .claude/.draft-handoff, .claude/.audit-go, .claude/tf-manifest.conf, .claude/.motor-go y
+# .claude/.cr-review-*; sin comentar, y `git check-ignore` debe confirmarlos ignorados (una negación posterior falla).
+gitignore-sentinels	EQUIVALENTE	.gitignore	100644	estructura:gitignore_sentinels
+settings-hooks	EQUIVALENTE	.claude/settings.json	100644	estructura:settings_hooks
+check-skill	EQUIVALENTE	.claude/hooks/check-skill.sh	100755	estructura:check_skill
+#
+# ENTORNO: contratos que no son archivos versionados sino estado del clon/repo destino.
+#
+hookspath	ENTORNO	core.hooksPath	n/a	entorno:hookspath
+skill-issue-craft	ENTORNO	.claude/skills/talent-issue-craft	n/a	entorno:skill_issue_craft
+perfil-repo	ENTORNO	docs/reference/issue-craft-perfil	n/a	entorno:perfil

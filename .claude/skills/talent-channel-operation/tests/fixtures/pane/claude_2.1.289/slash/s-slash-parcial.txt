@@ -1,0 +1,50 @@
+
+  En el siglo XX surgieron nuevas familias: el vidrio borosilicatado (Pyrex), resistente a los cambios
+  térmicos; el vidrio templado y laminado, que protege automóviles y edificios; y las fibras ópticas, que
+  transportan datos de un continente a otro en haces de luz. Las pantallas de teléfonos, con vidrios
+  reforzados químicamente, cabe decir que se llevan en el bolsillo de miles de millones de personas.
+
+  Hoy el vidrio también se asocia a la sostenibilidad, porque se recicla indefinidamente sin perder calidad.
+  Un material descubierto en la prehistoria sigue siendo, cinco mil años después, una pieza clave de la
+  ciencia, la arquitectura y la vida diaria.                                                                  
+
+✻ Cogitated for 19s · done 7:37 AM                                                                            
+                                                              
+❯ Responde solo con la palabra: recibido-humo                                                                 
+
+● recibido-humo                                                                                               
+                      
+✻ Cogitated for 1s · done 11:38 AM                                                                            
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Sonnet 5.5
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ /mod                                                                                                        
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  /model                            Set the AI model for Claude Code (currently Sonnet 5.5)                 
+  /auto-mode-setup                  Teach auto mode about your environment, plus optional rule tweaks       
+  /code-review                      Review the current diff, or a PR number/branch/path target, for
+                                    correctness bugs (plus reuse/simplification/efficiency cleanups where t…
+  /gtm-manager                      Manage Google Tag Manager containers, tags, triggers, and variables via
+                                    the GTM API v2. Use this skill whenever the user wants to: add tracking…
+  /talent-channel-operation         Coordinador multi-canal de la 1ª estación de la fábrica (ADR-0043) que
+                                    lleva encargos de Linear a PR DRAFT + HANDOFF usando canales tmux en In…
+  /talent-coordination              Use this skill when the user wants a terminal to act as the COORDINATION
+                                    command post (puesto de mando) for a Linear-managed project with N para…
+  /talent-llm-local                 Montar un servidor de IA local identico al de referencia:
+                                    Qwen3.6-35B-A3B (NVFP4) sobre vLLM con tensor parallel en 2 GPU Blackwe…
+  /plugin-authoring                 Make a mod: a live pane, band, status line, toast or hook inside Claude
+                                    Code (terminal or desktop Code tab), written as a plugin of function ho…
+  /ga4-skill                        Skill completo para Google Analytics 4 — las cuatro superficies de API:
+                                    Data API v1beta (reporting), Admin API v1alpha/v1beta (configuracion de…
+  /google-ads-api                   Use this skill whenever the user needs to work with Google Ads — both
+                                    programmatically AND for ad creative strategy. This includes: writing P…
+  /kotlin-android                   Use this skill for ANY Android-specific UI, presentation layer, or
+                                    Jetpack Compose work inside a KMP cross-platform monorepo. Triggers inc…
+  /nowpayments-skill                Use this skill whenever the user needs to work with NOWPayments — the
+                                    non-custodial cryptocurrency payment gateway supporting 350+ coins. Thi…
+  /stripe-skill                     Use this skill whenever the user needs to work with Stripe — both
+                                    programmatically AND for payment/billing architecture decisions. This i…
+
+

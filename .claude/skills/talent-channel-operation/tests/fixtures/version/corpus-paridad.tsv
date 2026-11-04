@@ -1,0 +1,23 @@
+real-claude	claude	@claude--version.bin	claude:2.1.301
+real-codex	codex	@codex--version.bin	codex:0.162.1
+doble-run-tests	claude	9.9.9 (Claude Code)\x0a	claude:9.9.9
+doble-identidad-dev	claude	2.1.288 (Claude Code)\x0a	claude:2.1.288
+doble-identidad-auditor	codex	codex-cli 0.1.0\x0a	codex:0.1.0
+nul-detras-del-triple	claude	2.1.301\x00 (Claude Code)\x0a	rc1
+nul-dentro-del-triple	claude	2.1.\x00301 (Claude Code)\x0a	rc1
+nul-al-final	claude	2.1.301 (Claude Code)\x00\x0a	rc1
+nul-codex	codex	codex-cli 0.162.1\x00\x0a	rc1
+retorno-de-carro	claude	2.1.301 (Claude Code)\x0d\x0a	rc1
+ansi	claude	\x1b[1m2.1.301\x1b[0m (Claude Code)\x0a	rc1
+dos-lineas	claude	2.1.301 (Claude Code)\x0a2.1.301 (Claude Code)\x0a	rc1
+segunda-linea-ajena	claude	2.1.301 (Claude Code)\x0anode 24.1.0\x0a	rc1
+sin-salto-final	claude	2.1.301 (Claude Code)	rc1
+sin-salto-final-codex	codex	codex-cli 0.162.1	rc1
+sufijo	claude	2.1.301-beta (Claude Code)\x0a	rc1
+sufijo-codex	codex	codex-cli 0.162.1-alpha.2\x0a	rc1
+prefijo	claude	build 42 versi\xc3\xb3n 2.1.301 (Claude Code)\x0a	rc1
+espacio-doble	claude	2.1.301  (Claude Code)\x0a	rc1
+triple-pelado	claude	2.1.301\x0a	rc1
+triple-pelado-codex	codex	0.162.1\x0a	rc1
+forma-de-otro-cli	codex	2.1.301 (Claude Code)\x0a	rc1
+vacia	claude		rc1

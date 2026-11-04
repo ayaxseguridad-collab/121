@@ -1,0 +1,52 @@
+     … +8 lines (ctrl+o to expand)
+● Todo verde. Escribo el informe completo en el fichero con Write.
+● Write(~/stop-audit-report.txt)
+  ⎿  Wrote 50 lines to ../stop-audit-report.txt
+       1 STOP-AUDIT — ABC-1234 · informe pre-push
+       2
+       3 RESUMEN DEL CAMBIO
+       4 Se añade un único fichero nuevo, docs/exploracion-fabrica.md (20 líneas, máximo 76
+       5 caracteres por línea), con frontmatter (title/created/author/status) y los tres apartados
+       7 frontmatter, como el precedente docs/ensayo-fabrica.md del PR #4). Sin versiones de
+       8 herramientas de terceros. No se toca README.md, código, configuración ni ficheros del contrato
+         .
+       9
+      10 Rama: docs/abc-1234-exploracion
+     … +54 lines (ctrl+o to expand)
+● Bash(head -1 ~/stop-audit-report.txt; echo; sed -n '/^────/,$p' ~/stop-audit-report.txt | head -5; cd
+      /home/USER/Repo-Neutro && echo "HEAD ahora: $(git rev-pa…)
+  ⎿  STOP-AUDIT — ABC-1234 · informe pre-push
+     ────────────────────────────────────────
+     … +5 lines (ctrl+o to expand)
+● STOP-AUDIT — ABC-1234 · informe pre-push
+  El informe completo está en ~/stop-audit-report.txt. Me paro aquí, sin push, PR ni sentinel, hasta el GO de
+  código.
+  - Cambio: un único fichero nuevo, docs/exploracion-fabrica.md. Tiene 20 líneas (máximo 76 caracteres) y los
+    tres apartados sellados. Incluye los tres ajustes de la auditoría del plan.
+  - Commit: abcdef012345 en la rama
+    docs/abc-1234-exploracion. Está en español y sin atribución
+    externa (regla 2 de CLAUDE.md, que prevalece sobre el pie por defecto).
+  - Base: git pull --rebase dijo «Already up to date», así que main sigue en abcdef0.
+  ────────────────────────────────────────
+  · SHA auditado: abcdef012345
+  · Árbol: clean
+  · Comandos de verificación y exit code:
+  - gate docs: test -f README.md → 0
+  - DoD 1: test -f docs/exploracion-fabrica.md && wc -l < docs/exploracion-fabrica.md → 0 (imprime 20)
+  - DoD 2: git diff --name-only origin/main...HEAD → 0 (exactamente docs/exploracion-fabrica.md)
+  - DoD 3: test -f README.md → 0
+  - npx --yes markdownlint-cli2 docs/exploracion-fabrica.md → 0 (0 issues)
+  - bash scripts/github/validar-rama-pr.sh <rama> → 0
+  - Invariantes (ficheros del contrato y README.md en el diff) → vacío
+  No corrí typecheck, lint ni build de turbo: el diff es un .md en docs/ y el único gate del manifiesto es
+  docs.
+  El informe también recoge tres observaciones fuera de alcance para el coordinador:
+  - Los checks no requeridos «Markdown format», «Links» y validar-build fallaron en el PR #4.
+  - linear-skill documenta gitBranchName, pero el campo vivo de la API es branchName.
+  - El perfil issue-craft-perfil-ensayo.md conserva §4–§9 como placeholders.
+✻ Cooked for 1m 5s · done 6:13 AM
+────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────
+  [Sonnet 5.5] ctx: 16%
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents

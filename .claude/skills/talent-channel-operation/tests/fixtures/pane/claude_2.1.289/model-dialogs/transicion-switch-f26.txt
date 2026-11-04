@@ -1,0 +1,50 @@
+  ⎿  Set model to Opus 5.5 and saved as your default for new sessions
+
+❯ /model
+  ⎿  Set model to Sonnet 5.5 and saved as your default for new sessions
+
+❯ /effort high
+  ⎿  Set effort level to high (saved as your default for new sessions): Comprehensive implementation with
+     extensive testing and documentation
+
+❯ /model
+  ⎿  Set model to Opus 5.5 and saved as your default for new sessions
+
+❯ /model
+  ⎿  Set model to Sonnet 5.5 and saved as your default for new sessions
+
+❯ Responde solo con la palabra: caliente
+
+● caliente
+
+✻ Worked for 1s · done 5:05 PM
+
+❯ /model
+  ⎿  Set model to Opus 5.5 and saved as your default for new sessions
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Sonnet 5.5] ctx: 6%                                                                      ● high · /effort
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

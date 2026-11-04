@@ -1,0 +1,28 @@
+INV-OR-001	SKILL.md	MUST	audit-issue	TAL-3265-gate-pre-bundle
+INV-OR-002	SKILL.md	MUST	encargo	ref08-encargos-bundle
+INV-OR-003	scripts/00-config.sh	MUST	JAMÁS se asume el env del repo fundador	paquete-v1-B2-orquestador
+INV-OR-004	scripts/00-config.sh	MUST_NOT	Talent Academy 2026/\.env\.local	paquete-v1-B2-sin-ruta-fundador
+INV-OR-005	scripts/00-config.sh	MUST	TORC_HOST_ENV_REL	paquete-v1-identidad-adjudicada
+INV-OR-006	references/11-multi-fabrica-y-ceo.md	MUST	CEO usa Opus vigente; PM y coordinación usan Sonnet vigente	politica-rodante-multifabrica
+INV-OR-007	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-OR-008	scripts/00-config.sh	MUST	torc_validate_env_rel	review-pr13-A1-traversal-loader
+INV-OR-009	SKILL.md	MUST	Eco de cumplimiento	TAL-3569-r1-eco-cumplimiento
+INV-OR-010	references/09-torre-de-control.md	MUST	lado de lectura	TAL-3569-r16-lado-lectura
+INV-OR-011	references/09-torre-de-control.md	MUST	se envenena solo	TAL-3569-r17-detector-disjunto
+INV-OR-012	scripts/torre-compact.sh	MUST	torc_torre_collect_handoff	TAL-8039-handoff-por-fichero-con-pantalla-de-respaldo
+INV-OR-013	scripts/lib-torre.sh	MUST	torc_torre_read_handoff_file	TAL-8039-lector-de-handoff-por-fichero-rc-0-2-4
+INV-OR-014	scripts/torre-compact.sh	MUST	ABORTO ANTES de /compact	TAL-2278-TAL-8039-jamas-compact-sin-handoff-verificado
+INV-OR-015	scripts/torre-compact.sh	MUST_NOT	torc_torre_cap "\$S" 800	TAL-8039-la-captura-de-pantalla-ya-no-es-la-via-primaria
+INV-OR-016	scripts/lib-torre.sh	MUST	"\$mtime" -lt "\$since"	TAL-8039-fichero-antiguo-de-otra-ejecucion-no-cuenta
+INV-OR-017	references/09-torre-de-control.md	MUST	Handoff de compact-60 por FICHERO	TAL-8039-doctrina-del-handoff-por-fichero-y-prorroga-con-tope
+INV-OR-018	scripts/lib-torre.sh	MUST	torc_torre_alive "\$s" && alive=1	TAL-8039-acta-m5-pane-muerto-no-es-turno-vivo
+INV-OR-019	scripts/torre-compact.sh	MUST	es un enlace simbolico	TAL-8039-acta-dir-de-handoff-symlink-no-se-sigue
+INV-OR-020	references/09-torre-de-control.md	MUST	menu-abierto	TAL-8043-flag-menu-abierto-en-torre-sweep
+INV-OR-021	references/09-torre-de-control.md	MUST	se sella en el bus ANTES de esperar	TAL-8043-escalado-obligatorio-al-bus
+INV-OR-022	references/09-torre-de-control.md	MUST	NO ACREDITADO hasta re-acreditar	TAL-8043-tras-clear-reinicio-o-sesion-nueva-no-acreditado
+INV-OR-023	references/09-torre-de-control.md	MUST	AVISO posible-pregunta-sin-escalar	ronda1-pregunta-informativa
+INV-OR-024	references/09-torre-de-control.md	MUST	informativo no anula un selector posterior	ronda2-citas-limitadas-a-la-region-activa
+INV-OR-025	scripts/lib-torre.sh	MUST	for\(i=prompt\+1;i<=n;i\+\+\)	ronda3-citas-captura-completa
+INV-OR-026	scripts/torre-resume.sh	MUST	CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1	torre-arranque-sin-encuesta
+INV-OR-027	tests/torre-modelos.sh	MUST	RESULTADO torre	resume-por-rol-y-retirada-tardia
+INV-OR-028	scripts/00-config.sh	MUST	id -u.*-eq 0	Usuario-sudo-solo-en-root

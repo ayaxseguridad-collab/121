@@ -1,0 +1,71 @@
+INV-TB-001	scripts/00-config.sh	MUST	4a1ebf2	M3-fuente-fijada-los-patches-solo-valen-contra-este-commit
+INV-TB-002	scripts/genkeys.py	MUST	ABORTADO.*ya existe	incidente-2026-07-30-keys-json-machacado-por-import
+INV-TB-003	assets/hardening.conf	MUST	ProtectSystem=strict	M4-aislamiento-hermes-usuario-dedicado
+INV-TB-004	assets/patches/04-compose-bind-ip.patch	MUST	BUZZ_BIND_IP	M2-frontera-el-compose-upstream-publica-en-todas-las-interfaces
+INV-TB-005	scripts/verificar.sh	MUST	PRUEBA NEGATIVA	M2d-la-frontera-se-prueba-desde-fuera-no-solo-con-ss
+INV-TB-006	scripts/roles.py	MUST	SIN --reply-to	ronda-usuario-2026-07-30-hilos-en-dm-ilegibles
+INV-TB-007	scripts/montar.sh	MUST	sleep 1	upstream-kind-13534-colision-de-timestamps-en-altas
+INV-TB-008	scripts/montar.sh	MUST	umask 077	secretos-0600-de-nacimiento-no-se-corrigen-despues
+INV-TB-009	SKILL.md	MUST	movil\.sh construir	E2-movil-entregado-con-procedimiento-no-como-promesa
+INV-TB-010	tests/probar-antifugas.sh	MUST	rev-list	M5-se-escanean-todos-los-commits-no-el-diff-acumulado
+INV-TB-011	assets/patches/01-fallback-publisher.patch	MUST	DESCARTA	ronda-usuario-2026-07-30-el-razonamiento-no-se-publica
+INV-TB-012	assets/fenix.env.tmpl	MUST	BUZZ_ACP_ALLOWED_RESPOND_TO=owner-only,allowlist	candado-el-harness-no-arranca-abierto-a-cualquiera
+INV-TB-013	assets/hermes.env.tmpl	MUST_NOT	nsec1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{50}	cero-secretos-las-plantillas-llevan-placeholders
+INV-TB-014	assets/buzz-pair-relay.service.tmpl	MUST_NOT	0\.0\.0\.0	M2-el-pair-relay-jamas-escucha-en-todas-las-interfaces
+INV-TB-015	scripts/montar.sh	MUST	BUZZ_COMPOSE_TLS=true	M2r4-run-sh-compara-literal-con-true
+INV-TB-016	scripts/montar.sh	MUST	apply -R	M3r4-reversa-total-la-imagen-solo-sale-de-pin-mas-patches
+INV-TB-017	tests/probar-antifugas.sh	MUST_NOT	\| *(escanea_texto|veta_binarios)	M5r4-pipeline-subshell-pierde-el-contador
+INV-TB-018	assets/fenix.env.tmpl	MUST	@CLAUDE_ACP@	M6r4-ruta-efectiva-del-adaptador-no-fija
+INV-TB-019	scripts/verificar.sh	MUST	list-members	M7r4-roster-verificado-antes-del-OK
+INV-TB-020	scripts/montar.sh	MUST_NOT	add-member.*\|\| true	M7r4-fallos-de-alta-cierran-el-montaje
+INV-TB-021	tests/probar-antifugas-fixtures.sh	MUST	commit intermedio	M5r4-fixtures-negativos-obligatorios-del-gate
+INV-TB-022	scripts/lib-contexto.sh	MUST	archive	M3r5-la-imagen-se-construye-de-un-export-limpio-no-del-checkout
+INV-TB-023	tests/probar-contexto-imagen.sh	MUST	hermit	M3r5-fixture-del-ignorado-que-eludia-porcelain
+INV-TB-024	tests/probar-antifugas.sh	MUST	no existe en este repo	Ar5-base-invalida-no-es-gate-vacio
+INV-TB-025	tests/probar-antifugas-fixtures.sh	MUST_NOT	/dev/urandom	M5r6-fixtures-deterministas-el-azar-no-es-evidencia
+INV-TB-026	scripts/sonda.sh	MUST	need_cmd tar	Ar6-lib-contexto-necesita-tar-la-sonda-lo-exige
+INV-TB-027	scripts/sonda.sh	MUST	need_cmd cc	e2e-2026-07-30-cargo-muere-sin-enlazador-C-en-maquina-fresca
+INV-TB-028	scripts/montar.sh	MUST	acepto-home-compartido	CRr2-aislamiento-de-fenix-es-decision-informada-no-default
+INV-TB-029	assets/patches/01-fallback-publisher.patch	MUST	isError	M8-el-error-de-buzz-agent-llega-como-completed-mas-isError
+INV-TB-030	assets/patches/02-movil-cleartext-esquemas.patch	MUST	toWebSocketScheme	M1-normalizacion-explicita-wss-jamas-degrada-a-ws
+INV-TB-031	assets/patches/02-movil-cleartext-esquemas.patch	MUST	TB_CLEARTEXT_HOST_PLACEHOLDER	M2-movil-autoridad-inyectada-en-build-no-host-quemado
+INV-TB-032	assets/patches/02-movil-cleartext-esquemas.patch	MUST	cleartextTrafficPermitted="false"	M2-movil-plataforma-cleartext-off-por-defecto
+INV-TB-033	assets/patches/02-movil-cleartext-esquemas.patch	MUST_NOT	usesCleartextTraffic	M2-movil-jamas-cleartext-global-en-el-manifest
+INV-TB-034	scripts/movil.sh	MUST	exportar_contexto_exacto	M3-el-apk-sale-del-export-limpio-no-del-checkout
+INV-TB-035	scripts/movil.sh	MUST	umask 077	secretos-0600-de-nacimiento-keystore-y-signing-env
+INV-TB-036	scripts/movil.sh	MUST	el APK contiene el placeholder	V1-verificacion-fail-closed-sobre-el-artefacto-final
+INV-TB-037	references/movil.md	MUST	0\.5\.1	M4-desktop-versionado-como-dependencia-del-pairing
+INV-TB-038	assets/patches/03-movil-dm-parity.patch	MUST	isDm	DM-del-movil-con-p-tags-de-participantes-como-desktop
+INV-TB-039	scripts/movil.sh	MUST	--bind "\$ts_ip"	M2-el-portal-solo-escucha-en-la-ip-del-tailnet
+INV-TB-040	references/movil.md	MUST	Estado del ensayo de pairing	M9-el-estado-del-ensayo-se-declara-no-se-insinua
+INV-TB-041	assets/patches/03-movil-dm-parity.patch	MUST	fail-closed	M10-dm-sin-participantes-determinables-no-se-envia
+INV-TB-042	scripts/movil.sh	MUST	host_acreditado	M11-el-host-cleartext-se-acredita-como-magicdns-del-tailnet
+INV-TB-043	scripts/movil.sh	MUST	exigir_0600	M12-secretos-reutilizados-verificados-antes-de-usarse
+INV-TB-044	scripts/movil.sh	MUST	ip_tailnet_valida "\$ts_ip"	Ar9-el-portal-verifica-que-su-ip-es-del-tailnet
+INV-TB-045	scripts/movil.sh	MUST	no pude leer el contenido del APK	CRrE2-v1-extraccion-verificada-el-pipe-tapaba-fallos-de-unzip
+INV-TB-046	scripts/movil.sh	MUST	V3b	CRrE2-cada-ip-declarada-se-verifica-en-el-apk-final
+INV-TB-047	scripts/publicar.sh	MUST	--content -	SEG-B1-la-respuesta-viaja-por-stdin-jamas-en-argv
+INV-TB-048	scripts/roles.py	MUST	buzz-publicar	SEG-B1-la-regla-publica-con-el-helper-no-inline
+INV-TB-049	scripts/roles.py	MUST_NOT	--content \\"	SEG-B1-cero-interpolacion-de-la-respuesta-en-comandos
+INV-TB-050	references/extension-app-agents.md	MUST	--content -	SEG-B1-la-app-tambien-publica-por-stdin
+INV-TB-051	references/extension-app-agents.md	MUST_NOT	cat <<	SEG-B1r1-heredoc-prohibido-terminacion-anticipada
+INV-TB-052	assets/patches/01-fallback-publisher.patch	MUST	buzz-publicar	SEG-M6-el-fallback-reconoce-el-helper-o-duplica
+INV-TB-053	scripts/publicar.sh	MUST	trap limpiar EXIT	SEG-M7-centinela-resembrado-en-toda-salida
+INV-TB-054	tests/probar-antifugas.sh	MUST	show -m	SEG-C2-los-diffs-de-merges-tambien-se-escanean
+INV-TB-055	assets/buzz-hermes@.service.tmpl	MUST	hermesbot%i	SEG-H3-usuario-por-instancia-no-compartido
+INV-TB-056	assets/buzz-hermes@.service.tmpl	MUST_NOT	User=hermesbot$	SEG-H3-el-usuario-compartido-a-secas-prohibido
+INV-TB-057	scripts/desmontar.sh	MUST	datos.*ANTES	SEG-M5-datos-tratados-antes-de-borrar-usuarios
+INV-TB-058	assets/patches/04-compose-bind-ip.patch	MUST	BUZZ_BIND_IP:\?	SEG-H4-sin-default-abierto-la-variable-es-obligatoria
+INV-TB-059	assets/patches/02-movil-cleartext-esquemas.patch	MUST	isPrivateIp	SEG-H5-guard-ssrf-restaurado-para-todos-los-esquemas
+INV-TB-060	scripts/montar.sh	MUST	reconciliar_env	SEG-H67-el-env-heredado-se-reconcilia-completo
+INV-TB-061	scripts/lib-seguridad.sh	MUST	exigir_0600	SEG-H67-secretos-verificados-antes-de-usarse
+INV-TB-062	scripts/montar.sh	MUST	BUZZ_REQUIRE_RELAY_MEMBERSHIP=true	SEG-H67-membership-jamas-degradado-por-env-heredado
+INV-TB-063	tests/probar-sonda.sh	MUST	TB_TEST_DF	SEG-H8-df-fake-determinista-tres-estados
+INV-TB-064	scripts/sonda.sh	MUST	no se pudo medir	SEG-H8-medicion-fallida-distinta-de-sin-espacio
+INV-TB-065	scripts/montar.sh	MUST	sys.argv	SEG-H10-rutas-y-nombres-por-argv-no-interpolados
+INV-TB-066	scripts/00-config.sh	MUST	4a1ebf25c782fc6a68f0a69e6f866f793a259a1f	SEG-H11-pin-por-sha-completo
+INV-TB-067	tests/probar-patches.sh	MUST	rev-parse	SEG-H11-el-pin-se-resuelve-antes-de-usarse
+INV-TB-068	assets/hermes.env.tmpl	MUST	BUZZ_ACP_AGENTS=1	SEG-M4r5-ratchet-de-no-concurrencia-el-centinela-no-tiene-cas
+INV-TB-069	scripts/lib-seguridad.sh	MUST	DUPLICADAS	SEG-Ar5-claves-duplicadas-en-el-env-fallan-cerrado
+INV-TB-070	tests/probar-patches.sh	MUST	TB_BUZZ_SIN_RED	bateria-sin-transporte-8041
+INV-TB-071	tests/probar-patches.sh	MUST	\[ -e "\$TB_BUZZ_GIT/\.git" \]	checkout-worktree-valido-8041

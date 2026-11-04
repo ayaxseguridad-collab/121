@@ -1,0 +1,8 @@
+# caso<TAB>fragmento que DEBE aparecer en la salida del diagnostico sobre corpus-fake
+sin-fecha	preferencia-editor.md
+duplicado-commits	politica-commits-notas ~ politica-commits
+duplicado-indentacion	formato-indentacion-espacios ~ formato-indentacion-tabs
+instruccion-muerta	scripts/parche-arranque-v1.sh
+s3-roto	nota-estado-solo-cuerpo.md (estado en cuerpo, description sin estado)
+indice-entrada-rota	nota-que-ya-no-existe.md
+indice-huerfana	nota sin entrada en el indice: politica-commits.md

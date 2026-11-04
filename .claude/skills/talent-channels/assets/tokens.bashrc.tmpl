@@ -1,0 +1,16 @@
+# Tokens operativos del repo (modelo token-por-carril, NO MCP). Auto-cargados en shell interactivo.
+# Parser dotenv SIN evaluación de shell: el .env.local lo escribe el intake con valores CRUDOS
+# (sin escape); sourcearlo ejecutaría/expandiría `$`, backticks o espacios de un valor. Aquí cada
+# línea KEY=VALOR se exporta LITERAL con el builtin export (el valor jamás pasa por eval/source).
+if [ -f ~/__REPO_DIR__/__ENV_DEST__ ]; then
+  while IFS= read -r _tc_line; do
+    _tc_key="${_tc_line%%=*}"
+    # Blocklist de variables de CONTROL del shell/loader: una clave descubierta con uno de
+    # estos nombres contaminaria todos los procesos hijos del carril (PATH/IFS/LD_PRELOAD...).
+    case "$_tc_key" in
+      BASH_ENV|ENV|PATH|CDPATH|GLOBIGNORE|IFS|SHELLOPTS|BASHOPTS|PROMPT_COMMAND|PS0|PS1|PS2|PS3|PS4|LD_*|DYLD_*) continue;;
+    esac
+    export "$_tc_key=${_tc_line#*=}"
+  done < <(grep -E '^[A-Z][A-Z0-9_]*=' ~/__REPO_DIR__/__ENV_DEST__ 2>/dev/null)
+  unset _tc_line _tc_key
+fi

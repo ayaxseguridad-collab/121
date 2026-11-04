@@ -1,0 +1,33 @@
+TAREA: planificar el encargo __ISSUE__ (NO implementes nada todavía — estás en MODO PLAN; al final usa ExitPlanMode para presentar el plan y quédate esperando aprobación).
+
+Estás en el repo del canal (~/__REPO_DIR__). Sigue SIEMPRE las reglas de CLAUDE.md/AGENTS.md del repo. El clon ya trae los git hooks versionados activados (core.hooksPath=.githooks; el despacho lo verifica).
+
+NOMBRE DE RAMA: usa SIEMPRE minúsculas tras el prefijo y la clave del equipo de esta instancia — el required check de rama rechaza mayúsculas.
+
+1) CONTEXTO desde Linear (token-only, NO MCP, vía el linear-skill del repo): lee TODO el contexto de __ISSUE__ (descripción completa, issues relacionadas y comentarios). Si el encargo es un BUNDLE (varios issues), el brief del coordinador los enumera: léelos TODOS. Mueve el/los issue(s) a "In Progress" en Linear.
+2) ENTIENDE el trabajo leyendo el código real (no asumas). Carga los skills obligatorios que apliquen según el repo (skill de backend del anexo si tocas DB, etc.). Incluye al inicio del plan un **sello de carga de skills**: lista los skills que cargaste; el auditor lo cruza con el scope. [TAL-5172] El gate (4) de despacho (`preflight-issue.sh`, TAL-3266) acredita por `audit-issue` **O** por el **brief del Orquestador** (marcador `BRIEF-ACREDITADO` en un comentario de la issue, autenticado contra `issue.description` — no exige carga de skill adicional, el gate corre en el coordinador). Si el encargo va por la vía `audit-issue`, carga también `talent-issue-craft` + el perfil de issue-craft de ESTE repo (`docs/reference/issue-craft-perfil*.md`: umbral, tipos elegibles y DoD del gate) — tu plan lo necesita para pasar la rúbrica M/S/O/Q. Si el repo no tiene perfil, PARA y repórtalo: se crea desde `talent-issue-craft/templates/perfil-de-repo.md` — nunca uses el perfil de otro repo.
+3) PLAN: produce un plan de desarrollo detallado del CONJUNTO del encargo (archivos a tocar, pasos, y pasos de VERIFICACIÓN end-to-end) y preséntalo con ExitPlanMode. FORMATO: la PRIMERA línea del plan es el ancla literal `PLAN-INICIO __ISSUE__` y la ÚLTIMA es `PLAN-FIN` en línea propia (el coordinador lo extrae sin ambigüedad, igual que con STOP-AUDIT). Cada ancla aparece EXACTAMENTE UNA VEZ al inicio de su línea; si necesitas mencionarlas en el texto, NO las escribas a principio de línea. Al re-presentar tras un NO-GO, reemite el bloque COMPLETO entre las mismas anclas. NO implementes; espera.
+
+Protocolo del resto (tras aprobación del plan):
+- Implementarás en bypass.
+- ORDEN: implementa (bypass) -> COMMIT -> STOP-AUDIT (informe pre-push) y te PARARÁS (sin subir nada) hasta el GO de CÓDIGO de la auditoría. El informe STOP-AUDIT DECLARA el sha auditado = `git rev-parse HEAD` (un COMMIT real: será el head del PR). En un bundle, el GO cubre el CONJUNTO del encargo.
+- CONTRATO INFORME-POR-FICHERO (obligatorio, no opcional): con pantalla alternativa, la captura de tu pane devuelve como MÁXIMO lo visible en el viewport — un informe largo pierde su propio header antes de que quedes idle. Por eso escribes el informe COMPLETO con tu herramienta Write a `~/__STOP_AUDIT_FILE__` (NUNCA con heredoc/redirect bash — la doctrina anti-hook de este repo lo exige) ANTES de imprimir el header en el pane. El pane queda solo como SEÑAL de que hay informe (el coordinador lo extrae por fichero primero); el fichero es el ÚNICO transporte fiable para informes largos.
+- FORMATO del informe STOP-AUDIT (en el FICHERO y también su header anclado en el pane): empieza la PRIMERA línea con el ancla literal `STOP-AUDIT` (para que el coordinador lo extraiga sin ambigüedad) e incluye AL FINAL esta SECCIÓN CANÓNICA — sin ella el veredicto de código no es evaluable:
+    __STOP_AUDIT_HEADER__
+    (resumen del cambio + cómo lo verificaste)
+    ────────────────────────────────────────
+    · SHA auditado: <git rev-parse HEAD>            (el head que declaras)
+    · Árbol: clean|dirty                            (git status --porcelain; DEBE ser clean)
+    · Comandos de verificación corridos + su EXIT CODE, uno por línea, p.ej.:
+__GATES__
+      Ejecuta todos los gates declarados arriba; registra resultados reales, incluidos fallos y omisiones.
+__MIGRATION_REPORT__
+  Un comando con exit != 0, un árbol `dirty`, o un SHA que no sea `git rev-parse HEAD` = el coordinador NO releva a auditoría (corrige y reemite el informe COMPLETO — la reemisión SUSTITUYE a la anterior).
+__MIGRATIONS__
+- ENTREGA (tras el GO de código) — tu pipeline TERMINA aquí; NO corras CodeRabbit (ni CLI ni App), NO esperes los checks de CI, NO rebases después de entregar y NO merges (todo eso lo hace la estación de merge):
+    1. `bash scripts/draft-handoff.sh` — valida working tree limpio, rama válida y gates del manifiesto VERDES; emite el sentinel de entrega (`.claude/.draft-handoff`). Si un gate está en rojo, corrígelo ANTES.
+    2. Sube la rama (el hook pre-push acepta el sentinel para ese SHA exacto; commit nuevo = re-correr el paso 1).
+    3. `gh pr create --draft` con un `closes <clave-del-equipo>-<número>` en el body por CADA issue del encargo (sin eso Linear no cerrará al mergear).
+    4. Pega el comentario HANDOFF siguiendo la plantilla `docs/templates/handoff-pr-draft.md` COMPLETA (todas las secciones + bloque machine-readable al final con el head vigente). El HANDOFF es la interfaz con la estación de merge: invariantes vagos = entrega rebotada.
+    5. `bash scripts/verify-handoff.sh <pr>` — exit 0 obligatorio; si falla, corrige lo que señale y re-valida.
+- Issues a In Review (linear-skill) y REPORTA la entrega al coordinador (nº de PR + salida de verify-handoff). FIN de tu trabajo en este encargo: el merge, los checks y las migraciones a prod son de la estación de merge; cualquier finding volverá como trabajo nuevo, no reabras este PR.

@@ -1,0 +1,49 @@
+  La llegada a Europa
+
+  El papel entró en Europa por la península ibérica. Xàtiva, en la actual Valencia, fue un centro papelero
+  importante desde el siglo XI o XII. De allí pasó a Italia, donde las ciudades de Fabriano y Amalfi
+  desarrollaron una industria floreciente en el siglo XIII. Los italianos incorporaron novedades importantes.
+  Usaron martillos hidráulicos para triturar los trapos, introdujeron el encolado con gelatina animal y
+  crearon las marcas de agua, que permitían identificar al fabricante y el origen del papel.
+
+  A pesar de sus ventajas, el papel tardó en imponerse. Muchos lo consideraban frágil y poco digno frente al
+  pergamino, e incluso hubo prohibiciones para su uso en documentos oficiales. Pero su bajo coste acabó
+  prevaleciendo. Hacia mediados del siglo XV, Johannes Gutenberg perfeccionó la imprenta de tipos móviles en
+  Maguncia. La combinación de ambas tecnologías fue revolucionaria. Los libros dejaron de ser objetos de lujo
+  copiados a mano y se multiplicaron, lo que impulsó el Renacimiento, la Reforma protestante y la revolución
+  científica.
+
+  La era industrial
+
+  Durante siglos, el papel europeo se fabricó con trapos de lino y algodón. Cuando la demanda creció de forma
+  explosiva, la escasez de trapos se volvió un problema grave. A finales del siglo XVIII, el francés
+  Nicolas-Louis Robert inventó una máquina que producía papel en una banda continua, y los hermanos
+  Fourdrinier la perfeccionaron en Inglaterra a comienzos del siglo XIX. Ese diseño sigue siendo la base de la
+  fabricación moderna.
+
+  La otra gran transformación fue la materia prima. En la década de 1840, Friedrich Gottlob Keller en Sajonia
+  y Charles Fenerty en Canadá desarrollaron la pulpa de madera molida. Más tarde se crearon procesos químicos,
+  como el método al sulfito y el proceso kraft, que permitieron obtener celulosa de mejor calidad. El papel
+  se abarató y sostuvo la expansión de los periódicos, las novelas populares, los manuales escolares, los
+  documentos administrativos y el embalaje. Esa misma pulpa ácida, no obstante, tiene un inconveniente: los
+  papeles fabricados con ella se degradan con el tiempo, un reto serio para archivos y bibliotecas.
+
+  El papel hoy
+
+  En el siglo XX el papel se diversificó. Hoy sirve para cartón, pañuelos, billetes, filtros, papel pintado y
+  material de oficina. Con la llegada de lo digital se anunció en varias ocasiones la «oficina sin papel»,
+  pero el consumo global siguió creciendo durante décadas. Actualmente las preocupaciones ambientales marcan
+  la industria. El sector impulsa el reciclaje, que permite reutilizar las fibras varias veces, además de
+  plantaciones certificadas y procesos que consumen menos agua y energía.
+
+  Tras casi dos milenios, el papel sigue siendo uno de los grandes inventos de la humanidad. Hizo posible la
+  administración de los imperios, la expansión de las religiones, la ciencia moderna y la educación masiva, y
+  su historia es en buena parte la de cómo las personas han decidido conservar y compartir lo que saben.
+
+✻ Churned for 21s · done 6:42 AM
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Sonnet 5.5] ctx: 5%
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents

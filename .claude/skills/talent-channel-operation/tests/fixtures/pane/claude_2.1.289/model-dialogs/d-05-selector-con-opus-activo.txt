@@ -1,0 +1,50 @@
+✻ Cogitated for 19s · done 7:37 AM                                                                            
+                                                              
+❯ Responde solo con la palabra: recibido-humo                                                                 
+
+● recibido-humo                                                                                               
+                      
+✻ Cogitated for 1s · done 11:38 AM                                                                            
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Sonnet 5.5
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Sonnet 5.5
+
+❯ /model                                                                                                      
+  ⎿  Set model to Opus 5.5 and saved as your default for new sessions
+
+❯ /effort xhigh                                                                                               
+  ⎿  Set effort level to xhigh (saved as your default for new sessions): Deeper reasoning than high, just
+     below maximum (on supported models)
+
+❯ /model                                                                                                      
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Select model                                                                                              
+  Switch between Claude models. Your pick becomes the default for new sessions. For other/previous model 
+  names, specify with --model.                                                                            
+                                                                                                            
+    1. Default (recommended)  Sonnet 5.5 · Efficient for routine tasks                       
+    2. Sonnet                 Sonnet 5.5 · Efficient for routine tasks                                      
+    3. Fable                  Fable 5.1 · Most capable for your hardest and longest-running tasks  
+  ❯ 4. Opus ✔                 Opus 5.5 · Best for everyday, complex tasks                                   
+    5. Haiku                  Haiku 4.5 · Fastest for quick answers                                  
+                                                                                                            
+  ◉ xHigh effort ←/→ to adjust                                                                              
+                                                                                                            
+  Enter to set as default · s to use this session only · Esc to cancel                                    
+
+
+
+
+
+
+
+
+
+
+
+
+

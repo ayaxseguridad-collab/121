@@ -1,0 +1,43 @@
+INV-CH-001	SKILL.md	MUST	perfil dedicado	TAL-3318/F2-apparmor-scoped
+INV-CH-002	references/08-runners-del-mergeador.md	MUST	rootless	TAL-3318/F4-runner-no-docker
+INV-CH-003	references/03-golden.md	MUST	env -i	TAL-3318-node-aceptacion
+INV-CH-004	references/03-golden.md	MUST	NO es el flag	TAL-3318/F1-anti-placebo-bypass
+INV-CH-005	SKILL.md	MUST	NO hornea ninguna	TAL-2294-golden-sin-credenciales
+INV-CH-006	SKILL.md	MUST	NO MCP	TAL-1490-token-only
+INV-CH-007	references/06-operacion-y-launchers.md	MUST	TODA la flota	TAL-3318/F3-artefacto-flota-golden
+INV-CH-008	SKILL.md	MUST	CEO usa Opus vigente	politica-rodante-por-rol
+INV-CH-009	tests/verify-cr-cli-pin.sh	MUST	sha256	pin-cli-cr-02-golden
+INV-CH-010	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-CH-011	SKILL.md	MUST	echo-probe	TAL-4731-pz7-relaunch-tras-pkill-22-23ago
+INV-CH-012	references/05-credenciales-por-carril.md	MUST	401 masivo del censo	TAL-4731-pz9-refresh-on-401-22ago
+INV-CH-013	SKILL.md	MUST	Probe headless real	TAL-4731-pz10-pozo-en-uso-invalida-escrow-23ago
+INV-CH-014	SKILL.md	MUST	Recycle-deja-sesión: un canal aparcado SIN trabajo CONSERVA su sesión tmux	TAL-4731-pz11-recycle-deja-sesion-23ago
+INV-CH-015	scripts/auth-move-lib.sh	MUST	am_move_final_rc	TAL-8042-rc-final-del-MOVE-por-fase-del-journal
+INV-CH-016	scripts/lib.sh	MUST	_tf_kill_wait	TAL-8042-quiesce-por-ejecutable-no-por-linea-de-comandos
+INV-CH-017	tests/fake-incus.sh	MUST	allowed-kill-pids	TAL-8042-escudo-hermetico-lista-de-PIDs-creados-por-el-test
+INV-CH-018	tests/run-tests.sh	MUST	zombie scan_zombie	difuntos-omitidos-en-revalidacion-y-escaner-tres-copias
+INV-CH-019	assets/launcher-v.tmpl	MUST	CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1	canal-arranque-sin-encuesta
+INV-CH-020	tests/modelos-consumidores.sh	MUST	RESULTADO consumidores	consumidores-salud-fase-y-proveedor-ajeno
+INV-CH-021	scripts/verify.sh	MUST	jq -s -e --arg m	identificador-completo-por-igualdad-json
+INV-CH-022	references/06-operacion-y-launchers.md	MUST	antes del primer arranque	golden-neutro-preparacion-obligatoria
+INV-CH-023	scripts/03-clone.sh	MUST	tc_clone_power	arranque-parada-consultan-estado-y-no-ocultan-fallos
+INV-CH-024	scripts/02-golden.sh	MUST	user.fabrica.base-completa	construccion-parcial-no-acredita-plantilla-base
+INV-CH-025	scripts/02-golden.sh	MUST	coderabbit-pin.conf	Pin-unico-para-host-y-plantilla
+INV-CH-026	scripts/push-carril-env.sh	MUST	perfil runner no recibe credenciales	Perfil-runner-excluido-del-reparto
+INV-CH-027	scripts/push-carril-env.sh	MUST	declare -f tc_coderabbit_auth	Autenticacion-compartida-con-la-estacion
+INV-CH-028	scripts/coderabbit-auth.sh	MUST	timeout 30 coderabbit auth status	Estado-del-CLI-exigido-sin-gastar-revision
+INV-CH-029	scripts/coderabbit-auth.sh	MUST	fichero=%s	Diagnosticos-por-causa-sin-valores-secretos
+INV-CH-030	scripts/verify.sh	MUST	etapa=preparado	Verificacion-completa-por-defecto
+INV-CH-031	scripts/verify.sh	MUST	PENDIENTE: modelo de canales	Modelo-pendiente-explicito-en-creacion
+INV-CH-032	tests/verify-etapas.py	MUST	completo sin registro	Registro-obligatorio-en-verificacion-completa
+INV-CH-033	scripts/verify.sh	MUST	golden sin credencial claude NI codex	Plantilla-sin-logins-tras-acreditacion
+INV-CH-034	tests/verify-etapas.py	MUST	acreditado sin registro	Registro-obligatorio-en-acreditado
+INV-CH-035	tests/verify-etapas.py	MUST	alias posterior conserva rojo	Alias-posterior-no-relaja-igualdad-de-F5
+INV-CH-036	tests/fase-papel-json.sh	MUST	RESULTADO fase papel JSON	fase-por-panel-papel-literal-json-unico
+INV-CH-037	scripts/refresh-claude-auth.sh	MUST	agente preservado	panel-acreditado-antes-de-detener
+INV-CH-038	tests/panel-durable.sh	MUST	RESULTADO panel durable	sesion-durable-y-seleccion-estricta
+INV-CH-039	scripts/install-launchers.sh	MUST_NOT	HOST_USER:\$HOST_USER	propietario-con-grupo-de-inicio
+INV-CH-040	tests/run-tests.sh	MUST	--orden incus	Doble-envuelto-valida-gh-antes-de-responder
+INV-CH-041	scripts/verify.sh	MUST	\.claude_token\.env	Rutas-unicas-de-sesiones-y-token
+INV-CH-042	tests/verify-etapas.py	MUST	creado rechaza ruta de credencial	Creacion-sin-las-tres-rutas-de-credencial
+INV-CH-043	tests/verify-etapas.py	MUST	acreditado permite token de canal	Token-permitido-en-canal-acreditado

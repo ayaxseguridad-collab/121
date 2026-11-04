@@ -1,0 +1,23 @@
+# creds.manifest — credenciales operacionales que el intake pide para el env por carril.
+# DECLARATIVO Y EXTENSIBLE: añadir un proveedor = añadir una línea (sin tocar código).
+# Formato (pipe):  ENV_KEY | regex_validacion | required(yes/no) | scope(percarril/shared) | descripción
+#   - ENV_KEY   : nombre de la variable que va al .env del carril.
+#   - regex     : validación de formato (usar '.' si no hay).
+#   - required  : yes = obligatoria; no = opcional (Enter para saltar).
+#   - scope     : percarril = token distinto por carril (trazabilidad TA-E#);
+#                 shared    = mismo valor en todos los carriles (config no sensible/compartida).
+#   - descripción: texto del prompt.
+#
+# El intake ADEMÁS descubre claves del .env.example del repo objetivo y pregunta
+# cualquiera que no esté aquí (genérica, opcional, percarril).
+# NO se ponen valores aquí — solo el catálogo. Los valores se piden en runtime (sin eco).
+
+LINEAR_API_KEY|^lin_api_|no|percarril|Linear API key (lin_api_...)
+SUPABASE_ACCESS_TOKEN|^sbp_|no|percarril|Supabase Management API token (sbp_...)
+SUPABASE_SERVICE_ROLE_KEY|.|no|percarril|Supabase service-role key
+NEXT_PUBLIC_SUPABASE_URL|^https?://|no|shared|Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY|.|no|shared|Supabase anon/publishable key
+GITHUB_TOKEN|^gh[ps]_|no|percarril|GitHub token operacional (push/PR del carril)
+CONVEX_DEPLOY_KEY|.|no|percarril|Convex deploy key
+CONVEX_URL|^https?://|no|shared|Convex deployment URL
+CODERABBIT_API_KEY|^cr-[A-Za-z0-9_-]{20,}$|no|percarril|CodeRabbit Agentic API key (cr-...). SOLO canales del Mergeador (estacion de merge, talent-merger); los canales de PRODUCCION la dejan VACIA (no corren CodeRabbit — perfil en references/05). TAL-2193 (antes shared, TAL-1502)

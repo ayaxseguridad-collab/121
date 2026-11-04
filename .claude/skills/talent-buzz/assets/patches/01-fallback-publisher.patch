@@ -1,0 +1,490 @@
+# 01-fallback-publisher.patch — sobre block/buzz commit 4a1ebf2
+#
+# Salvavidas de publicacion para harnesses de modelo local (buzz-agent, hermes-acp):
+# si el turno termina en EndTurn con texto de mensaje pero sin publicacion efectiva
+# por el CLI de Buzz, buzz-acp publica ese texto como kind 9 (truncado a 4000 bytes
+# en frontera UTF-8). Es un salvavidas REARMADO y BEST-EFFORT, no una garantia:
+# solo actua si hubo agent_message_chunk y el relay responde — ante un fallo del
+# helper, la evidencia autoritativa es el payload que buzz-publicar preserva.
+# Detalles del contrato:
+# - Deteccion de comandos publicadores (messages send/canvas set/notes/reactions
+#   add) normalizada por espacios y continuaciones de linea (helper puro testeado).
+#   Reconoce ADEMAS el helper `buzz-publicar` del skill, SOLO en posicion de
+#   comando (primer token o tras separador/wrapper/asignacion): una mencion en
+#   texto no silencia el fallback (ronda de seguridad M6).
+# - La invocacion NO basta: un tool_call_update de fallo retira la pretension y el
+#   fallback rescata el turno. FORMAS DE FALLO cubiertas (M8): status failed/error
+#   Y el formato normal de buzz-agent — status "completed" + rawOutput.isError=true
+#   (emit_completed siempre reporta completed). Sin noticia del resultado se asume
+#   exito (default seguro contra duplicados).
+# - Solo turnos EndTurn: narracion parcial de turnos cancelados/limitados jamas
+#   se publica.
+# - El razonamiento (thought) se DESCARTA siempre: ni se bufferiza ni se publica.
+# - Gate por harness: buzz-agent y hermes; claude-agent-acp/goose/codex publican
+#   fiablemente y duplicarian.
+diff --git a/crates/buzz-acp/src/acp.rs b/crates/buzz-acp/src/acp.rs
+index 3514580..c2760a3 100644
+--- a/crates/buzz-acp/src/acp.rs
++++ b/crates/buzz-acp/src/acp.rs
+@@ -215,6 +215,24 @@ pub struct AcpClient {
+     /// deltas. Both goose and buzz-agent emit this notification; goose gates
+     /// on client capability advertisement, buzz-agent emits unconditionally.
+     goose_usage: UsageTracker,
++    /// Accumulated `agent_message_chunk` text for the current turn. Local
++    /// models sometimes narrate a reply without ever running a publishing CLI
++    /// command; the pool uses this buffer to publish that narration as a
++    /// fallback so the turn's work is not lost.
++    turn_reply_text: String,
++    /// Whether any `tool_call` this turn invoked a Buzz CLI publishing
++    /// command (`buzz messages send`, canvas, notes, …). When true the
++    /// fallback publisher stays silent to avoid double-posting.
++    /// Reasoning (`agent_thought_chunk`) is deliberately NOT tracked: thought
++    /// text is never published — surfacing it floods channels with raw
++    /// chain-of-thought.
++    turn_saw_publish: bool,
++    /// toolCallIds of publishing commands seen this turn. If a later
++    /// `tool_call_update` reports one as failed, the publish claim is
++    /// withdrawn so the fallback can rescue the reply — invocation alone
++    /// does not prove the CLI actually published. No update = assume
++    /// success (the safe default against double-posting).
++    turn_publish_calls: std::collections::HashSet<String>,
+ }
+ 
+ /// Recursively merge `overlay` into `base`, with `overlay` winning on scalar/shape
+@@ -564,6 +582,9 @@ impl AcpClient {
+             steering_supported: false,
+             steer_rx: None,
+             goose_usage: UsageTracker::default(),
++            turn_reply_text: String::new(),
++            turn_saw_publish: false,
++            turn_publish_calls: std::collections::HashSet::new(),
+         })
+     }
+ 
+@@ -773,6 +794,9 @@ impl AcpClient {
+         // prompt so that any setup notifications recorded earlier are not
+         // misattributed to this turn.
+         self.goose_usage.begin_turn(session_id);
++        self.turn_reply_text.clear();
++        self.turn_saw_publish = false;
++        self.turn_publish_calls.clear();
+ 
+         self.last_prompt_id = Some(self.next_id);
+         let id = self.next_id;
+@@ -878,6 +902,18 @@ impl AcpClient {
+         self.goose_usage.take()
+     }
+ 
++    /// Consume the turn's unpublished narration, if any.
++    ///
++    /// Returns `Some(text)` only when the agent streamed message text this
++    /// turn but never ran a Buzz CLI publishing command — the case where a
++    /// local model "answers" without its answer ever reaching the channel.
++    /// Resets the per-turn tracking either way.
++    pub fn take_turn_reply(&mut self) -> Option<String> {
++        let saw_publish = std::mem::take(&mut self.turn_saw_publish);
++        let message = std::mem::take(&mut self.turn_reply_text);
++        resolve_turn_reply(saw_publish, &message)
++    }
++
+     /// Install a per-turn steer request channel for goose-native
+     /// non-cancelling mid-turn delivery.
+     ///
+@@ -1729,6 +1765,7 @@ impl AcpClient {
+             "agent_message_chunk" => {
+                 if let Some(text) = update["content"]["text"].as_str() {
+                     tracing::info!(target: "acp::stream", "{text}");
++                    self.turn_reply_text.push_str(text);
+                 }
+                 false
+             }
+@@ -1741,6 +1778,14 @@ impl AcpClient {
+                     .get("kind")
+                     .and_then(|v| v.as_str())
+                     .unwrap_or("unknown");
++                if let Some(cmd) = update["rawInput"]["command"].as_str() {
++                    if is_publishing_command(cmd) {
++                        self.turn_saw_publish = true;
++                        if let Some(id) = update.get("toolCallId").and_then(|v| v.as_str()) {
++                            self.turn_publish_calls.insert(id.to_string());
++                        }
++                    }
++                }
+                 tracing::info!(target: "acp::tool", "tool_call: {title} ({kind})");
+                 true
+             }
+@@ -1750,6 +1795,17 @@ impl AcpClient {
+                     .and_then(|v| v.as_str())
+                     .unwrap_or("?");
+                 let status = update.get("status").and_then(|v| v.as_str()).unwrap_or("?");
++                // Un comando publicador que REPORTA fallo no publico nada: se
++                // retira su pretension para que el fallback rescate el turno.
++                // OJO: buzz-agent representa el error como status "completed"
++                // + rawOutput.isError=true (M8) — el helper cubre ambas formas.
++                if tool_update_is_failure(status, update)
++                    && self.turn_publish_calls.remove(tool_id)
++                    && self.turn_publish_calls.is_empty()
++                {
++                    self.turn_saw_publish = false;
++                    tracing::info!(target: "acp::tool", "publishing command {tool_id} failed — fallback re-armed");
++                }
+                 tracing::info!(target: "acp::tool", "tool_call_update: {tool_id} → {status}");
+                 false
+             }
+@@ -1759,6 +1815,8 @@ impl AcpClient {
+             }
+             "agent_thought_chunk" => {
+                 if let Some(text) = update["content"]["text"].as_str() {
++                    // Reasoning is logged for debugging but NEVER buffered for
++                    // publication: thought text does not belong in channels.
+                     tracing::debug!(target: "acp::thought", "{text}");
+                 }
+                 false
+@@ -1963,6 +2021,96 @@ impl AcpClient {
+     }
+ }
+ 
++/// Whether a shell command invoked a Buzz CLI publishing subcommand.
++///
++/// Whitespace-normalized so `buzz   messages  send` (extra spaces, tabs,
++/// line-wrapped commands) still counts — a missed detection here means the
++/// fallback double-posts the agent's reply.
++fn is_publishing_command(cmd: &str) -> bool {
++    // Shell line-continuations (`\` + newline) become plain whitespace before
++    // token-normalization, so wrapped commands still match.
++    let unfolded = cmd.replace("\\\n", " ");
++    let normalized = unfolded.split_whitespace().collect::<Vec<_>>().join(" ");
++    if normalized.contains("buzz messages send")
++        || normalized.contains("buzz canvas set")
++        || normalized.contains("buzz notes set")
++        || normalized.contains("buzz notes rm")
++        || normalized.contains("buzz reactions add")
++    {
++        return true;
++    }
++    // `buzz-publicar` (helper del skill: publica ./respuesta.txt por stdin)
++    // solo cuenta en POSICION DE COMANDO — primer token, o precedido por un
++    // separador/wrapper de shell o una asignacion de entorno. Una mera
++    // mencion dentro de texto (`echo "usa buzz-publicar"`) NO cuenta: contarla
++    // silenciaria el fallback en un turno que jamas publico.
++    let tokens: Vec<&str> = normalized.split(' ').collect();
++    tokens.iter().enumerate().any(|(i, t)| {
++        let is_helper = *t == "buzz-publicar" || t.ends_with("/buzz-publicar");
++        if !is_helper {
++            return false;
++        }
++        // Camina hacia atras saltando tokens TRANSPARENTES en posicion de
++        // comando (asignaciones VAR=x y argumentos numericos de wrappers
++        // como `timeout 30`): lo que quede decide si es una invocacion.
++        let mut j = i;
++        while j > 0 {
++            let prev = tokens[j - 1];
++            if prev.contains('=') || prev.chars().all(|c| c.is_ascii_digit()) {
++                j -= 1;
++                continue;
++            }
++            return matches!(
++                prev,
++                "&&" | "||"
++                    | ";"
++                    | "|"
++                    | "&"
++                    | "then"
++                    | "else"
++                    | "do"
++                    | "("
++                    | "{"
++                    | "exec"
++                    | "sudo"
++                    | "env"
++                    | "command"
++                    | "nohup"
++                    | "timeout"
++            ) || prev.ends_with(';')
++                || prev.ends_with('|')
++                || prev.ends_with('&');
++        }
++        true
++    })
++}
++
++/// Whether a `tool_call_update` reports a FAILED tool run.
++///
++/// Two real shapes count as failure (review M8, PR #22): an explicit
++/// `status: "failed"|"error"`, and buzz-agent's normal error representation —
++/// `status: "completed"` with `rawOutput.isError: true` (see buzz-agent's
++/// `emit_completed`, which always reports "completed" and carries the error
++/// bit in the raw output).
++fn tool_update_is_failure(status: &str, update: &serde_json::Value) -> bool {
++    matches!(status, "failed" | "error") || update["rawOutput"]["isError"].as_bool() == Some(true)
++}
++
++/// Decision core of the fallback publisher, kept pure so the contract is
++/// unit-testable: a turn that already published via CLI never falls back,
++/// and thought text is not an input at all — the caller discards it.
++fn resolve_turn_reply(saw_publish: bool, message: &str) -> Option<String> {
++    if saw_publish {
++        return None;
++    }
++    let message = message.trim();
++    if message.is_empty() {
++        None
++    } else {
++        Some(message.to_string())
++    }
++}
++
+ /// Build `session/prompt` params from one or more text content blocks.
+ fn build_prompt_params(session_id: &str, prompt_blocks: &[&str]) -> serde_json::Value {
+     let blocks: Vec<serde_json::Value> = prompt_blocks
+@@ -2237,6 +2385,135 @@ fn configure_no_window(cmd: &mut tokio::process::Command) {
+ mod tests {
+     use super::*;
+ 
++    /// Contract of the fallback publisher (review round 2): a turn that
++    /// already ran a publishing CLI command must NOT fall back, even if it
++    /// also streamed message text — otherwise the reply would duplicate.
++    #[test]
++    fn turn_reply_suppressed_when_cli_already_published() {
++        assert_eq!(resolve_turn_reply(true, "hola equipo"), None);
++        assert_eq!(resolve_turn_reply(true, ""), None);
++    }
++
++    /// A turn whose only output was reasoning (thought) yields None: the
++    /// caller drops thought before calling, so message arrives empty.
++    #[test]
++    fn turn_reply_none_when_only_thought() {
++        assert_eq!(resolve_turn_reply(false, ""), None);
++        assert_eq!(resolve_turn_reply(false, "   \n  "), None);
++    }
++
++    /// Message streamed but never published via CLI → falls back, trimmed.
++    #[test]
++    fn turn_reply_falls_back_on_unpublished_message() {
++        assert_eq!(
++            resolve_turn_reply(false, "  la respuesta  "),
++            Some("la respuesta".to_string())
++        );
++    }
++
++    /// M8 (PR #22): failure detection must cover BOTH real shapes — explicit
++    /// failed/error status, and buzz-agent's `completed` + rawOutput.isError.
++    #[test]
++    fn tool_update_failure_covers_both_real_shapes() {
++        // Forma real de buzz-agent (emit_completed) con error del CLI:
++        let completed_con_error = serde_json::json!({
++            "sessionUpdate": "tool_call_update",
++            "toolCallId": "call-1",
++            "status": "completed",
++            "content": [{ "type": "content", "content": { "type": "text", "text": "error: relay unreachable" } }],
++            "rawOutput": { "isError": true },
++        });
++        assert!(tool_update_is_failure("completed", &completed_con_error));
++
++        // Forma real de exito: completed + isError:false NO es fallo.
++        let completed_ok = serde_json::json!({
++            "sessionUpdate": "tool_call_update",
++            "toolCallId": "call-2",
++            "status": "completed",
++            "content": [{ "type": "content", "content": { "type": "text", "text": "{\"accepted\":true}" } }],
++            "rawOutput": { "isError": false },
++        });
++        assert!(!tool_update_is_failure("completed", &completed_ok));
++
++        // Estados explicitos y neutros:
++        assert!(tool_update_is_failure("failed", &serde_json::json!({})));
++        assert!(tool_update_is_failure("error", &serde_json::json!({})));
++        assert!(!tool_update_is_failure(
++            "in_progress",
++            &serde_json::json!({})
++        ));
++        assert!(!tool_update_is_failure("completed", &serde_json::json!({})));
++    }
++
++    /// Publishing-command detection is whitespace-normalized: a miss here
++    /// means the fallback double-posts (review round: CodeRabbit PR #22).
++    #[test]
++    fn publishing_command_detection_survives_whitespace() {
++        assert!(is_publishing_command(
++            "buzz messages send --channel x --content y"
++        ));
++        assert!(is_publishing_command("buzz   messages \t send --channel x"));
++        assert!(is_publishing_command(
++            "cd /tmp && buzz \\\n  messages \\\n  send --channel x"
++        ));
++        assert!(is_publishing_command("buzz canvas set --channel x"));
++        assert!(is_publishing_command("buzz notes set clave valor"));
++        assert!(is_publishing_command("buzz notes rm viejo-slug"));
++        // get/ls son lecturas; `create` no existe en el CLI del pin → false.
++        assert!(!is_publishing_command("buzz notes get"));
++        assert!(!is_publishing_command("buzz notes ls"));
++        assert!(!is_publishing_command("buzz notes create"));
++        assert!(is_publishing_command("buzz reactions add -e ok"));
++        assert!(!is_publishing_command("buzz messages get --channel x"));
++        assert!(!is_publishing_command("echo hola"));
++        assert!(!is_publishing_command(""));
++    }
++
++    /// `buzz-publicar` (skill helper) counts as publishing ONLY in command
++    /// position; a mention inside text must not silence the fallback, and a
++    /// missed detection would double-post every helper-published turn
++    /// (security round M6).
++    #[test]
++    fn helper_publicar_counts_only_in_command_position() {
++        // Command position: bare, path-qualified, after separators/wrappers.
++        assert!(is_publishing_command("buzz-publicar 1111-2222"));
++        assert!(is_publishing_command(
++            "/usr/local/bin/buzz-publicar 1111-2222"
++        ));
++        assert!(is_publishing_command("cd /var/lib/x && buzz-publicar abc"));
++        assert!(is_publishing_command("cd /var/lib/x; buzz-publicar abc"));
++        assert!(is_publishing_command(
++            "BUZZ_RELAY_URL=ws://x buzz-publicar abc"
++        ));
++        assert!(is_publishing_command("timeout 30 buzz-publicar abc"));
++        // Mention in text, NOT an invocation:
++        assert!(!is_publishing_command(
++            "echo \"usa buzz-publicar para publicar\""
++        ));
++        assert!(!is_publishing_command("echo usa buzz-publicar al final"));
++        assert!(!is_publishing_command("cat docs/buzz-publicar.md"));
++        // Lookalikes are not the helper:
++        assert!(!is_publishing_command("buzz-publicar-viejo abc"));
++    }
++
++    /// Transition contract with the helper (M6): success silences the
++    /// fallback; buzz-agent's real failure shape (completed + isError:true)
++    /// withdraws the claim so the fallback rescues the turn.
++    #[test]
++    fn helper_publicar_failure_shape_rearms_fallback() {
++        assert!(is_publishing_command("buzz-publicar 1111-2222"));
++        // Failure exactly as buzz-agent reports it for a failed helper run:
++        let update: serde_json::Value = serde_json::from_str(
++            r#"{"rawOutput": {"isError": true, "output": "buzz-publicar: envio fallido"}}"#,
++        )
++        .unwrap();
++        assert!(tool_update_is_failure("completed", &update));
++        // Successful helper run: claim stands, no fallback.
++        let ok: serde_json::Value =
++            serde_json::from_str(r#"{"rawOutput": {"isError": false}}"#).unwrap();
++        assert!(!tool_update_is_failure("completed", &ok));
++    }
++
+     #[test]
+     fn stop_reason_parses_all_known_values() {
+         assert_eq!(StopReason::from_str("end_turn"), Some(StopReason::EndTurn));
+diff --git a/crates/buzz-acp/src/pool.rs b/crates/buzz-acp/src/pool.rs
+index 038f8a7..eac29fc 100644
+--- a/crates/buzz-acp/src/pool.rs
++++ b/crates/buzz-acp/src/pool.rs
+@@ -2124,6 +2124,24 @@ pub async fn run_prompt_task(
+             )
+             .await;
+ 
++            // Fallback publisher: local models (buzz-agent/hermes harnesses)
++            // sometimes narrate a reply without ever running `buzz messages
++            // send`, so the turn's answer never reaches the channel. Publish
++            // the narration on the agent's behalf. Gated by harness — richer
++            // harnesses like claude-agent-acp publish reliably and their
++            // narration would be a duplicate — and by stop reason: a
++            // cancelled/limited turn may hold partial narration the agent
++            // never meant to send.
++            if fallback_publish_enabled(&ctx.harness_name)
++                && matches!(stop_reason, crate::acp::StopReason::EndTurn)
++            {
++                if let (Some(reply), PromptSource::Channel(cid)) =
++                    (agent.acp.take_turn_reply(), &source)
++                {
++                    publish_fallback_reply(&ctx, *cid, &reply).await;
++                }
++            }
++
+             send_prompt_result(
+                 &result_tx,
+                 &turn_id,
+@@ -3409,6 +3427,85 @@ fn acp_stop_to_core(r: &StopReason) -> buzz_core::agent_turn_metric::StopReason
+     }
+ }
+ 
++/// Harness gate for the fallback publisher.
++///
++/// Local-model harnesses (buzz-agent, hermes-acp) may narrate a reply without
++/// running a publishing CLI command; richer harnesses (claude-agent-acp,
++/// goose, codex) publish reliably, and a fallback there would duplicate.
++fn fallback_publish_enabled(harness_name: &str) -> bool {
++    harness_name.contains("buzz-agent") || harness_name.contains("hermes")
++}
++
++#[cfg(test)]
++mod fallback_gate_tests {
++    use super::fallback_publish_enabled;
++
++    #[test]
++    fn enabled_for_local_model_harnesses() {
++        assert!(fallback_publish_enabled("buzz-agent"));
++        assert!(fallback_publish_enabled("hermes-acp"));
++        assert!(fallback_publish_enabled("hermes-agent"));
++    }
++
++    #[test]
++    fn disabled_for_rich_harnesses() {
++        assert!(!fallback_publish_enabled("claude-agent-acp"));
++        assert!(!fallback_publish_enabled("goose"));
++        assert!(!fallback_publish_enabled("codex"));
++        assert!(!fallback_publish_enabled(""));
++    }
++}
++
++/// Publish a turn's unpublished narration as a plain channel message.
++///
++/// Companion to [`AcpClient::take_turn_reply`]: when a buzz-agent turn ends
++/// with streamed text but no publishing CLI command, this posts that text so
++/// the reply is not silently lost.
++async fn publish_fallback_reply(ctx: &PromptContext, channel_id: uuid::Uuid, text: &str) {
++    use nostr::{EventBuilder, Kind, Tag};
++    const MAX_FALLBACK_BYTES: usize = 4000;
++    let mut body = text.to_string();
++    if body.len() > MAX_FALLBACK_BYTES {
++        let mut cut = MAX_FALLBACK_BYTES;
++        while !body.is_char_boundary(cut) {
++            cut -= 1;
++        }
++        body.truncate(cut);
++        body.push('…');
++    }
++    let h_tag = match Tag::parse(["h", &channel_id.to_string()]) {
++        Ok(t) => t,
++        Err(e) => {
++            tracing::warn!(target: "pool::fallback", "h tag build failed: {e}");
++            return;
++        }
++    };
++    let event = match EventBuilder::new(Kind::Custom(9), body)
++        .tags([h_tag])
++        .sign_with_keys(&ctx.agent_keys)
++    {
++        Ok(e) => e,
++        Err(e) => {
++            tracing::warn!(target: "pool::fallback", "fallback reply sign failed: {e}");
++            return;
++        }
++    };
++    match tokio::time::timeout(
++        std::time::Duration::from_secs(5),
++        ctx.rest_client.submit_event(&event),
++    )
++    .await
++    {
++        Ok(Ok(_)) => {
++            tracing::info!(target: "pool::fallback", %channel_id, "published fallback reply")
++        }
++        Ok(Err(e)) => {
++            tracing::warn!(target: "pool::fallback", "fallback reply publish failed: {e}")
++        }
++        Err(_) => tracing::warn!(target: "pool::fallback", "fallback reply publish timed out"),
++    }
++}
++
+ /// Best-effort: build and publish a `kind:44200` NIP-AM agent turn metric event.
+ ///
+ /// Does nothing when `usage` is `None` (goose emitted no usage notification

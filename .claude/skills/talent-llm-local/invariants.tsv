@@ -1,0 +1,13 @@
+INV-LL-001	SKILL.md	MUST	exactamente 2 GPU	M1-puerta-ligada-a-TP2
+INV-LL-002	scripts/00-config.sh	MUST	MIN_VRAM_POR_GPU_MIB	umbrales-en-MiB-no-GiB
+INV-LL-003	assets/vllm.service.tmpl	MUST_NOT	^[^#]*--api-key	M4-claves-fuera-de-argv
+INV-LL-004	scripts/verificar.sh	MUST	linea de arranque	M4-se-comprueba-activamente
+INV-LL-005	SKILL.md	MUST	ANTHROPIC_AUTH_TOKEN	prohibicion-que-salva-la-suscripcion
+INV-LL-006	scripts/sonda.sh	MUST	ubuntu	M7-puerta-de-distribucion
+INV-LL-007	assets/vllm.service.tmpl	MUST	--max-num-seqs	sin-el-no-arranca-bloques-mamba
+INV-LL-008	SKILL.md	MUST	NO VERIFICADA	D6-lo-no-rodado-no-se-borra-en-silencio
+INV-LL-009	assets/token-meter.py	MUST	AUTORIZADAS	M4-el-medidor-autentica
+INV-LL-010	scripts/montar.sh	MUST	ejecc	M6-fallo-cerrado
+INV-LL-011	scripts/montar.sh	MUST	ALIAS_MAP='	source-rompe-sin-comillas
+INV-LL-012	tests/probar-sonda.sh	MUST	TOTAL_ESPERADO=22	sonda-fixtures-autoconteo-8041
+INV-LL-013	tests/casos-sonda.tsv	MUST	disco bajo el umbral	sonda-disco-fail-closed-8041

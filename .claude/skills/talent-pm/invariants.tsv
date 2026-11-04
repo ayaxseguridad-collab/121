@@ -1,0 +1,59 @@
+INV-PM-001	SKILL.md	MUST	Sonnet vigente	politica-rodante-pm
+INV-PM-002	SKILL.md	MUST	capa META	jerarquia-pm-contraparte-ceo-TAL-3650
+INV-PM-003	references/04-gobernanza-del-lead.md	MUST	UNA pregunta por turno	regla-una-pregunta-por-turno
+INV-PM-004	references/04-gobernanza-del-lead.md	MUST	texto listo para pegar	relevo-verbatim-del-lead
+INV-PM-005	references/05-incidentes-y-huellas.md	MUST	huella que no reproduces	regla-de-oro-huella-reproducida
+INV-PM-006	references/05-incidentes-y-huellas.md	MUST	ALTO y petición	material-ausente-jamas-reconstruir-incidente-2026-07-28
+INV-PM-007	references/03-fronteras-bilaterales.md	MUST	estable-aditiv	contratos-aditivos-con-preaviso
+INV-PM-008	references/03-fronteras-bilaterales.md	MUST	[Cc]orte duro	ventanas-dimensionadas-con-colchon
+INV-PM-009	references/02-pre-revision-y-dictamenes.md	MUST	independiente ANTES de todo dictamen	dictamen-solo-con-medida-propia
+INV-PM-010	references/06-interfaz-ceo-pm.md	MUST	no puede ser un freno	doctrina-lead-2026-07-30-no-freno
+INV-PM-011	references/06-interfaz-ceo-pm.md	MUST_NOT	El PM supervisa la ejecuci	anti-patron-pm-vigia-jamas-prescrito
+INV-PM-012	references/06-interfaz-ceo-pm.md	MUST	capacidad disponible que comunica	M5-capacidad-dinamica-del-ceo-TAL-3650
+INV-PM-013	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-PM-014	references/04-gobernanza-del-lead.md	MUST_NOT	[Cc]loses	regimen-referencia-sin-autocierre
+INV-PM-015	references/04-gobernanza-del-lead.md	MUST	cierre de issues lo decide el lead	cierre-decision-del-lead
+INV-PM-016	references/04-gobernanza-del-lead.md	MUST	SIN reversión automática	M3-secuencia-post-squash-sin-revert-TAL-3650
+INV-PM-017	references/07-regimen-de-caudal.md	MUST	métrica de fallo DEL PM	adjudicacion-lead-2026-07-30-no-ralentizar
+INV-PM-018	references/07-regimen-de-caudal.md	MUST	frontera escrita y cerrada de delegación	M8a-solo-espera-lo-reservado
+INV-PM-019	references/07-regimen-de-caudal.md	MUST	ANTES de ese paso	M13-detencion-pre-paso-reservado
+INV-PM-020	references/07-regimen-de-caudal.md	MUST	jamás las firmas	M11-rafaga-no-fusiona-firmas
+INV-PM-021	references/07-regimen-de-caudal.md	MUST	referencia histórica, nunca autoridad final	M14-baseline-no-es-autoridad
+INV-PM-022	references/06-interfaz-ceo-pm.md	MUST	ni vigilando ni tardando	dos-modos-de-frenar
+INV-PM-023	references/07-regimen-de-caudal.md	MUST	jamás sustituye un GO reservado al lead	M8b-autoridad-de-la-frontera-no-sustituible
+INV-PM-024	references/07-regimen-de-caudal.md	MUST	se verifica antes	checklist-precargado-pre-evento
+INV-PM-025	references/07-regimen-de-caudal.md	MUST	declara su régimen	disponibilidad-declarada-por-adelantado
+INV-PM-026	references/06-interfaz-ceo-pm.md	MUST	disparadores por evento	triggers-armados-vs-vigia
+INV-PM-027	references/07-regimen-de-caudal.md	MUST	sigue vigente en el conjunto vivo	M16-barrera-de-vigencia-pre-firma
+INV-PM-028	references/07-regimen-de-caudal.md	MUST	sostiene el caudal entrante sin formar cola	M15-elegibilidad-relevo-al-caer
+INV-PM-029	references/08-applies-y-cuadres.md	MUST	cita el par inmutable	praxis-una-firma-por-entrada
+INV-PM-030	references/02-pre-revision-y-dictamenes.md	MUST	transición observada	falsos-verdes-de-review
+INV-PM-031	references/08-applies-y-cuadres.md	MUST	por CONJUNTOS y por NOMBRE	leccion-nombre-de-la-vecina
+INV-PM-032	references/08-applies-y-cuadres.md	MUST	UNA instantánea consistente	CR-PR20-barrera-de-version-atomica
+INV-PM-033	references/08-applies-y-cuadres.md	MUST	huérfano-en-tránsito	ventana-de-propagacion-no-es-incidente
+INV-PM-034	references/08-applies-y-cuadres.md	MUST	se reproducen, no se cotejan	desviacion-copia-derivada
+INV-PM-035	references/08-applies-y-cuadres.md	MUST	literal del EFECTO	sondeo-efecto-no-simbolo
+INV-PM-036	references/08-applies-y-cuadres.md	MUST	transacción abortada	correccion-administrativa-dry-run
+INV-PM-037	references/08-applies-y-cuadres.md	MUST	doble firma	correccion-administrativa-doble-firma
+INV-PM-038	references/08-applies-y-cuadres.md	MUST	jamás la cabeza remota móvil	M12-promocion-contra-sha-inmutable
+INV-PM-039	references/08-applies-y-cuadres.md	MUST	entrega no terminada	promocion-no-verificada-fail-closed
+INV-PM-040	references/01-intake-y-carga.md	MUST	se verifica, no se asume	consistencia-eventual-de-relaciones
+INV-PM-041	references/02-pre-revision-y-dictamenes.md	MUST	radio medido	cierre-defecto-conocido-radio
+INV-PM-042	references/02-pre-revision-y-dictamenes.md	MUST	qué NO se verificó	nota-de-metodo-en-dictamenes
+INV-PM-043	references/08-applies-y-cuadres.md	MUST	enumera todos los pares	M11-unidad-atomica-de-firma
+INV-PM-044	references/08-applies-y-cuadres.md	MUST	descendiente de S	M12-promocion-descendiente-verificado
+INV-PM-045	references/08-applies-y-cuadres.md	MUST	promociona automáticamente	M13-declarar-promocion-al-merge
+INV-PM-046	references/08-applies-y-cuadres.md	MUST	antes de cualquier promoción que dependa de él	M13-apply-precede-promocion-dependiente
+INV-PM-047	references/08-applies-y-cuadres.md	MUST	compare-and-set	M14-guarda-atomica-cas
+INV-PM-048	references/08-applies-y-cuadres.md	MUST	número exacto de filas	M14-cardinalidad-exacta-o-alto
+INV-PM-049	references/02-pre-revision-y-dictamenes.md	MUST	invalida la review	M17-review-ligada-al-material
+INV-PM-050	references/08-applies-y-cuadres.md	MUST	no constituyen una instantánea	M18-doble-lectura-insuficiente
+INV-PM-051	references/02-pre-revision-y-dictamenes.md	MUST	las tres condiciones juntas	M10-condiciones-inseparables-cierre
+INV-PM-052	references/02-pre-revision-y-dictamenes.md	MUST	con qué comando/fuente	M10-nota-metodo-comando-fuente
+INV-PM-053	references/08-applies-y-cuadres.md	MUST	censo de entornos	contrato-promocion-censo-entornos
+INV-PM-054	references/08-applies-y-cuadres.md	MUST	ALTO y expediente	huerfano-no-convergido-al-cierre
+INV-PM-055	references/08-applies-y-cuadres.md	MUST	jamás sustituye ese recibo	M14-cardinalidad-del-recibo-de-mutacion
+INV-PM-056	references/01-intake-y-carga.md	MUST	hasta observar la transición esperada	CR-PR21-flip-reintentos-acotados
+INV-PM-057	references/08-applies-y-cuadres.md	MUST	contenido en la rama principal protegida	CR-PR21-descendiente-solo-por-circuito
+INV-PM-058	references/02-pre-revision-y-dictamenes.md	MUST	resultado aprobatorio de la autoridad requerida	CR-PR21-review-aprobatoria
+INV-PM-059	references/08-applies-y-cuadres.md	MUST	sin resultado aprobatorio no hay apply	CR-PR21-apply-solo-aprobado

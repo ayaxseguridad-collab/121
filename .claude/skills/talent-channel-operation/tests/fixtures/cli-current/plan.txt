@@ -1,0 +1,8 @@
+❯ /effort xhigh
+  ⎿  Set effort level to xhigh (saved as your default for new sessions): Deeper reasoning than high, just
+     below maximum (on supported models)
+────────────────────────────────────────────────────────�
+❯ 
+────────────────────────────────────────────────────────�
+  [Opus 5.5] ctx: N/A
+  ⏸ plan mode on (shift+tab to cycle) · ← for agents

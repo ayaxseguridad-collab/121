@@ -1,0 +1,50 @@
+ ▐▛███▛█   Claude Code v2.1.289
+▝▜██████▀  Opus 5.5 with xhigh effort · Claude API
+ ▝▝   ▝▝   ~/Talent-Agents
+
+▎ Get to finished work sooner with Opus 5.5. Switch anytime with /model.
+
+❯ /clear
+
+❯ Ejecuta sleep 40 con la herramienta Bash y al terminar responde solo: listo.
+
+✽ Schlepping…
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Sonnet 5.5] ctx: N/A
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

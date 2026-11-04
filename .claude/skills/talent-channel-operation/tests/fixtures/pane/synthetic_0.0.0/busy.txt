@@ -1,0 +1,7 @@
+salida previa del agente (fixture SINTETICO, no es una captura real)
+· trabajando en la tarea
+
+╭──────────────────────────────────────╮
+│ >                                    │
+╰──────────────────────────────────────╯
+  esc to interrupt · bypass permissions on

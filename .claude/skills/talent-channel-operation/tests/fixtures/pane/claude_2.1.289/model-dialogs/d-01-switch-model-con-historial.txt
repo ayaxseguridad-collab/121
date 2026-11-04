@@ -1,0 +1,50 @@
+  transportan datos de un continente a otro en haces de luz. Las pantallas de teléfonos, con vidrios
+  reforzados químicamente, cabe decir que se llevan en el bolsillo de miles de millones de personas.
+
+  Hoy el vidrio también se asocia a la sostenibilidad, porque se recicla indefinidamente sin perder calidad.
+  Un material descubierto en la prehistoria sigue siendo, cinco mil años después, una pieza clave de la
+  ciencia, la arquitectura y la vida diaria.                                                                  
+
+✻ Cogitated for 19s · done 7:37 AM                                                                            
+                                                              
+❯ Responde solo con la palabra: recibido-humo                                                                 
+
+● recibido-humo                                                                                               
+                      
+✻ Cogitated for 1s · done 11:38 AM                                                                            
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Sonnet 5.5
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Sonnet 5.5
+
+❯ /model                                                                                                      
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Switch model?                                                                                             
+  Your next response will be slower and use more tokens                                                  
+                                                                                                          
+  This conversation is cached for the current model. Switching to Opus 5.5 means the full history gets      
+  re-read on your next message.                                                              
+                                                                                                            
+  ❯ 1. Yes, switch to Opus 5.5                                                                     
+    2. No, go back                                                                                          
+                                                                                                     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

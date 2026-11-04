@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Freno de emergencia: para TODOS los agentes de Buzz de golpe.
+# No depende del relay, del LLM ni de que los agentes obedezcan.
+# Deriva la lista de unidades en vivo: cubre las que existan (fenix, hermes@N...).
+set -u
+mapfile -t UNITS < <(systemctl list-units --all --plain --no-legend 'buzz-claude.service' 'buzz-hermes@*.service' 2>/dev/null | awk '{print $1}' | sed '/^$/d')
+if [ "${#UNITS[@]}" -eq 0 ]; then
+  echo "no hay unidades buzz-claude/buzz-hermes@ definidas" >&2
+  exit 1
+fi
+case "${1:-stop}" in
+  stop)
+    # El rc del stop SE MIDE: reportar "PARADOS" con agentes vivos es el peor
+    # fallo posible de un freno de emergencia. Verificacion por estado real.
+    sudo systemctl stop "${UNITS[@]}"; rc=$?
+    vivos=()
+    for u in "${UNITS[@]}"; do
+      [ "$(systemctl is-active "$u")" = "active" ] && vivos+=("$u")
+    done
+    if [ "$rc" -ne 0 ] || [ "${#vivos[@]}" -gt 0 ]; then
+      echo "FALLO DE PARADA (rc=$rc) — SIGUEN VIVOS: ${vivos[*]:-ninguno-pero-stop-fallo}" >&2
+      exit 1
+    fi
+    echo "AGENTES PARADOS: ${UNITS[*]}";;
+  start)  sudo systemctl start "${UNITS[@]}";  echo "agentes arrancados: ${UNITS[*]}";;
+  status) for u in "${UNITS[@]}"; do printf '%s %s\n' "$u" "$(systemctl is-active "$u")"; done;;
+  *) echo "uso: buzz-panic [stop|start|status]" >&2; exit 1;;
+esac
