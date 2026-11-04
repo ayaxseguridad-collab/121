@@ -570,6 +570,16 @@ function soloAdminSi(condicion, que) {
   if (condicion && pideIngreso() && !esAdmin) throw new Error(`${que} lo hace el administrador`);
 }
 
+// Lo que se puede cambiar por «POST /api/config» (GAS-400). Las secretas no
+// tienen pantalla: las carga el administrador. Las horas van de 0 a 23.
+const CLAVES_CONFIG = new Set([
+  "horas_u1", "horas_u3", "horas_u4", "hora_fin_dia", "pct_preaviso", "url_panel",
+  "modo_envio", "pedir_ingreso", "avisar_nuevo", "avisar_por_vencer", "avisar_vencido",
+  "area_atcl", "hora_resumen", "silencio_desde", "silencio_hasta",
+]);
+const CLAVES_SOLO_ADMIN = new Set(["pin_cierre", "resend_key", "correo_desde", "ultramsg_token", "ultramsg_instancia"]);
+const CLAVES_HORA = new Set(["hora_resumen", "silencio_desde", "silencio_hasta"]);
+
 const anotar = (itemId, texto, ts = Date.now()) =>
   db.prepare("INSERT INTO movimientos (item_id, texto, ts, usuario) VALUES (?,?,?,?)")
     .run(itemId, texto, ts, usuarioEnCurso);
@@ -1786,6 +1796,15 @@ const rutas = {
   },
 
   "POST /api/config": (body) => {
+    // Solo se guardan las claves conocidas (GAS-400): antes entraba cualquiera,
+    // y Atención podía cambiar la clave de cierre o la del correo. Se revisa
+    // todo antes de guardar nada: o va el cambio entero o no va.
+    for (const k of Object.keys(body)) {
+      if (!CLAVES_CONFIG.has(k) && !CLAVES_SOLO_ADMIN.has(k)) throw new Error("Ese ajuste no se puede cambiar desde acá");
+      soloAdminSi(CLAVES_SOLO_ADMIN.has(k), "Cambiar las claves y el correo de envío");
+      if (CLAVES_HORA.has(k) && !/^(1?\d|2[0-3])$/.test(String(body[k])))
+        throw new Error("La hora tiene que ser un número entero de 0 a 23");
+    }
     soloAdminSi("pedir_ingreso" in body, "Encender o apagar el ingreso");
     soloAdminSi("modo_envio" in body, "Cambiar el modo de envío");
     if (body.pedir_ingreso === "1" &&
