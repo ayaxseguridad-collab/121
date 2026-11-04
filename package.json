@@ -1,0 +1,17 @@
+{
+  "name": "crm-atencion",
+  "version": "3.2.1",
+  "private": true,
+  "main": "server.js",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test tests/altas.test.cjs",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "qrcode": "^1.5.4"
+  }
+}

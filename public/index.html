@@ -1,0 +1,2456 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM Atención al Cliente</title>
+<style>
+  /* Los colores y la tipografía salen de design.md, que sale del sitio de Ayax.
+     El naranja de marca #FF6700 no se usa acá: sobre blanco da 2,9:1 de
+     contraste. Va solo en el logo. El de interfaz es #D36922, el mismo tono. */
+  @font-face { font-family: "Inter"; src: url("Inter.ttf") format("truetype");
+               font-weight: 100 900; font-display: swap; }
+  :root {
+    --fondo: #0E0F11; --panel: #16181B; --panel2: #1C1F23; --borde: #2A2E33;
+    --texto: #ECEDEE; --suave: #9BA1A8; --tenue: #71777E;
+    --naranja: #D36922; --naranja-hond: #B1571B;
+    --rojo: #EF4444; --amarillo: #FBBF24; --verde: #22C55E; --azul: #38BDF8; --gris: #71777E;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto);
+         font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px;
+         -webkit-font-smoothing: antialiased; }
+  header { display: flex; align-items: center; gap: 14px; padding: 13px 20px;
+           border-bottom: 1px solid var(--borde); position: sticky; top: 0; background: var(--fondo); z-index: 5; }
+  /* z-index por encima de la tapa del ingreso: la primera pantalla que se ve es
+     esa, y es justo donde importa saber que uno no está en el sistema de verdad. */
+  #bandaCopia { background: #FBBF24; color: #1a1a1a; text-align: center;
+                padding: 6px 14px; font-size: 12.5px; font-weight: 700;
+                letter-spacing: .01em; position: fixed; top: 0; left: 0; right: 0;
+                z-index: 60; }
+  #bandaCopia:not(.oculta) ~ #tapa { padding-top: 30px; }
+  header .logo { height: 24px; flex: none; }
+  header .barrita { width: 1px; height: 22px; background: var(--borde); flex: none; }
+  h1 { font-size: 15px; margin: 0; letter-spacing: .02em; font-weight: 600; }
+  /* El buscador. Va en la barra y no dentro de una pestaña porque sirve para lo
+     contrario: llegar a un pedido sin saber en qué pestaña está. Busca en todos,
+     abiertos y cerrados. */
+  .buscador { position: relative; margin-left: auto; }
+  .buscador input { background: var(--panel); border: 1px solid var(--borde);
+                    color: var(--texto); border-radius: 8px; padding: 7px 12px;
+                    font-size: 13px; width: 190px; transition: width .15s; }
+  .buscador input:focus { width: 260px; outline: none; border-color: var(--acento); }
+  .resultados { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20;
+                background: var(--panel); border: 1px solid var(--borde);
+                border-radius: 10px; width: 420px; max-height: 60vh; overflow-y: auto;
+                box-shadow: 0 12px 32px #0008; }
+  .resultados .r { padding: 9px 13px; cursor: pointer; border-bottom: 1px solid var(--borde); }
+  .resultados .r:last-child { border-bottom: 0; }
+  .resultados .r:hover, .resultados .r.sel { background: var(--fondo); }
+  .resultados .r b { font-size: 13px; }
+  .resultados .r .det { font-size: 11.5px; color: var(--suave); margin-top: 2px; }
+  .resultados .r .aj { color: #7DD3FC; }
+  .resultados .nada { padding: 14px; color: var(--suave); font-size: 13px; }
+
+  nav { display: flex; gap: 4px; }
+  nav button { background: none; border: 1px solid transparent; color: var(--suave);
+               padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  nav button:hover { color: var(--texto); }
+  nav button.activa { background: var(--panel); border-color: var(--borde); color: #fff; }
+  main { padding: 20px; max-width: 1200px; margin: 0 auto; }
+  /* !important porque hay cosas con display puesto por su id, y el id le gana a
+     la clase: sin esto quedaban a la vista aunque se las mandara a esconder. */
+  .oculta { display: none !important; }
+  .badge { background: var(--naranja); color: #fff; border-radius: 20px; padding: 1px 7px;
+           font-size: 11px; font-weight: 800; margin-left: 5px; font-family: ui-monospace, monospace; }
+
+  /* Las dos filas de filtros usan la misma grilla, así todos los botones
+     quedan exactamente del mismo tamaño. */
+  .filtros { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+             gap: 10px; margin-bottom: 10px; }
+  .filtros:last-of-type { margin-bottom: 20px; }
+  .btnf { background: var(--panel); border: 1px solid var(--borde); color: var(--suave);
+          height: 58px; padding: 0 14px; border-radius: 10px; cursor: pointer;
+          font-family: inherit; font-size: 13px; text-align: left;
+          display: flex; align-items: center; justify-content: space-between; gap: 8px;
+          transition: border-color .12s, color .12s; }
+  .btnf:hover { border-color: var(--tenue); color: var(--texto); }
+  .btnf.sel { border-color: var(--naranja); color: #fff; background: var(--panel2); }
+  .btnf .rot { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; line-height: 1.25; }
+  .btnf .n { font-size: 24px; font-weight: 700; font-family: ui-monospace, monospace; line-height: 1; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+       color: var(--tenue); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--borde); }
+  td { padding: 10px; border-bottom: 1px solid var(--borde); vertical-align: middle; }
+  tr:hover td { background: #ffffff08; }
+  .num { font-family: ui-monospace, monospace; font-size: 12px; color: var(--suave); }
+  /* La versión, chiquita al lado del título: sirve para saber qué hay corriendo
+     cuando alguien avisa que algo no anda, sin robarle atención al panel. */
+  .version { font-family: ui-monospace, monospace; font-size: 11px; color: var(--tenue);
+             font-weight: 400; margin-left: 8px; letter-spacing: 0; }
+  .restante { font-family: ui-monospace, monospace; font-weight: 700; font-size: 15px; white-space: nowrap; }
+  .punto { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: middle; }
+  .urg { display: inline-block; width: 26px; height: 26px; line-height: 26px; text-align: center;
+         border-radius: 7px; font-weight: 800; font-size: 14px; }
+  /* El color sale de la urgencia: 1 y 2 rojo, 3 y 4 amarillo, 5 verde.
+     Fondo lleno para que se vea de lejos. */
+  .urg { color: #0E0F11; }
+  .u1, .u2 { background: var(--rojo); }
+  .u3, .u4 { background: var(--amarillo); }
+  .u5      { background: var(--verde); }
+
+  select, input, textarea, button.accion {
+    background: var(--fondo); border: 1px solid var(--borde); color: var(--texto);
+    padding: 8px 10px; border-radius: 8px; font-size: 13px; font-family: inherit; }
+  select:focus, input:focus, textarea:focus { outline: none; border-color: var(--naranja); }
+  .mini { padding: 4px 8px; font-size: 12px; }
+  /* Un pedido que sigue en "Nuevo" es uno que nadie tomó todavía: se marca */
+  select.pendiente { border-color: var(--naranja); color: #fff; }
+  button.accion { cursor: pointer; }
+  button.accion:hover { border-color: var(--tenue); }
+  button.primario { background: var(--naranja); border-color: var(--naranja); color: #fff; font-weight: 600; }
+  button.primario:hover { background: var(--naranja-hond); border-color: var(--naranja-hond); }
+
+  form.alta { background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 20px; max-width: 620px; }
+  .campo { margin-bottom: 14px; }
+  .campo label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+                 color: var(--suave); margin-bottom: 5px; }
+  .campo input, .campo select, .campo textarea { width: 100%; }
+  .fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .aviso { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; }
+  .aviso.solo-uno { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+    background: #38BDF818; border: 1px solid #38BDF850; color: #7DD3FC; }
+  .ok { background: #22c55e18; border: 1px solid #22c55e50; color: #86efac; }
+  .error { background: #ef444418; border: 1px solid #ef444450; color: #fca5a5; }
+  .aviso.parecido { background: #f59e0b18; border: 1px solid #f59e0b50; color: var(--texto); }
+  .aviso.parecido .ped { border-top: 1px solid #f59e0b30; padding: 8px 0; }
+  .aviso.parecido .ped:first-of-type { border-top: 0; }
+  .aviso.parecido .botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+  .conf { background: var(--panel); border: 1px solid var(--borde); border-radius: 12px;
+          padding: 16px 18px; margin-bottom: 14px; }
+  .conf h3 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--suave); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .chip { background: var(--fondo); border: 1px solid var(--borde); border-radius: 20px;
+          padding: 5px 10px 5px 12px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+  .chip button { background: none; border: none; color: var(--tenue); cursor: pointer; font-size: 15px; line-height: 1; padding: 0; }
+  .chip button:hover { color: var(--rojo); }
+  .chip button[data-renombrar]:hover { color: var(--texto, inherit); }
+  .vacio { color: var(--tenue); text-align: center; padding: 40px; }
+  /* Un ancho fijo para todos los sectores: si cada tabla reparte el suyo, el
+     teléfono de un grupo cae en una columna y el del otro en otra. */
+  /* Los números de la estadística no se filtran: no tienen por qué entrar en la
+     misma grilla de ancho fijo que los botones de arriba. Con rótulos largos
+     —«Tardan en resolver»— esa grilla apretaba el número y lo partía en dos. */
+  .datos-fila { display: grid; gap: 10px; margin-bottom: 20px;
+                grid-template-columns: repeat(auto-fill, minmax(182px, 1fr)); }
+  .datos-fila .n { white-space: nowrap; }
+  .tabla-usuarios { table-layout: fixed; }
+  .tabla-usuarios td:nth-child(1) { width: 25%; }
+  .tabla-usuarios td:nth-child(2) { width: 13%; }
+  .tabla-usuarios td:nth-child(3) { width: 25%; }
+  .tabla-usuarios td:nth-child(4) { width: 14%; }
+  .tabla-usuarios td:nth-child(5) { width: 13%; }
+  .tabla-usuarios td:nth-child(6) { width: 10%; }
+  .tabla-usuarios td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .msg { background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px;
+         padding: 12px 14px; margin: 6px 0 14px; white-space: pre-wrap; font-size: 13px;
+         font-family: ui-monospace, monospace; color: #cbd5e1; line-height: 1.5; }
+  .aviso-item { margin-bottom: 4px; }
+  /* La nota de quien movió el pedido, al lado del tipo */
+  .nota { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 20px;
+          background: #38bdf818; color: #7dd3fc; font-size: 11px;
+          /* Una nota puede tener dos mil caracteres: en la tabla se muestran las
+             primeras líneas y el resto se lee en la historia del pedido. Sin esto
+             una nota larga estira la fila y deja la tabla ilegible. */
+          max-width: 46ch; vertical-align: bottom; white-space: pre-wrap;
+          display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+          overflow: hidden; }
+  .contador { text-align: right; font-size: 11px; color: var(--tenue); margin-top: 3px;
+              font-variant-numeric: tabular-nums; }
+  /* Ficha de auditoría: un pedido con toda su historia */
+  .ficha { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px;
+           margin-bottom: 8px; overflow: hidden; }
+  .ficha summary { padding: 10px 14px; cursor: pointer; display: flex; align-items: center;
+                   gap: 10px; font-size: 13px; list-style: none; }
+  .ficha summary::-webkit-details-marker { display: none; }
+  .ficha summary:hover { background: #ffffff08; }
+  .ficha[open] summary { border-bottom: 1px solid var(--borde); }
+  .ficha .cuerpo { padding: 12px 14px 14px; }
+  .etq { font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
+         padding: 2px 8px; border-radius: 20px; }
+  .etq.abto { background: #38BDF81F; color: #7DD3FC; }
+  .etq.cerr { background: #22C55E1F; color: #86EFAC; }
+  .hito { border-left: 2px solid var(--borde); padding: 3px 0 8px 12px; margin-left: 4px; font-size: 13px; }
+  .hito.aviso-hito { border-color: var(--azul); }
+  @keyframes marcar { from { background: #D3692255 } to { background: transparent } }
+  tr.marcada { animation: marcar 3s ease-out; }
+  tr.marcada td { border-color: var(--azul); }
+  #dlgHistoria { width: min(680px, 94vw); }
+  .historia { max-height: 62vh; overflow-y: auto; padding-right: 4px; }
+  .hito-h { display: grid; grid-template-columns: 96px 1fr; gap: 12px; padding: 11px 0;
+            border-bottom: 1px solid var(--borde); align-items: start; }
+  .hito-h:last-child { border-bottom: 0; }
+  .hito-h .cuando { font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--tenue);
+                    line-height: 1.5; }
+  .hito-h .que { font-size: 14px; line-height: 1.5; }
+  .hito-h .quien { display: inline-block; font-size: 11px; color: var(--azul);
+                   background: #38bdf818; padding: 1px 7px; border-radius: 20px; margin-left: 6px; }
+  .hito-h .dicho { display: block; margin-top: 4px; font-size: 14px; color: var(--texto);
+                   border-left: 2px solid var(--azul); padding-left: 9px; }
+  .hito-h.avisó .que { color: var(--suave); font-size: 13px; }
+  .area-avisos { border: 1px solid var(--borde); border-radius: 9px; margin-bottom: 10px; overflow: hidden; }
+  .area-nombre { background: var(--panel2); padding: 8px 14px; font-weight: 600; font-size: 13.5px;
+                 border-bottom: 1px solid var(--borde); }
+  .area-cuerpo { padding: 12px 14px; }
+  .rotulo-chico { font-size: 11px; letter-spacing: .05em; text-transform: uppercase;
+                  color: var(--tenue); margin-bottom: 6px; }
+  .quien { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .quien span { color: var(--suave); }
+  .quien b { color: var(--texto); }
+  /* Mientras el panel averigua si tiene que pedir ingreso no se muestra nada:
+     antes se veía un destello de la pantalla de ingreso en cada apertura. */
+  body.cargando > * { visibility: hidden; }
+  #tapa { position: fixed; inset: 0; background: var(--fondo); z-index: 50;
+          display: flex; align-items: center; justify-content: center; }
+  #tapa .caja { background: var(--panel); border: 1px solid var(--borde); border-radius: 12px;
+                padding: 28px; width: 320px; }
+  #tapa h2 { margin: 0 0 4px; font-size: 17px; }
+  #tapa p { margin: 0 0 20px; color: var(--suave); font-size: 13px; }
+  .firma { color: var(--tenue); }
+  dialog { background: var(--panel); color: var(--texto); border: 1px solid var(--borde);
+           border-radius: 14px; padding: 22px; min-width: 340px; }
+  dialog::backdrop { background: #000a; }
+  /* Los que llevan una nota necesitan lugar. Sin ancho propio el diálogo se
+     encoge al contenido y quedaba en unos 480px: cinco renglones de cincuenta
+     caracteres para escribir hasta dos mil. Se escribía por un ojo de cerradura. */
+  #dlgDerivar, #dlgNota, #dlgEditar { width: min(680px, 94vw); }
+  #dlgDerivar textarea, #dlgNota textarea, #dlgEditar textarea {
+    min-height: 150px; resize: vertical; line-height: 1.5; }
+
+  /* ── En el celular ────────────────────────────────────────────────────────
+     La pantalla se pensó para una computadora: la tabla principal tiene ocho
+     columnas y en un teléfono no entra ninguna. Abajo de 760px cada fila deja
+     de ser una fila y pasa a ser una ficha, con el nombre de cada dato al lado
+     del dato. Es más largo de leer pero se lee; apretado no se leía nada. */
+  @media (max-width: 900px) {
+    .altas-grilla { grid-template-columns: 1fr !important; }
+    header { padding: 10px 14px; gap: 8px; flex-wrap: wrap; }
+    h1 { font-size: 14px; }
+    /* Las solapas pasan a una tira que se corre con el dedo. Achicarlas para
+       que entren todas las dejaba impracticables. */
+    .buscador { margin-left: 0; width: 100%; order: 3; }
+    .buscador input, .buscador input:focus { width: 100%; }
+    .resultados { width: 100%; }
+    nav { margin-left: 0; width: 100%; overflow-x: auto; padding-bottom: 2px;
+          scrollbar-width: none; }
+    nav::-webkit-scrollbar { display: none; }
+    nav button { flex: none; white-space: nowrap; padding: 8px 12px; }
+    main { padding: 14px 12px 40px; }
+
+    .filtros { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+    .btnf { height: 52px; padding: 0 11px; }
+    .btnf .n { font-size: 20px; }
+    .datos-fila { grid-template-columns: repeat(auto-fill, minmax(144px, 1fr)); }
+
+    /* Los formularios de dos columnas quedan en una: dos campos de texto en
+       360px de ancho no se pueden completar. */
+    .fila { grid-template-columns: 1fr; }
+    form.alta { padding: 14px; }
+
+    /* Cada fila, una ficha */
+    table.fichas thead { display: none; }
+    table.fichas, table.fichas tbody, table.fichas tr, table.fichas td { display: block; width: 100%; }
+    table.fichas tr { background: var(--panel); border: 1px solid var(--borde);
+                      border-radius: 12px; margin-bottom: 10px; padding: 4px 2px; }
+    /* El rótulo va ARRIBA del dato, no al lado. Al lado obligaba a una grilla de
+       dos columnas, y las celdas que traen un segundo renglón —el número del
+       pedido, el tiempo que falta— caían en la columna del rótulo. */
+    table.fichas td { border-bottom: 1px solid var(--borde); padding: 9px 12px; }
+    table.fichas tr td:last-child { border-bottom: 0; }
+    /* El rótulo sale del data-rot de cada celda: sin encabezado, un dato suelto
+       no dice qué es. */
+    table.fichas td::before { content: attr(data-rot); display: block; font-size: 10px;
+                              text-transform: uppercase; letter-spacing: .07em;
+                              color: var(--tenue); margin-bottom: 4px; }
+    table.fichas td[data-rot=""]::before, table.fichas td:not([data-rot])::before { content: ""; }
+    /* Los botones van abajo, en una sola línea y a lo ancho: en el teléfono se
+       tocan con el pulgar y son lo que más se usa. */
+    table.fichas td.acciones::before { display: none; }
+    table.fichas td.acciones { display: flex; flex-wrap: wrap; gap: 8px; padding: 11px 12px; }
+    table.fichas td.acciones .accion { flex: 1; min-height: 38px; font-size: 13px; }
+    table.fichas select.mini { width: 100%; min-height: 38px; }
+
+    /* Las tablas que no son fichas —configuración, personas— se corren
+       de costado en vez de apretar sus columnas hasta romperlas. */
+    .tabla-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tabla-scroll table { min-width: 560px; }
+
+    dialog { width: 94vw !important; max-width: 94vw; padding: 16px; }
+    .hito-h { grid-template-columns: 1fr; gap: 3px; }
+    .chips { gap: 6px; }
+  }
+
+  /* Los dedos no aciertan un botón de 24px. */
+  @media (pointer: coarse) {
+    .accion, nav button, .btnf { min-height: 38px; }
+    select.mini, input, select, textarea { min-height: 38px; font-size: 16px; }
+  }
+</style>
+</head>
+<body class="cargando">
+
+<div id="tapa" class="oculta">
+  <div class="caja">
+    <h2>CRM · Atención al Cliente</h2>
+    <p>Entrá con tu usuario.</p>
+    <div class="campo"><label>Quién sos</label><select id="inArea"></select></div>
+    <div class="campo" style="margin-top:12px"><label>Clave</label><input id="inClave" type="password"></div>
+    <div id="inError" style="color:var(--rojo); font-size:12px; min-height:16px; margin-top:8px"></div>
+    <button class="accion primario" id="btnIngresar" style="width:100%; margin-top:10px">Entrar</button>
+  </div>
+</div>
+
+<!-- Solo se ve en las copias: el CRM de la nube no la dibuja. Una copia de
+     prueba con datos reales es indistinguible del sistema de verdad, y en agosto
+     una quedó prendida un día entero mandándole avisos al personal. -->
+<div id="bandaCopia" class="oculta">
+  BANCO DE PRUEBAS — no es el CRM que usa la gente. Lo que se toque acá no le llega a nadie.
+</div>
+
+<header>
+  <img src="logo-ayax.svg" class="logo" alt="Ayax">
+  <span class="barrita"></span>
+  <h1>Atención al Cliente <span id="version" class="version"></span></h1>
+  <div class="buscador">
+    <input id="qBuscar" type="search" autocomplete="off" placeholder="Buscar reclamo…"
+           title="Número de reclamo, abonado, nombre del cliente o N° de Bykom">
+    <div id="qResultados" class="resultados oculta"></div>
+  </div>
+  <nav>
+    <button data-tab="tablero" class="activa">Tablero</button>
+    <button data-tab="nuevo">Nuevo pedido</button>
+    <button data-tab="altas" id="tabAltas" class="oculta">Altas</button>
+    <button data-tab="cerrar">Para auditar <span id="badgeCerrar" class="badge oculta">0</span></button>
+    <button data-tab="seguimiento">Seguimiento</button>
+    <button data-tab="personas">Personas</button>
+    <button data-tab="avisos">Avisos</button>
+    <button data-tab="stats">Estadística</button>
+    <button data-tab="config">Configuración</button>
+  </nav>
+  <div id="quien" class="quien oculta">
+    <span id="quienArea"></span>
+    <button class="btnf" id="btnSalir">Salir</button>
+  </div>
+</header>
+
+<main>
+  <!-- ── TABLERO ─────────────────────────────────────────────────── -->
+  <section id="tablero">
+    <div id="soloUno" class="aviso solo-uno oculta"></div>
+    <div class="filtros" id="filtroArea"></div>
+    <div class="filtros" id="semaforo"></div>
+    <table class="fichas">
+      <thead><tr>
+        <th>Qué área pide</th><th>Deriva a</th><th>Urg.</th><th>Abonado</th><th>Qué se pide</th>
+        <th>Estado</th><th>Pasar a área</th><th></th>
+      </tr></thead>
+      <tbody id="filas"></tbody>
+    </table>
+    <div id="sinDatos" class="vacio oculta">No hay pedidos abiertos.</div>
+  </section>
+
+  <!-- ── NUEVO PEDIDO ────────────────────────────────────────────── -->
+  <section id="nuevo" class="oculta">
+    <div id="avisoAlta"></div>
+    <form class="alta" id="formAlta">
+      <div class="fila">
+        <div class="campo">
+          <label>Abonado (código)</label>
+          <input name="abonado" list="listaAbonados" required placeholder="4210" autocomplete="off">
+          <datalist id="listaAbonados"></datalist>
+        </div>
+        <div class="campo">
+          <label>Nombre</label>
+          <input name="abonado_nombre" placeholder="se completa solo si ya existe">
+        </div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>Área que recibe</label><select name="area_recibe" required></select></div>
+        <div class="campo"><label>Canal por el que recibe</label><select name="canal" required></select></div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>Área destino</label><select name="area" required></select></div>
+        <div class="campo"><label>Tipo de solicitud</label><select name="tipo_solicitud" required></select></div>
+      </div>
+      <div class="fila oculta" id="campoPersona">
+        <div class="campo"><label>Persona del área destino (opcional) — el aviso le llega solo a ella</label><select name="persona"></select></div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>Motivo</label><select name="tipo" required></select></div>
+        <div class="campo"><label>Tipo de cliente</label><select name="tipo_cliente" required></select></div>
+      </div>
+      <div class="campo">
+        <label>Descripción</label>
+        <textarea name="descripcion" rows="2" required placeholder="Una línea alcanza"></textarea>
+      </div>
+      <div class="fila">
+        <div class="campo">
+          <label>Urgencia</label>
+          <select name="urgencia" required>
+            <option value="1">1 — hasta 2 h</option>
+            <option value="2">2 — fin del día</option>
+            <option value="3" selected>3 — 24 h</option>
+            <option value="4">4 — 48 h</option>
+            <option value="5">5 — con fecha</option>
+          </select>
+        </div>
+      </div>
+      <div class="fila">
+        <div class="campo oculta" id="campoFecha">
+          <label>Fecha comprometida</label>
+          <input type="date" name="fecha_comprometida">
+        </div>
+        <div class="campo"><label>N° Bykom (opcional)</label><input name="bykom" placeholder="—"></div>
+      </div>
+      <button class="accion primario" type="submit">Cargar pedido</button>
+    </form>
+  </section>
+
+  <!-- ── PARA CERRAR (auditoría final) ───────────────────────────── -->
+  <section id="cerrar" class="oculta">
+    <div class="conf" style="margin-bottom:16px">
+      <h3>Auditoría final</h3>
+      <div style="color:var(--suave); font-size:13px; line-height:1.6">
+        Acá caen los pedidos que el área dio por terminados. Revisá que estén
+        resueltos de verdad y auditalos con la clave, o devolvelos al área si falta algo.
+        <b>Mientras están acá el reloj está frenado</b>: no le cuentan como demora a nadie.
+      </div>
+    </div>
+    <table class="fichas">
+      <thead><tr>
+        <th>Área que lo trabajó</th><th>Urg.</th><th>Abonado</th><th>Qué pide</th>
+        <th>Esperando cierre</th><th>Devolver a área</th><th></th>
+      </tr></thead>
+      <tbody id="filasCerrar"></tbody>
+    </table>
+    <div id="sinCerrar" class="vacio oculta">No hay pedidos esperando cierre.</div>
+  </section>
+
+  <!-- ── SEGUIMIENTO ─────────────────────────────────────────────── -->
+  <section id="seguimiento" class="oculta">
+    <div class="conf">
+      <h3 style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+        Seguimiento de cada pedido
+        <button class="accion mini" data-audit="abiertos">Abiertos</button>
+        <button class="accion mini" data-audit="cerrados">Cerrados</button>
+        <button class="accion mini" data-audit="todos">Todos</button>
+      </h3>
+      <div style="color:var(--tenue); font-size:12px; margin-bottom:12px">
+        Toda la vida del pedido en orden: cada movimiento y cada aviso que salió,
+        desde que entró hasta que se cerró.
+      </div>
+      <div id="soloUnoAudit" class="aviso solo-uno oculta"></div>
+      <div id="auditoria"></div>
+    </div>
+  </section>
+
+  <!-- ── PERSONAS ────────────────────────────────────────────────── -->
+  <section id="personas" class="oculta">
+    <div class="conf">
+      <h3>Personas — una persona, un usuario</h3>
+      <p style="color:var(--suave); font-size:12px; margin:-6px 0 14px; line-height:1.6">
+        Cada persona entra con su nombre y su clave, así cada movimiento queda firmado por quien
+        lo hizo. <b>El teléfono y el correo que cargues acá son los que reciben los avisos de su
+        sector</b>: es un solo dato, en un solo lugar.
+      </p>
+      <div id="listaPersonas"></div>
+    </div>
+
+    <div class="conf" id="cajaFormPersona">
+      <h3 id="tituloFormPersona">Agregar una persona</h3>
+      <form id="formUsuario" style="margin-top:16px">
+        <div class="fila">
+          <div class="campo"><label>Nombre y apellido</label>
+            <input name="nombre" placeholder="GOMEZ, ALBERTO" required></div>
+          <div class="campo"><label>Sector</label>
+            <select name="sector"></select></div>
+        </div>
+        <div class="fila">
+          <div class="campo"><label>Teléfono</label>
+            <input name="telefono" placeholder="11 5489-7134"></div>
+          <div class="campo"><label>Correo</label>
+            <input name="correo" type="email" placeholder="nombre@ayaxseguridad.com.ar"></div>
+        </div>
+        <div class="fila">
+          <div class="campo"><label>Clave</label>
+            <input name="clave" type="password" placeholder="Dejala vacía para no cambiarla"></div>
+          <div class="campo"><label>Rol</label>
+            <select name="rol">
+              <option value="area">Del sector</option>
+              <option value="admin">Administrador 🔑</option>
+            </select></div>
+        </div>
+        <label style="display:flex; gap:9px; align-items:flex-start; margin:4px 0 14px; cursor:pointer">
+          <input type="checkbox" name="solo_su_area" checked style="width:auto; margin-top:3px">
+          <span style="font-size:12.5px; color:var(--suave); line-height:1.55">
+            <b style="color:var(--texto)">Ve solo los pedidos de su sector.</b>
+            Los que su sector pidió y los que le derivaron. Destildalo para alguien que
+            necesite ver el tablero completo sin ser administrador.
+          </span>
+        </label>
+        <label style="display:flex; gap:9px; align-items:flex-start; margin:-6px 0 14px; cursor:pointer">
+          <input type="checkbox" name="recibe_resumen" checked style="width:auto; margin-top:3px">
+          <span style="font-size:12.5px; color:var(--suave); line-height:1.55">
+            <b style="color:var(--texto)">Recibe el resumen diario de su sector.</b>
+            Los avisos de cada pedido (nuevo, por vencer, vencido) le llegan igual.
+          </span>
+        </label>
+        <div id="usrError" style="color:var(--rojo); font-size:12px; min-height:16px"></div>
+        <div style="display:flex; gap:8px">
+          <button class="accion primario" type="submit">Guardar usuario</button>
+          <button class="accion" type="button" id="usrLimpiar">Limpiar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="conf">
+      <h3>Otros destinatarios</h3>
+      <p style="color:var(--suave); font-size:12px; margin:-6px 0 14px; line-height:1.6">
+        Para avisarle a alguien que <b>no</b> usa el panel: un teléfono de guardia, el celular de
+        un supervisor. Reciben el aviso igual que las personas del área, pero no entran al sistema
+        ni tienen clave.
+      </p>
+      <div id="tablaContactos"></div>
+    </div>
+  </section>
+
+  <!-- ── AVISOS ──────────────────────────────────────────────────── -->
+  <section id="avisos" class="oculta">
+    <div class="conf" id="estadoWsp"></div>
+    <div class="conf" id="modoEnvio"></div>
+
+    <div class="conf">
+      <h3>A quién le llega cada área</h3>
+      <div id="alcanceAvisos"></div>
+      <p style="color:var(--tenue); font-size:12px; margin:12px 0 0; line-height:1.6">
+        Sale del teléfono y el correo de cada persona, más los otros destinatarios.
+        Se cargan en <a href="#" data-ir-tab="personas" style="color:var(--naranja)">Personas</a>.
+      </p>
+    </div>
+
+    <div class="conf">
+      <h3>Cuándo avisa</h3>
+      <div id="reglasAviso"></div>
+    </div>
+
+    <div class="conf">
+      <h3>Resumen diario — así saldría ahora</h3>
+      <div id="vistaResumen"></div>
+    </div>
+
+    <div class="conf">
+      <h3>Revisión</h3>
+      <button class="accion mini" id="btnRevisar">Revisar avisos ahora</button>
+      <div style="color:var(--tenue); font-size:12px; margin-top:10px">
+        El bot revisa solo cada minuto. Esto lo fuerza en el momento.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ESTADÍSTICA ─────────────────────────────────────────────── -->
+  <section id="stats" class="oculta">
+    <div class="filtros" id="periodos"></div>
+    <div class="datos-fila" id="statTotales"></div>
+    <div id="statTablas"></div>
+  </section>
+
+  <!-- ── CONFIGURACIÓN ───────────────────────────────────────────── -->
+  <section id="config" class="oculta">
+    <div id="listasConf"></div>
+    <div class="conf">
+      <h3>Plazos y avisos</h3>
+      <div class="fila">
+        <div class="campo"><label>Urgencia 1 — horas</label><input id="horas_u1" type="number" min="1"></div>
+        <div class="campo"><label>Urgencia 2 — hora de corte del día</label><input id="hora_fin_dia" type="number" min="0" max="23"></div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label>Urgencia 3 — horas</label><input id="horas_u3" type="number" min="1"></div>
+        <div class="campo"><label>Urgencia 4 — horas</label><input id="horas_u4" type="number" min="1"></div>
+      </div>
+      <div class="campo" style="max-width:300px">
+        <label>Preaviso: a qué % del plazo pasa a amarillo</label>
+        <input id="pct_preaviso" type="number" min="1" max="99">
+      </div>
+      <div class="campo">
+        <label>Dirección del panel — la que va en el link de los avisos</label>
+        <input id="url_panel" placeholder="https://crm-production-c825.up.railway.app">
+        <div id="alertaUrl"></div>
+        <span style="color:var(--tenue); font-size:11px">
+          Cada aviso llega con un link que abre el pedido directo. Tiene que ser la dirección
+          de afuera, porque el aviso casi siempre se lee desde el celular. Vacío = sin link.
+        </span>
+      </div>
+      <button class="accion primario" id="guardarConfig">Guardar</button>
+    </div>
+
+    <div class="conf">
+      <h3>Planilla de clientes</h3>
+      <div id="estadoPlanilla" style="font-size:13px; margin-bottom:10px"></div>
+      <button class="accion mini" id="btnLeerPlanilla">Leer ahora</button>
+    </div>
+    <div class="conf" id="cajaUsuarios">
+      <h3>Ingreso al panel</h3>
+
+      <div>
+        <label style="display:flex; align-items:center; gap:10px; cursor:pointer">
+          <input type="checkbox" id="pedir_ingreso">
+          <b>Pedir usuario y clave al abrir el panel</b>
+        </label>
+        <div style="color:var(--tenue); font-size:11px; margin:6px 0 0 26px; line-height:1.6">
+          Apagado, el panel abre directo como siempre y las claves quedan cargadas esperando.
+          <b>Encendelo recién cuando cada uno tenga la suya</b>, o se van a quedar afuera.
+          Las personas se cargan en <a href="#" data-ir-tab="personas" style="color:var(--naranja)">Personas</a>.
+          Hace falta un administrador cargado para poder encenderlo.
+        </div>
+        <button class="accion mini" id="guardarIngreso" style="margin:10px 0 0 26px">Guardar</button>
+      </div>
+    </div>
+  </section>
+  <!-- ── ALTAS (el código está en altas.js) ───────────── -->
+  <section id="altas" class="oculta"></section>
+</main>
+
+<!-- Nota al cambiar de estado -->
+<dialog id="dlgNota">
+  <h3 style="margin:0 0 4px; font-size:15px" id="nTitulo">Cambiar estado</h3>
+  <p class="num" id="nPedido" style="margin:0 0 12px"></p>
+  <!-- Solo al pasar a CERRADO: el área dice cómo terminó, el auditor lo revisa. -->
+  <div id="nCierre" class="oculta">
+    <div class="campo"><label>Motivo de cierre</label><select id="nMotivo"></select></div>
+    <div class="campo"><label>Causa raíz</label><select id="nCausa"></select></div>
+  </div>
+  <div class="campo">
+    <label id="nEtiqueta">Nota (qué pasó, en una línea)</label>
+    <textarea id="nTexto" rows="5" maxlength="2000" placeholder="Ej: falta el comunicador, se pidió al proveedor"></textarea>
+    <div class="contador" id="nCuenta"></div>
+  </div>
+  <div id="nError" style="color:var(--rojo); font-size:12px; min-height:16px"></div>
+  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px">
+    <button class="accion" id="nCancelar">Cancelar</button>
+    <button class="accion primario" id="nGuardar">Guardar</button>
+  </div>
+</dialog>
+
+<!-- Todo lo que se fue escribiendo en el pedido. Solo para leer. -->
+<dialog id="dlgHistoria">
+  <h3 style="margin:0 0 3px; font-size:16px" id="hTitulo">Lo que se fue escribiendo</h3>
+  <p class="num" id="hPedido" style="margin:0 0 4px"></p>
+  <p id="hQuePide" style="margin:0 0 14px; color:var(--suave); font-size:13px"></p>
+  <div id="hAjeno"></div>
+  <div id="hLinea" class="historia"></div>
+  <div style="display:flex; justify-content:flex-end; margin-top:16px">
+    <button class="accion" id="hCerrar">Cerrar</button>
+  </div>
+</dialog>
+
+<!-- Corregir un pedido mal cargado -->
+<dialog id="dlgEditar">
+  <h3 style="margin:0 0 4px; font-size:15px">Corregir el pedido</h3>
+  <p class="num" id="eTicket" style="margin:0 0 14px"></p>
+  <div class="fila">
+    <div class="campo"><label>Nombre del abonado</label><input id="eNombre"></div>
+    <div class="campo"><label>Entra por</label><select id="eCanal"></select></div>
+  </div>
+  <div class="fila">
+    <div class="campo"><label>Área que recibe</label><select id="eRecibe"></select></div>
+    <div class="campo"><label>Área destino</label><select id="eArea"></select></div>
+  </div>
+  <div class="fila">
+    <div class="campo"><label>Tipo de solicitud</label><select id="eSolic"></select></div>
+    <div class="campo"><label>Motivo</label><select id="eTipo"></select></div>
+  </div>
+  <div class="fila">
+    <div class="campo"><label>Tipo de cliente</label><select id="eCliente"></select></div>
+    <div class="campo"><label>N° Bykom</label><input id="eBykom"></div>
+  </div>
+  <div class="campo"><label>Descripción</label><textarea id="eDesc" rows="2"></textarea></div>
+  <div class="fila">
+    <div class="campo">
+      <label>Urgencia</label>
+      <select id="eUrg">
+        <option value="1">1 — hasta 2 h</option><option value="2">2 — fin del día</option>
+        <option value="3">3 — 24 h</option><option value="4">4 — 48 h</option>
+        <option value="5">5 — con fecha</option>
+      </select>
+    </div>
+  </div>
+  <div class="campo oculta" id="eCampoFecha">
+    <label>Fecha comprometida</label><input type="date" id="eFecha">
+  </div>
+  <!-- Agregar algo al historial sin tener que mover el pedido. Aparece plegado
+       para que la ventana siga siendo la de corregir: la nota es lo otro que se
+       puede hacer acá, no lo principal. -->
+  <div style="margin-top:4px">
+    <button class="accion" id="eVerNota" type="button">+ Agregar nota</button>
+    <div class="campo oculta" id="eCampoNota" style="margin-top:8px">
+      <label>Nota nueva</label>
+      <textarea id="eNota" rows="2" placeholder="Qué pasó o qué hay que saber. Queda en el historial con tu área y la hora."></textarea>
+    </div>
+  </div>
+
+  <div style="color:var(--tenue); font-size:12px">
+    El código del abonado no se cambia: define a qué ticket pertenece. Si se cargó
+    al cliente equivocado, conviene anularlo y cargarlo de nuevo.
+  </div>
+  <div id="eError" style="color:var(--rojo); font-size:12px; min-height:16px; margin-top:6px"></div>
+  <div style="display:flex; gap:8px; justify-content:space-between; margin-top:14px">
+    <button class="accion" id="eAnular" style="border-color:var(--rojo); color:var(--rojo)">Anular pedido</button>
+    <span style="display:flex; gap:8px">
+      <button class="accion" id="eCancelar">Cancelar</button>
+      <button class="accion primario" id="eGuardar">Guardar</button>
+    </span>
+  </div>
+</dialog>
+
+<!-- Altas: confirmar un paso del checklist -->
+<dialog id="dlgAltaPaso" style="width:min(560px, 94vw)">
+  <h3 style="margin:0 0 4px; font-size:15px" id="apTitulo"></h3>
+  <p class="num" id="apItem" style="margin:0 0 12px"></p>
+  <div class="campo oculta" id="apCampoAbonado"><label>N.° de abonado</label><input id="apAbonado"></div>
+  <div id="apAviso">
+    <div class="campo"><label>Avisar por WhatsApp a (contacto del área)</label><div id="apAreas"></div></div>
+    <details class="campo"><summary style="cursor:pointer; font-size:12.5px; color:var(--suave)">Sumar personas</summary>
+      <div id="apUsuarios" style="max-height:160px; overflow-y:auto; margin-top:6px"></div></details>
+    <div class="campo oculta" id="apCampoPlazo">
+      <label>Lo sigue — <span id="apTarea"></span></label>
+      <select id="apResponsable" title="Quién la tiene que hacer"></select>
+    </div>
+    <div id="apSinPlazo" style="font-size:12px; color:var(--tenue); margin-bottom:8px"></div>
+    <div id="apAlcance" style="font-size:12px; color:var(--suave); margin-bottom:12px"></div>
+  </div>
+  <div class="campo"><label id="apNotaRot">Observación</label><textarea id="apNota" rows="3" maxlength="2000"></textarea></div>
+  <div id="apError" style="color:var(--rojo); font-size:12px; min-height:16px"></div>
+  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px">
+    <button class="accion" id="apCancelar">CANCELAR</button>
+    <button class="accion primario" id="apConfirmar">CONFIRMAR</button>
+  </div>
+</dialog>
+
+<!-- Derivar: obliga a dejar el pedido con un estado -->
+<dialog id="dlgDerivar">
+  <h3 style="margin:0 0 4px; font-size:15px" id="dTitulo">Derivar a <span id="dArea"></span></h3>
+  <p class="num" id="dPedido" style="margin:0 0 12px"></p>
+  <div class="campo oculta" id="dCampoPersona">
+    <label>Persona del área (opcional) — el aviso le llega solo a ella</label>
+    <select id="dPersona"></select>
+  </div>
+  <div class="campo oculta" id="dCampoEstado">
+    <label>Estado — el pedido está sin tomar, decí en qué estado queda</label>
+    <select id="dEstado"></select>
+  </div>
+  <div class="campo">
+    <label>Plazo para el área que lo recibe</label>
+    <select id="dPlazo"></select>
+    <div class="ayuda" id="dPlazoAyuda" style="font-size:11.5px; color:var(--tenue); margin-top:4px"></div>
+  </div>
+  <div class="campo oculta" id="dCampoFecha">
+    <label>¿Para cuándo?</label>
+    <input type="datetime-local" id="dFecha">
+  </div>
+  <div class="campo">
+    <label id="dEtiqueta">Nota — por qué pasa al área (queda a la vista)</label>
+    <textarea id="dNota" rows="5" maxlength="2000"
+      placeholder="Ej: se revisó el panel, falta el comunicador"></textarea>
+    <div class="contador" id="dCuenta"></div>
+  </div>
+  <div id="dError" style="color:var(--rojo); font-size:12px; min-height:16px"></div>
+  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px">
+    <button class="accion" id="dCancelar">Cancelar</button>
+    <button class="accion primario" id="dConfirmar">Derivar</button>
+  </div>
+</dialog>
+
+<!-- Cierre -->
+<dialog id="dlgCierre">
+  <h3 style="margin:0 0 16px; font-size:15px">Auditar pedido</h3>
+  <!-- Lo que eligió el área: se muestra, no se toca. -->
+  <p id="cDelArea" class="oculta" style="margin:0 0 14px; font-size:13px; color:var(--suave)"></p>
+  <!-- Solo si el pedido no trae una elección del área que siga en la lista. -->
+  <div id="cCampos">
+    <div class="campo"><label>Motivo de cierre</label><select id="cMotivo"></select></div>
+    <div class="campo"><label>Causa raíz</label><select id="cCausa"></select></div>
+  </div>
+  <div class="campo"><label>Se avisó al cliente por</label>
+    <select id="cAviso">
+      <option value="">Elegí…</option>
+      <option>Teléfono</option><option>WhatsApp</option><option>Correo</option>
+    </select>
+  </div>
+  <div class="campo" id="campoPin">
+    <label>Clave para auditar</label>
+    <input id="cPin" type="password" inputmode="numeric" maxlength="4" autocomplete="off"
+           placeholder="4 dígitos" style="width:120px; letter-spacing:6px; font-size:18px; text-align:center">
+  </div>
+  <div id="cError" style="color:var(--rojo); font-size:12px; min-height:16px"></div>
+  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:18px">
+    <button class="accion" id="cCancelar">Cancelar</button>
+    <button class="accion primario" id="cConfirmar">Auditar pedido</button>
+  </div>
+</dialog>
+
+<script>
+let listas = {}, datos = { items: [], contadores: {} }, filtro = null, filtroAreaSel = "";
+// El pedido del link del aviso (?p=): mientras esté puesto, el tablero o el
+// seguimiento muestran solo ese, con un botón para volver a la lista.
+let soloPedido = null, soloAudit = null;
+
+const avisoSoloUno = (numero, nombre, boton) =>
+  `<span>Pedido <b>${esc(numero)}</b>${nombre ? " · " + esc(nombre) : ""}</span>
+   <button class="btnf" id="${boton}">Ver todos</button>`;
+
+// El ?p= de la dirección sigue al pedido que se muestra: recargar o copiar el
+// link lleva al mismo. Sin pedido se saca, y el resto (?tab=) queda.
+function pedidoEnLaUrl(id) {
+  const u = new URL(location.href);
+  if (id) u.searchParams.set("p", id); else u.searchParams.delete("p");
+  if (u.href !== location.href) history.replaceState(null, "", u);
+}
+const quitarPedidoDeLaUrl = () => pedidoEnLaUrl(null);
+
+const api = async (ruta, body) => {
+  const r = await fetch(ruta, body ? {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  } : {});
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || "Error");
+  return d;
+};
+
+// Lo que escribe la gente puede traer < > & y romper la tabla: se escapa
+// siempre antes de meterlo en el HTML.
+const esc = (t) => String(t ?? "").replace(/[&<>"']/g,
+  c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const opciones = (tipo) => (listas[tipo] || []).map(v => `<option>${esc(v.valor)}</option>`).join("");
+
+const tiempo = (ms) => {
+  if (ms === null) return "Sin plazo";
+  const vencido = ms < 0; ms = Math.abs(ms);
+  const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60;
+  const t = h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : h ? `${h}h ${m}m` : `${m}m`;
+  return vencido ? `Vencido hace ${t}` : `Faltan ${t}`;
+};
+
+const COLORES = { vencido: "var(--rojo)", por_vencer: "var(--amarillo)", en_plazo: "var(--verde)",
+                  frenado: "var(--gris)", sin_plazo: "var(--gris)" };
+
+// Color por urgencia: 1 y 2 rojo, 3 y 4 amarillo, 5 verde.
+const colorUrgencia = (u) => u <= 2 ? "var(--rojo)" : u <= 4 ? "var(--amarillo)" : "var(--verde)";
+
+// ── Tablero ────────────────────────────────────────────────────────
+async function cargarTablero() {
+  datos = await api("/api/tablero");
+
+  // Los contadores de arriba siguen al área elegida: si estoy mirando Técnica,
+  // los números son los de Técnica, no los del total.
+  const base = filtroAreaSel ? datos.items.filter(i => i.area === filtroAreaSel) : datos.items;
+  const c = {
+    vencidos: base.filter(i => i.semaforo === "vencido").length,
+    por_vencer: base.filter(i => i.semaforo === "por_vencer").length,
+    nuevos: base.filter(i => i.estado === "Nuevo").length,
+    abiertos: base.length,
+  };
+  document.getElementById("semaforo").innerHTML = [
+    ["vencido", "Vencidos", c.vencidos, "var(--rojo)"],
+    ["por_vencer", "Por vencer", c.por_vencer, "var(--amarillo)"],
+    ["nuevo", "Nuevos", c.nuevos, "var(--azul)"],
+    ["todos", "Abiertos", c.abiertos, "var(--texto)"],
+  ].map(([k, r, n, col]) => `
+    <button class="btnf ${filtro === k ? "sel" : ""}" data-f="${k}">
+      <span class="rot">${r}${filtroAreaSel ? "<br>" + esc(filtroAreaSel) : ""}</span>
+      <span class="n" style="color:${col}">${n}</span>
+    </button>`).join("");
+
+  // Filtro de área: un botón por área, más "Todas". Cada uno muestra cuántos
+  // pedidos abiertos tiene, así se ve dónde está la carga sin entrar.
+  const porArea = (a) => datos.items.filter(i => i.area === a).length;
+  document.getElementById("filtroArea").innerHTML =
+    `<button class="btnf ${filtroAreaSel === "" ? "sel" : ""}" data-area-f="">
+       <span class="rot">Todas</span><span class="n">${datos.items.length}</span></button>
+     ${(listas.area || []).map(a => `
+       <button class="btnf ${filtroAreaSel === a.valor ? "sel" : ""}" data-area-f="${esc(a.valor)}">
+         <span class="rot">${esc(a.valor)}</span><span class="n">${porArea(a.valor)}</span></button>`).join("")}`;
+
+  let items = datos.items;
+  if (filtro === "vencido") items = items.filter(i => i.semaforo === "vencido");
+  if (filtro === "por_vencer") items = items.filter(i => i.semaforo === "por_vencer");
+  if (filtro === "nuevo") items = items.filter(i => i.estado === "Nuevo");
+  if (filtroAreaSel) items = items.filter(i => i.area === filtroAreaSel);
+  // Si el pedido del link se cerró mientras se miraba, se vuelve a la lista completa.
+  if (soloPedido && !datos.items.some(i => i.id === soloPedido)) { soloPedido = null; quitarPedidoDeLaUrl(); }
+  if (soloPedido) items = datos.items.filter(i => i.id === soloPedido);
+  const solo = document.getElementById("soloUno");
+  solo.innerHTML = soloPedido ? avisoSoloUno(items[0].numero, items[0].abonado_nombre || items[0].abonado, "verTodos") : "";
+  solo.classList.toggle("oculta", !soloPedido);
+  // Los filtros se esconden: en el celular empujaban el pedido fuera de la pantalla.
+  for (const f of ["filtroArea", "semaforo"]) document.getElementById(f).classList.toggle("oculta", !!soloPedido);
+
+  document.getElementById("filas").innerHTML = items.map(i => `
+    <tr data-fila="${i.id}" style="box-shadow: inset 6px 0 0 ${colorUrgencia(i.urgencia)}">
+      <td data-rot="Qué área pide">${esc(i.area_recibe || "—")}</td>
+      <td data-rot="Deriva a"><b>${esc(i.area)}</b>${i.persona ? `<div class="num">${esc(i.persona)}</div>` : ""}</td>
+      <td data-rot="Urgencia"><span class="urg u${i.urgencia}">${i.urgencia}</span></td>
+      <td data-rot="Abonado">${esc(i.abonado_nombre || i.abonado)}<div class="num">${esc(i.numero)}</div>${
+        i.cli_domicilio || i.cli_localidad || i.cli_vendedor ? `<div class="num" style="color:var(--tenue)">${esc([i.cli_domicilio,
+          i.cli_localidad, i.cli_vendedor && "vend. " + i.cli_vendedor].filter(Boolean).join(" · "))}</div>` : ""}</td>
+      <td data-rot="Qué se pide">${esc(i.descripcion)}<div class="num">${[
+          i.tipo_solicitud, i.tipo, i.tipo_cliente, i.bykom ? "Bykom " + i.bykom : "",
+        ].filter(Boolean).map(esc).join(" · ")}</div></td>
+      <td data-rot="Estado">
+        <select class="mini ${i.estado === "Nuevo" ? "pendiente" : ""}" data-estado="${i.id}">
+          ${(listas.estado || [])
+            .filter(e => e.valor !== "Cerrado")
+            // «Resuelto (a confirmar)» no se elige acá: para dar un pedido por
+            // terminado está CERRADO en «Pasar al área», que pide el comentario.
+            .filter(e => e.valor !== listas._config.estado_cierre || e.valor === i.estado)
+            // "Nuevo" solo se ofrece mientras el pedido siga sin tomar.
+            .filter(e => e.valor !== "Nuevo" || i.estado === "Nuevo")
+            .map(e => `<option ${e.valor === i.estado ? "selected" : ""}>${esc(e.valor)}</option>`).join("")}
+        </select>
+        <div class="restante" style="color:${COLORES[i.semaforo]}; font-size:12px; margin-top:3px">${tiempo(i.restante)}</div>
+      </td>
+      <td data-rot="Pasar a área">
+        <select class="mini" data-area="${i.id}" data-actual="${esc(i.estado)}">
+          <option value="">Derivar a…</option>
+          ${((listas._personas || {})[i.area] || []).some(n => n !== i.persona)
+            ? `<option value="__PERSONA__">Otra persona de ${esc(i.area)}…</option>` : ""}
+          ${(listas.area || []).filter(a => a.valor !== i.area).map(a => `<option>${esc(a.valor)}</option>`).join("")}
+          <option value="__CERRADO__">CERRADO</option>
+        </select>
+      </td>
+      <td class="acciones" style="white-space:nowrap">
+        <button class="accion mini" data-historia="${i.id}" title="Ver todo lo escrito">☰</button>
+        <button class="accion mini" data-editar="${i.id}" title="Corregir un error de carga">✎</button>
+      </td>
+    </tr>`).join("");
+
+  document.getElementById("sinDatos").classList.toggle("oculta", items.length > 0);
+  pintarParaCerrar();
+}
+
+// ── Bandeja del auditor ────────────────────────────────────────────
+// "hace 3 h 20 m" — para no tener que hacer la cuenta mirando la fecha.
+function haceCuanto(ts) {
+  const m = Math.max(0, Math.round((Date.now() - ts) / 60000));
+  if (m < 60) return `${m} m`;
+  if (m < 1440) return `${Math.floor(m / 60)} h ${m % 60} m`;
+  return `${Math.floor(m / 1440)} d ${Math.floor((m % 1440) / 60)} h`;
+}
+
+function pintarParaCerrar() {
+  const lista = datos.para_cerrar || [];
+  const badge = document.getElementById("badgeCerrar");
+  badge.textContent = lista.length;
+  badge.classList.toggle("oculta", !lista.length);
+
+  document.getElementById("sinCerrar").classList.toggle("oculta", lista.length > 0);
+  document.getElementById("filasCerrar").innerHTML = lista.map(i => `
+    <tr>
+      <td data-rot="Área que lo trabajó"><b>${esc(i.area)}</b></td>
+      <td data-rot="Urgencia"><span class="urg u${i.urgencia}">${i.urgencia}</span></td>
+      <td data-rot="Abonado">${esc(i.abonado_nombre || i.abonado)}<div class="num">${esc(i.numero)}</div></td>
+      <td data-rot="Qué pide">${esc(i.descripcion)}<div class="num">${[
+          i.tipo_solicitud, i.tipo, i.tipo_cliente, i.bykom ? "Bykom " + i.bykom : "",
+        ].filter(Boolean).map(esc).join(" · ")}${
+        i.nota ? `<span class="nota" title="${esc(i.nota)}">✎ ${esc(i.nota)}</span>` : ""}</div></td>
+      <td data-rot="Esperando cierre" style="white-space:nowrap">
+        ${i.espera_desde ? `${hora(i.espera_desde)}
+          <div class="num">hace ${haceCuanto(i.espera_desde)}</div>` : `<span class="num">—</span>`}
+        <div class="num" style="color:var(--tenue)">entró ${hora(i.creado_en)}</div>
+      </td>
+      <td data-rot="Devolver a área">
+        <select class="mini" data-devolver="${i.id}">
+          <option value="">Devolver a…</option>
+          ${(listas.area || []).map(a => `<option>${esc(a.valor)}</option>`).join("")}
+        </select>
+      </td>
+      <td class="acciones" style="white-space:nowrap">
+        <button class="accion mini" data-historia="${i.id}" title="Ver todo lo escrito">☰</button>
+        <button class="accion mini" data-editar="${i.id}" title="Corregir">✎</button>
+        <button class="accion mini primario" data-cerrar="${i.id}">Auditar</button>
+      </td>
+    </tr>`).join("");
+}
+
+document.addEventListener("click", async (e) => {
+  if (e.target.closest("#verTodos")) { turnoIr++; soloPedido = null; quitarPedidoDeLaUrl(); cargarTablero(); }
+
+  const t = e.target.closest("[data-f]");
+  if (t) { filtro = filtro === t.dataset.f || t.dataset.f === "todos" ? null : t.dataset.f; cargarTablero(); }
+
+  const fa = e.target.closest("[data-area-f]");
+  if (fa) { filtroAreaSel = fa.dataset.areaF; cargarTablero(); }
+
+  const ed = e.target.closest("[data-editar]");
+  if (ed) abrirEditor(Number(ed.dataset.editar));
+
+  const cerrar = e.target.closest("[data-cerrar]");
+  if (cerrar) {
+    // El motivo y la causa los elige el área al pasarlo a CERRADO: el cierre usa
+    // eso (el servidor lo lee de la base) y acá solo se muestra. Los
+    // desplegables aparecen cuando el pedido no trae esa elección, o cuando lo
+    // elegido ya no está en la lista: si no, no se podría cerrar.
+    const pc = (datos.para_cerrar || []).concat(datos.items || []).find(x => x.id === Number(cerrar.dataset.cerrar));
+    const conValor = (tipo, propuesto) => {
+      const vals = (listas[tipo] || []).map(v => v.valor);
+      // Si lo sacaron de la lista después, no se ofrece: se elige de nuevo.
+      const actual = vals.includes(propuesto) ? propuesto : "";
+      return (actual ? "" : `<option value="">Elegí…</option>`) +
+        vals.map(v => `<option ${v === actual ? "selected" : ""}>${esc(v)}</option>`).join("");
+    };
+    document.getElementById("cMotivo").innerHTML = conValor("motivo_cierre", pc?.area_motivo);
+    document.getElementById("cCausa").innerHTML = conValor("causa_raiz", pc?.area_causa);
+    const delArea = !!(document.getElementById("cMotivo").value && document.getElementById("cCausa").value);
+    document.getElementById("cCampos").classList.toggle("oculta", delArea);
+    document.getElementById("cDelArea").classList.toggle("oculta", !delArea);
+    document.getElementById("cDelArea").innerHTML = delArea
+      ? `Motivo y causa (los eligió el área): <b style="color:var(--texto)">${esc(pc.area_motivo)} / ${esc(pc.area_causa)}</b>` : "";
+    document.getElementById("cAviso").value = "";
+    document.getElementById("cPin").value = "";
+    document.getElementById("cError").textContent = "";
+    document.getElementById("campoPin").classList.toggle("oculta", listas._config.pide_pin !== "1");
+    document.getElementById("dlgCierre").dataset.id = cerrar.dataset.cerrar;
+    document.getElementById("dlgCierre").showModal();
+    if (listas._config.pide_pin === "1") setTimeout(() => document.getElementById("cPin").focus(), 100);
+  }
+
+  // Antes, si el servidor no dejaba quitar un valor, el error se perdía y el
+  // botón parecía no andar. Ahora se pregunta antes y se dice por qué no.
+  // Ojo: «data-editar» ya es el ✎ de corregir un pedido; este es otro botón.
+  const renombrar = e.target.closest("[data-renombrar]");
+  if (renombrar) {
+    const v = Object.values(listas).flat().find(x => x && x.id === Number(renombrar.dataset.renombrar));
+    if (!v) return;
+    const nuevo = prompt(`Nuevo nombre para "${v.valor}".\nLos pedidos que ya lo tienen pasan al nombre nuevo.`, v.valor);
+    if (nuevo === null || !nuevo.trim() || nuevo.trim() === v.valor) return;
+    try { await api("/api/listas/editar", { id: v.id, valor: nuevo.trim() }); }
+    catch (err) { alert(err.message); return; }
+    await cargarListas(); pintarConfig(); cargarTablero();
+  }
+
+  const borrar = e.target.closest("[data-borrar]");
+  if (borrar) {
+    const v = Object.values(listas).flat().find(x => x && x.id === Number(borrar.dataset.borrar));
+    if (!confirm(`¿Quitar "${v ? v.valor : "este valor"}" de la lista?`)) return;
+    try { await api("/api/listas/borrar", { id: Number(borrar.dataset.borrar) }); }
+    catch (err) { alert(err.message); return; }
+    await cargarListas(); pintarConfig();
+  }
+});
+
+document.addEventListener("change", async (e) => {
+  if (e.target.dataset.estado) {
+    // Antes de aplicar el cambio se pide la nota: si se pidiera después, se
+    // perdería el motivo justo cuando más sirve.
+    const id = Number(e.target.dataset.estado), nuevo = e.target.value;
+    const i = (datos.items || []).concat(datos.para_cerrar || []).find(x => x.id === id);
+    const dlg = document.getElementById("dlgNota");
+    document.getElementById("nTitulo").textContent = `Pasar a "${nuevo}"`;
+    document.getElementById("nPedido").textContent = i ? `${i.numero} · ${i.abonado_nombre || i.abonado}` : "";
+    document.getElementById("nTexto").value = "";
+  document.getElementById("nTexto").dispatchEvent(new Event("input"));
+    document.getElementById("nError").textContent = "";
+    dlg.dataset.id = id; dlg.dataset.estado = nuevo; dlg.dataset.paraAuditar = "";
+    dlg.showModal();
+    setTimeout(() => document.getElementById("nTexto").focus(), 100);
+  }
+  // Derivar: si el pedido sigue en "Nuevo", primero hay que decir en qué estado
+  // queda. Se pide en el mismo momento, no después.
+  if (e.target.dataset.area && e.target.value) {
+    const id = Number(e.target.dataset.area), area = e.target.value;
+    // "CERRADO" no es un área: manda el pedido a la bandeja del auditor. Antes
+    // se abre la caja del comentario, la misma del cambio de estado.
+    if (area === "__CERRADO__") {
+      const i = (datos.items || []).find(x => x.id === id);
+      const dlg = document.getElementById("dlgNota");
+      document.getElementById("nTitulo").textContent = "Pasar a auditar (CERRADO)";
+      document.getElementById("nPedido").textContent = i ? `${i.numero} · ${i.abonado_nombre || i.abonado}` : "";
+      document.getElementById("nTexto").value = "";
+      document.getElementById("nTexto").dispatchEvent(new Event("input"));
+      document.getElementById("nError").textContent = "";
+      // Ojo con el nombre: `data-cerrar` es el del botón «Auditar», y el clic
+      // en Guardar abría además la auditoría con clave.
+      const elegi = `<option value="">Elegí…</option>`;
+      document.getElementById("nMotivo").innerHTML = elegi + opciones("motivo_cierre");
+      document.getElementById("nCausa").innerHTML = elegi + opciones("causa_raiz");
+      document.getElementById("nCierre").classList.remove("oculta");
+      etiquetaNota();
+      dlg.dataset.id = id; dlg.dataset.estado = ""; dlg.dataset.paraAuditar = "1";
+      dlg.showModal();
+      setTimeout(() => document.getElementById("nTexto").focus(), 100);
+      e.target.value = "";
+      return;
+    }
+    // Otra persona de la misma área: se abre el mismo diálogo, con el área actual.
+    if (area === "__PERSONA__") {
+      const i = (datos.items || []).find(x => x.id === id);
+      if (i) abrirDerivar(id, i.area, false, true);
+      e.target.value = "";
+      return;
+    }
+    abrirDerivar(id, area);
+    e.target.value = "";            // se resetea hasta que se confirme
+  }
+  if (e.target.dataset.devolver && e.target.value) {
+    // Vuelve al área con un estado de trabajo, no como "Nuevo": ya fue tomado.
+    abrirDerivar(Number(e.target.dataset.devolver), e.target.value, true);
+    e.target.value = "";
+  }
+  if (e.target.dataset.reloj) await api("/api/listas/reloj", { id: Number(e.target.dataset.reloj), reloj: e.target.checked }), cargarListas();
+});
+
+// Cancelar deja el pedido como estaba: se vuelve a dibujar el tablero.
+// Si el motivo o la causa es «Otro», hay que escribir qué fue: si no, el
+// auditor recibe un «Otro» sin nada que lo explique.
+const esOtro = (v) => (v || "").trim().toLowerCase().startsWith("otro");
+function etiquetaNota() {
+  const cierre = !document.getElementById("nCierre").classList.contains("oculta");
+  const pide = cierre && (esOtro(document.getElementById("nMotivo").value) || esOtro(document.getElementById("nCausa").value));
+  document.getElementById("nEtiqueta").innerHTML = pide
+    ? `Nota — <b style="color:var(--amarillo)">obligatoria: elegiste «Otro», contá qué pasó</b>`
+    : "Nota (qué pasó, en una línea)";
+}
+for (const k of ["nMotivo", "nCausa"]) document.getElementById(k).addEventListener("change", etiquetaNota);
+// El mismo diálogo se usa para cambiar de estado: ahí los desplegables no van.
+document.getElementById("dlgNota").addEventListener("close", () => {
+  document.getElementById("nCierre").classList.add("oculta");
+  document.getElementById("dlgNota").dataset.paraAuditar = "";
+});
+
+document.getElementById("nCancelar").onclick = () => {
+  document.getElementById("dlgNota").close(); cargarTablero();
+};
+document.getElementById("nGuardar").onclick = async () => {
+  const dlg = document.getElementById("dlgNota");
+  try {
+    const nota = document.getElementById("nTexto").value;
+    if (dlg.dataset.paraAuditar === "1") {
+      const motivo_cierre = document.getElementById("nMotivo").value;
+      const causa_raiz = document.getElementById("nCausa").value;
+      if (!motivo_cierre || !causa_raiz) throw new Error("Elegí el motivo de cierre y la causa raíz");
+      if ((esOtro(motivo_cierre) || esOtro(causa_raiz)) && !nota.trim())
+        throw new Error("Elegiste «Otro»: escribí en la nota qué pasó");
+      await api("/api/items/para-cerrar", { id: Number(dlg.dataset.id), nota, motivo_cierre, causa_raiz });
+    }
+    else
+      await api("/api/items/estado", { id: Number(dlg.dataset.id), estado: dlg.dataset.estado, nota });
+    dlg.close(); cargarTablero();
+  } catch (err) { document.getElementById("nError").textContent = err.message; }
+};
+
+// ── Todo lo escrito en un pedido ───────────────────────────────────
+// Solo para leer: acá no se toca nada. Lo que se ve es lo que quedó
+// registrado a medida que cada área lo fue trabajando.
+async function verHistoria(id) {
+  const i = (datos.items || []).concat(datos.para_cerrar || []).find(x => x.id === id);
+  const dlg = document.getElementById("dlgHistoria");
+  document.getElementById("hPedido").textContent =
+    i ? `${i.numero} · ${i.abonado_nombre || i.abonado} · ${i.area}` : "";
+  document.getElementById("hQuePide").textContent = i ? i.descripcion : "";
+  document.getElementById("hAjeno").innerHTML = "";
+  document.getElementById("hLinea").innerHTML = `<div class="vacio">Buscando…</div>`;
+  dlg.showModal();
+
+  const d = await api(`/api/item?id=${id}`);
+  const movs = d.movimientos || [];
+  // Se puede abrir un pedido de otra área si alguien pasa el número, pero tiene
+  // que quedar claro que no es tuyo: si no, alguien lo mueve creyendo que le
+  // corresponde, o lo busca después en su tablero y no lo encuentra.
+  document.getElementById("hAjeno").innerHTML = d.de_otra_area
+    ? `<div class="aviso" style="background:#38BDF818; border:1px solid #38BDF850; color:#7DD3FC">
+         ${d.de_otro_vendedor
+           ? `Este caso lo tiene <b>${esc(d.item.persona)}</b>, no vos. Lo ves porque entraste con el
+              número; no aparece en tu tablero y no lo podés derivar.`
+           : `Este pedido es de <b>${esc(d.item?.area || "otra área")}</b>, no del tuyo. Lo ves porque
+              entraste con el número; no aparece en tu tablero.`}</div>`
+    : "";
+  document.getElementById("hLinea").innerHTML = movs.length ? movs.map(m => {
+    // La nota va después del guión largo: se muestra aparte, más grande.
+    const corte = m.texto.indexOf(" — ");
+    const hecho = corte > 0 ? m.texto.slice(0, corte) : m.texto;
+    const dicho = corte > 0 ? m.texto.slice(corte + 3) : "";
+    const f = new Date(m.ts);
+    return `<div class="hito-h">
+      <div class="cuando">${f.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" })}<br>
+        ${f.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })}</div>
+      <div class="que">${esc(hecho)}${m.usuario ? `<span class="quien">${esc(m.usuario)}</span>` : ""}
+        ${dicho ? `<span class="dicho">${esc(dicho)}</span>` : ""}</div>
+    </div>`;
+  }).join("") : `<div class="vacio">Todavía no se escribió nada en este pedido.</div>`;
+}
+
+document.getElementById("hCerrar").onclick = () => document.getElementById("dlgHistoria").close();
+
+// ── Corregir un pedido ─────────────────────────────────────────────
+function abrirEditor(id) {
+  const i = (datos.items || []).concat(datos.para_cerrar || []).find(x => x.id === id);
+  if (!i) return;
+  const dlg = document.getElementById("dlgEditar");
+  document.getElementById("eTicket").textContent = `${i.numero} · ${i.abonado_nombre || i.abonado}`;
+  document.getElementById("eNombre").value = i.abonado_nombre || "";
+  document.getElementById("eDesc").value = i.descripcion || "";
+  document.getElementById("eBykom").value = i.bykom || "";
+  document.getElementById("eUrg").value = i.urgencia;
+  for (const [campo, lista, valor] of [
+    ["eCanal", "canal", i.canal], ["eTipo", "tipo", i.tipo], ["eArea", "area", i.area],
+    ["eRecibe", "area", i.area_recibe], ["eSolic", "tipo_solicitud", i.tipo_solicitud],
+    ["eCliente", "tipo_cliente", i.tipo_cliente],
+  ]) {
+    // Los pedidos cargados antes de que existieran estos campos no tienen valor:
+    // se deja el renglón vacío en vez de elegir cualquier cosa por ellos.
+    document.getElementById(campo).innerHTML = `<option value=""></option>` + opciones(lista);
+    document.getElementById(campo).value = valor || "";
+  }
+  document.getElementById("eCampoFecha").classList.toggle("oculta", String(i.urgencia) !== "5");
+  // La nota arranca siempre vacía y plegada: es para lo que se agrega ahora, no
+  // para editar lo que ya se escribió antes.
+  document.getElementById("eNota").value = "";
+  document.getElementById("eCampoNota").classList.add("oculta");
+  document.getElementById("eError").textContent = "";
+  dlg.dataset.id = id;
+  dlg.showModal();
+}
+
+document.getElementById("eUrg").onchange = (e) =>
+  document.getElementById("eCampoFecha").classList.toggle("oculta", e.target.value !== "5");
+document.getElementById("eVerNota").onclick = () => {
+  const campo = document.getElementById("eCampoNota");
+  campo.classList.remove("oculta");
+  document.getElementById("eVerNota").classList.add("oculta");
+  document.getElementById("eNota").focus();
+};
+
+document.getElementById("eCancelar").onclick = () => document.getElementById("dlgEditar").close();
+
+document.getElementById("eGuardar").onclick = async () => {
+  const dlg = document.getElementById("dlgEditar");
+  try {
+    const r = await api("/api/items/editar", {
+      id: Number(dlg.dataset.id),
+      abonado_nombre: document.getElementById("eNombre").value.trim(),
+      canal: document.getElementById("eCanal").value,
+      tipo: document.getElementById("eTipo").value,
+      area: document.getElementById("eArea").value,
+      area_recibe: document.getElementById("eRecibe").value,
+      tipo_solicitud: document.getElementById("eSolic").value,
+      tipo_cliente: document.getElementById("eCliente").value,
+      descripcion: document.getElementById("eDesc").value.trim(),
+      urgencia: document.getElementById("eUrg").value,
+      bykom: document.getElementById("eBykom").value.trim(),
+      fecha_comprometida: document.getElementById("eFecha").value,
+    });
+    // La nota va aparte de la corrección: se puede agregar sola, sin cambiar
+    // ningún campo, y así queda como un movimiento propio en el historial.
+    const nota = document.getElementById("eNota").value.trim();
+    if (nota) await api("/api/items/nota", { id: Number(dlg.dataset.id), texto: nota });
+
+    dlg.close(); cargarTablero();
+    const avisos = [];
+    if (r.cambios) avisos.push("Corregido:\n" + r.cambios.join("\n"));
+    if (nota) avisos.push("Nota agregada al historial.");
+    if (avisos.length) setTimeout(() => alert(avisos.join("\n\n")), 100);
+  } catch (err) { document.getElementById("eError").textContent = err.message; }
+};
+
+document.getElementById("eAnular").onclick = async () => {
+  const dlg = document.getElementById("dlgEditar");
+  const motivo = prompt("¿Por qué se anula? (queda registrado)", "Cargado por error");
+  if (motivo === null) return;
+  const pin = prompt("Clave para anular:");
+  if (!pin) return;
+  try {
+    await api("/api/items/anular", { id: Number(dlg.dataset.id), motivo, pin });
+    dlg.close(); cargarTablero();
+  } catch (err) { document.getElementById("eError").textContent = err.message; }
+};
+
+// Pasar un pedido a otra área siempre pasa por acá: es el momento en que hay
+// que decir por qué, y esa nota es lo primero que ve el área que lo recibe.
+function abrirDerivar(id, area, devolviendo = false, reasignar = false) {
+  const i = (datos.items || []).concat(datos.para_cerrar || []).find(x => x.id === id);
+  const sinTomar = i?.estado === "Nuevo";
+  const dlg = document.getElementById("dlgDerivar");
+
+  document.getElementById("dTitulo").innerHTML = reasignar
+    ? `Pasar a otra persona de <b>${esc(area)}</b>`
+    : `${devolviendo ? "Devolver a" : "Derivar a"} <b>${esc(area)}</b>`;
+  document.getElementById("dPedido").textContent = i ? `${i.numero} · ${i.abonado_nombre || i.abonado}` : "";
+  document.getElementById("dEtiqueta").textContent = reasignar
+    ? "Nota — por qué se lo pasás (queda a la vista)"
+    : devolviendo
+    ? "Nota — qué falta para poder cerrarlo (queda a la vista)"
+    : "Nota — por qué pasa al área (queda a la vista)";
+  document.getElementById("dEstado").innerHTML = (listas.estado || [])
+    .filter(x => !["Nuevo", "Cerrado", listas._config.estado_cierre].includes(x.valor))
+    .map(x => `<option>${esc(x.valor)}</option>`).join("");
+  document.getElementById("dCampoEstado").classList.toggle("oculta", devolviendo || !sinTomar);
+
+  // Las personas del área que recibe. Si vuelve a la misma área, queda elegida la que ya tenía.
+  const nombres = (listas._personas || {})[area] || [];
+  const dPersona = document.getElementById("dPersona");
+  dPersona.innerHTML = `<option value="">Toda el área</option>` +
+    nombres.map(n => `<option>${esc(n)}</option>`).join("");
+  dPersona.value = i && i.area === area && nombres.includes(i.persona) ? i.persona : "";
+  // Al pasarlo a otra persona, la que ya lo tiene no se ofrece y no hay nada elegido.
+  if (reasignar) {
+    dPersona.innerHTML = (i?.persona ? `<option value="">Toda el área</option>` : `<option value="">Elegí a quién…</option>`) +
+      nombres.filter(n => n !== i?.persona).map(n => `<option>${esc(n)}</option>`).join("");
+    dPersona.value = "";
+  }
+  document.getElementById("dCampoPersona").classList.toggle("oculta", !nombres.length);
+
+  // El plazo del tramo que empieza. Se elige el PLAZO, no la urgencia: la
+  // urgencia es lo que se le prometió al cliente. Por defecto, el que el pedido
+  // ya tiene — quien deriva no está obligado a decidir nada.
+  const c = listas._config || {};
+  const opciones = [
+    ["", `Como está — el del pedido (urgencia ${i?.urgencia ?? "?"})`],
+    ["1", `${c.horas_u1 || 2} horas`],
+    ["2", `Fin del día (hasta las ${c.hora_fin_dia || 18})`],
+    ["3", `${c.horas_u3 || 24} horas`],
+    ["4", `${c.horas_u4 || 48} horas`],
+    ["5", "Una fecha y hora a medida"],
+  ];
+  const sel = document.getElementById("dPlazo");
+  sel.innerHTML = opciones.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("");
+  sel.value = "";
+  document.getElementById("dCampoFecha").classList.add("oculta");
+  document.getElementById("dFecha").value = "";
+  // La urgencia 5 tiene fecha comprometida con el cliente: si no se elige nada
+  // no se toca, y si se elige algo hay que decir que se la está pisando.
+  document.getElementById("dPlazoAyuda").textContent = i?.urgencia === 5
+    ? "Este pedido tiene una fecha comprometida con el cliente. Si dejás «como está», no se toca."
+    : "La urgencia del pedido no cambia: sigue siendo lo que se le prometió al cliente.";
+  sel.onchange = () => {
+    document.getElementById("dCampoFecha").classList.toggle("oculta", sel.value !== "5");
+    if (sel.value === "5") setTimeout(() => document.getElementById("dFecha").focus(), 50);
+  };
+
+  document.getElementById("dNota").value = "";
+  document.getElementById("dNota").dispatchEvent(new Event("input"));
+  document.getElementById("dError").textContent = "";
+  document.getElementById("dConfirmar").textContent = reasignar ? "Pasar" : devolviendo ? "Devolver" : "Derivar";
+  dlg.dataset.id = id; dlg.dataset.area = area; dlg.dataset.reasignar = reasignar ? "1" : "";
+  dlg.dataset.estado = devolviendo ? "En curso" : (sinTomar ? "" : "-");
+  dlg.showModal();
+  setTimeout(() => document.getElementById("dNota").focus(), 100);
+}
+
+// El contador de las notas. Con dos mil caracteres disponibles conviene ver
+// cuánto queda: si no, uno escribe y el navegador corta en seco sin avisar.
+for (const [campo, salida] of [["nTexto", "nCuenta"], ["dNota", "dCuenta"]]) {
+  const t = document.getElementById(campo), c = document.getElementById(salida);
+  if (!t || !c) continue;
+  const pintar = () => {
+    const usados = t.value.length, tope = Number(t.maxLength) || 2000;
+    c.textContent = usados ? `${usados} de ${tope}` : "";
+    c.style.color = usados > tope - 100 ? "var(--rojo)" : "var(--tenue)";
+  };
+  t.addEventListener("input", pintar);
+  pintar();
+}
+
+document.getElementById("dCancelar").onclick = () => {
+  document.getElementById("dlgDerivar").close(); cargarTablero();
+};
+document.getElementById("dConfirmar").onclick = async () => {
+  const dlg = document.getElementById("dlgDerivar");
+  // "-" es el pedido que ya está tomado: sigue con el estado que tenía.
+  const fijo = dlg.dataset.estado;
+  try {
+    const plazo = document.getElementById("dPlazo").value;
+    const fecha = document.getElementById("dFecha").value;
+    if (plazo === "5" && !fecha) {
+      document.getElementById("dError").textContent = "Elegí la fecha y la hora, o cambiá el plazo.";
+      return;
+    }
+    await api("/api/items/area", {
+      id: Number(dlg.dataset.id), area: dlg.dataset.area,
+      estado: fijo === "-" ? undefined : (fijo || document.getElementById("dEstado").value),
+      nota: document.getElementById("dNota").value,
+      persona: document.getElementById("dPersona").value,
+      reasignar: dlg.dataset.reasignar === "1" || undefined,
+      plazo: plazo || undefined,
+      // El campo da "2026-09-05T18:00"; calcularVencimiento le agrega las 18 si
+      // solo viene la fecha, así que se manda tal cual y decide el servidor.
+      plazo_fecha: plazo === "5" ? fecha : undefined,
+    });
+    dlg.close(); cargarTablero();
+  } catch (err) { document.getElementById("dError").textContent = err.message; }
+};
+
+document.getElementById("cCancelar").onclick = () => document.getElementById("dlgCierre").close();
+async function confirmarCierre() {
+  const dlg = document.getElementById("dlgCierre");
+  const err = document.getElementById("cError");
+  err.textContent = "";
+  try {
+    await api("/api/items/cerrar", {
+      id: Number(dlg.dataset.id),
+      // Solo si se eligieron acá; si no, el servidor usa lo del área.
+      ...(document.getElementById("cCampos").classList.contains("oculta") ? {} : {
+        motivo_cierre: document.getElementById("cMotivo").value,
+        causa_raiz: document.getElementById("cCausa").value,
+      }),
+      aviso_cliente: document.getElementById("cAviso").value,
+      pin: document.getElementById("cPin").value,
+    });
+    dlg.close(); cargarTablero();
+  } catch (e) {
+    err.textContent = e.message;
+    const pin = document.getElementById("cPin");
+    pin.value = ""; pin.focus();
+  }
+}
+document.getElementById("cConfirmar").onclick = confirmarCierre;
+// Con Enter en la clave también cierra, para no obligar a ir al botón.
+document.getElementById("cPin").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); confirmarCierre(); }
+});
+
+// ── Alta ───────────────────────────────────────────────────────────
+document.querySelector("[name=urgencia]").onchange = (e) =>
+  document.getElementById("campoFecha").classList.toggle("oculta", e.target.value !== "5");
+
+// "+ Agregar a la lista…" — se escribe el valor nuevo, se guarda en la lista y
+// queda elegido, sin perder lo que ya se había cargado en el formulario.
+document.addEventListener("change", async (e) => {
+  const sel = e.target;
+  if (!sel.dataset?.lista || sel.value !== "__nuevo__") return;
+  const titulo = { area: "área", canal: "canal", tipo: "motivo",
+                   tipo_solicitud: "tipo de solicitud", tipo_cliente: "tipo de cliente" }[sel.dataset.lista]
+                 || "valor";
+  const valor = (prompt(`Nuevo ${titulo}:`) || "").trim();
+  sel.value = "";
+  if (!valor) return;
+  try {
+    await api("/api/listas", { tipo: sel.dataset.lista, valor, reloj: 1 });
+    await cargarListas();
+    // Todos los desplegables de esa lista se rehicieron: se elige el nuevo en
+    // el que se estaba usando.
+    document.querySelector(`[name=${sel.name}]`).value = valor;
+  } catch (err) { alert(err.message); }
+});
+
+// Las personas cargadas en el área destino. Si el área no tiene a nadie, el campo no aparece.
+function pintarPersonaDestino() {
+  const area = document.querySelector("#formAlta [name=area]").value;
+  const nombres = (listas._personas || {})[area] || [];
+  const sel = document.querySelector("#formAlta [name=persona]");
+  const antes = sel.value;
+  sel.innerHTML = `<option value="">Toda el área</option>` +
+    nombres.map(n => `<option>${esc(n)}</option>`).join("");
+  if (nombres.includes(antes)) sel.value = antes;
+  document.getElementById("campoPersona").classList.toggle("oculta", !nombres.length);
+}
+document.querySelector("#formAlta [name=area]").addEventListener("change", pintarPersonaDestino);
+
+// Si el abonado ya tiene un pedido abierto, el servidor no lo carga y devuelve
+// cuáles son: se muestran con «Ir a ese pedido» y «Cargar igual».
+function resumen(texto, max = 140) {
+  const t = String(texto || "").replace(/\s+/g, " ").trim();
+  return t.length > max ? t.slice(0, max).trimEnd() + "…" : t;
+}
+function mostrarParecidos(lista, form, revisados) {
+  const aviso = document.getElementById("avisoAlta");
+  aviso.innerHTML = `<div class="aviso parecido">
+    <b>⚠️ Hay un pedido ya, ¿qué pasó?</b>
+    <div>Este abonado ya tiene ${lista.length === 1 ? "un pedido abierto" : lista.length + " pedidos abiertos"}:</div>
+    ${lista.map(p => `<div class="ped">
+      <div><b>#${p.id}</b> · ${esc(p.tipo_solicitud || "sin tipo")} · ${esc(p.tipo)} · ${esc(p.area)}${p.persona ? " (" + esc(p.persona) + ")" : ""}
+        · ${esc(p.estado)} · hace ${haceCuanto(p.creado_en)}</div>
+      ${p.ajeno ? `<div style="color:var(--suave)">Lo tiene otro vendedor: no lo podés abrir.</div>`
+                : `<div style="color:var(--suave)">«${esc(resumen(p.descripcion))}»</div>`}
+      ${p.otra_area ? `<div style="color:var(--tenue); font-size:12px">Es de ${esc(p.area)}, no de tu área: no aparece en tu tablero.</div>` : ""}
+      ${p.ajeno ? "" : `<div class="botones"><button type="button" class="accion" data-ir="${p.id}">Ir a ese pedido</button></div>`}
+    </div>`).join("")}
+    <div style="margin-top:8px">¿Querés cargar el pedido nuevo igual?</div>
+    <div class="botones">
+      <button type="button" class="accion primario" id="cargarIgual">Cargar igual</button>
+      <button type="button" class="accion" id="cancelarParecido">Cancelar</button>
+    </div>
+  </div>`;
+  aviso.querySelectorAll("[data-ir]").forEach(b => b.onclick = () => irAlPedido(Number(b.dataset.ir)));
+  document.getElementById("cancelarParecido").onclick = () => { aviso.innerHTML = ""; };
+  // Se carga lo mismo que se revisó, no lo que haya quedado en el formulario.
+  const rev = revAlta;
+  document.getElementById("cargarIgual").onclick = (e) => {
+    if (rev !== revAlta) { aviso.innerHTML = ""; return; }
+    e.target.disabled = true;
+    cargarPedido(form, lista.map(p => p.id).join(","), revisados);
+  };
+  scrollTo(0, 0);
+}
+
+// revAlta sube con cada cambio del formulario: una respuesta de parecidos que
+// llega después de editar es de otro pedido y se descarta.
+let cargando = false, revAlta = 0;
+document.getElementById("formAlta").onsubmit = (e) => {
+  e.preventDefault();
+  cargarPedido(e.target);
+};
+// Si se corrige algo después del aviso, «Cargar igual» ya no corresponde.
+document.getElementById("formAlta").addEventListener("input", () => {
+  revAlta++;
+  if (document.querySelector("#avisoAlta .parecido")) document.getElementById("avisoAlta").innerHTML = "";
+});
+
+async function cargarPedido(form, cargarIgual, revisados) {
+  if (cargando) return;      // un doble clic cargaba dos veces el mismo pedido
+  cargando = true;
+  const d = revisados ? { ...revisados } : Object.fromEntries(new FormData(form));
+  if (cargarIgual) d.cargar_igual = cargarIgual;
+  const rev = revAlta;
+  const aviso = document.getElementById("avisoAlta");
+  try {
+    const r = await api("/api/items", d);
+    if (r.duplicados) {
+      if (rev !== revAlta) {
+        aviso.innerHTML = `<div class="aviso error">Cambiaste el pedido mientras se revisaba: apretá «Cargar pedido» de nuevo.</div>`;
+        return;
+      }
+      delete d.cargar_igual;
+      return mostrarParecidos(r.duplicados, form, d);
+    }
+    aviso.innerHTML = `<div class="aviso ok">Cargado en el ticket <b>${esc(r.ticket)}</b></div>`;
+    form.reset();
+    pintarPersonaDestino();
+    document.getElementById("campoFecha").classList.add("oculta");
+    await cargarTablero();
+  } catch (err) {
+    aviso.innerHTML = `<div class="aviso error">${esc(err.message)}</div>`;
+  } finally {
+    cargando = false;
+  }
+}
+
+// ── Configuración ──────────────────────────────────────────────────
+const TITULOS = { area: "Áreas", canal: "Canales de ingreso",
+                  tipo_solicitud: "Tipos de solicitud", tipo: "Motivos",
+                  tipo_cliente: "Tipos de cliente", estado: "Estados",
+                  motivo_cierre: "Motivos de cierre", causa_raiz: "Causas raíz" };
+
+// De la planilla «Ayax Atencion Cliente» salen domicilio, vendedor y
+// administrador de cada pedido nuevo. Acá se ve si la está pudiendo leer.
+async function pintarPlanilla(p) {
+  p = p || await api("/api/planilla");
+  const caja = document.getElementById("estadoPlanilla");
+  caja.innerHTML = !p.configurada
+    ? `<span style="color:var(--amarillo)">Sin conectar: falta la cuenta de servicio de Google en el servidor.</span>`
+    : (p.leida ? `<span style="color:var(--verde)">${p.clientes} clientes</span> · leída a las ${esc(hora(p.leida))}` : "Todavía no se leyó")
+      + (p.error ? `<div style="color:var(--rojo); margin-top:4px">${esc(p.error)}</div>` : "")
+      + (p.repetidos?.length ? `<div style="color:var(--amarillo); margin-top:4px">Códigos repetidos en la planilla (quedan sin datos):
+          ${esc(p.repetidos.map(r => r.join(" = ")).join(" · "))}</div>` : "")
+      + (p.sin_leer?.length ? `<div style="color:var(--amarillo); margin-top:4px">Códigos que no se entienden (${p.sin_leer.length}):
+          ${esc(p.sin_leer.slice(0, 10).join(", "))}</div>` : "");
+}
+document.getElementById("btnLeerPlanilla").addEventListener("click", async () => {
+  try { await pintarPlanilla(await api("/api/planilla/leer", {})); } catch (e) { alert(e.message); }
+});
+
+function pintarConfig() {
+  pintarPlanilla().catch(e => { document.getElementById("estadoPlanilla").textContent = e.message; });
+  document.getElementById("listasConf").innerHTML = Object.entries(TITULOS).map(([tipo, titulo]) => `
+    <div class="conf">
+      <h3>${titulo}</h3>
+      <div class="chips">
+        ${(listas[tipo] || []).map(v => `
+          <span class="chip">
+            ${esc(v.valor)}
+            ${tipo === "estado" ? `<label style="color:var(--tenue);font-size:11px">
+              <input type="checkbox" data-reloj="${v.id}" ${v.reloj ? "checked" : ""}> corre el reloj</label>` : ""}
+            <button data-renombrar="${v.id}" title="Cambiar el nombre">✎</button>
+            <button data-borrar="${v.id}" title="Quitar">×</button>
+          </span>`).join("")}
+      </div>
+      <form data-tipo="${tipo}" style="display:flex; gap:8px">
+        <input name="valor" placeholder="Agregar…" class="mini" style="flex:1">
+        <button class="accion mini" type="submit">Agregar</button>
+      </form>
+    </div>`).join("");
+
+  for (const k of ["horas_u1", "horas_u3", "horas_u4", "hora_fin_dia", "pct_preaviso", "url_panel"])
+    document.getElementById(k).value = listas._config[k] ?? "";
+  // Sin dirección los avisos salen igual, pero pelados: nadie puede abrir el
+  // pedido desde el celular y nada en el panel lo delata. Por eso el cartel.
+  const dir = (listas._config.url_panel || "").trim();
+  document.getElementById("alertaUrl").innerHTML = dir
+    ? (dir.startsWith("https://") ? ""
+       : `<div class="aviso" style="margin:8px 0 0; background:#FBBF2418; border:1px solid #FBBF2450; color:#FCD34D">
+            Esta dirección no es <b>https</b>: si el aviso se lee desde afuera de la oficina, el link puede no abrir.
+          </div>`)
+    : `<div class="aviso error" style="margin:8px 0 0">
+         <b>Los avisos están saliendo sin link.</b> Falta la dirección del panel: el que recibe el
+         aviso en el celular no tiene cómo abrir el pedido.
+       </div>`;
+  pintarUsuarios();
+}
+
+document.addEventListener("submit", async (e) => {
+  if (!e.target.dataset.tipo) return;
+  e.preventDefault();
+  const valor = e.target.valor.value.trim();
+  if (!valor) return;
+  await api("/api/listas", { tipo: e.target.dataset.tipo, valor, reloj: 1 });
+  e.target.reset(); await cargarListas(); pintarConfig();
+});
+
+document.getElementById("guardarConfig").onclick = async () => {
+  const c = {};
+  for (const k of ["horas_u1", "horas_u3", "horas_u4", "hora_fin_dia", "pct_preaviso", "url_panel"])
+    c[k] = document.getElementById(k).value.trim();
+  const btn = document.getElementById("guardarConfig");
+  try {
+    await api("/api/config", c);
+  } catch (e) {
+    // Antes el error del servidor se perdía y el botón no decía nada: quedaba
+    // la sensación de haber guardado algo que nunca se guardó.
+    document.getElementById("alertaUrl").innerHTML =
+      `<div class="aviso error" style="margin:8px 0 0">${esc(e.message)}</div>`;
+    btn.textContent = "No se guardó";
+    setTimeout(() => (btn.textContent = "Guardar"), 2500);
+    return;
+  }
+  await cargarListas(); cargarTablero();
+  btn.textContent = "Guardado ✓";
+  setTimeout(() => (btn.textContent = "Guardar"), 1500);
+};
+
+// ── Avisos ─────────────────────────────────────────────────────────
+const REGLAS = [
+  ["avisar_nuevo", "Cuando entra un pedido nuevo → al área"],
+  ["avisar_por_vencer", "Antes de que venza (preaviso) → al área"],
+  ["avisar_vencido", "Cuando vence o el área no devuelve → al área y a ATCL"],
+];
+
+let temporizadorQr = null;
+
+async function pintarWsp() {
+  const w = await api("/api/wsp");
+  const caja = document.getElementById("estadoWsp");
+  if (!caja) return;
+
+  if (w.estado === "conectado") {
+    caja.innerHTML = `
+      <h3>WhatsApp</h3>
+      <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap">
+        <span class="punto" style="background:var(--verde); width:10px; height:10px"></span>
+        <b>Conectado</b>
+        <span class="num">número ${esc(w.numero || "—")}</span>
+        <button class="accion mini" id="btnProbarWsp">Mandarme una prueba</button>
+        <button class="accion mini" id="btnSalirWsp">Desconectar</button>
+      </div>`;
+  } else if (w.estado === "esperando_qr" && w.qr) {
+    caja.innerHTML = `
+      <h3>WhatsApp — escaneá el código</h3>
+      <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap">
+        <img src="${w.qr}" width="220" height="220" style="border-radius:10px; background:#fff; padding:8px">
+        <div style="font-size:13px; color:var(--suave); line-height:1.7; max-width:340px">
+          En el celular del <b>número que va a mandar los avisos</b>:<br>
+          WhatsApp → <b>Dispositivos vinculados</b> → <b>Vincular un dispositivo</b><br>
+          y apuntá a este código.<br><br>
+          <span style="color:var(--tenue)">El código se renueva solo cada 20 segundos.
+          Una vez vinculado no hay que repetirlo, ni aunque se apague el CRM.</span>
+        </div>
+      </div>`;
+  } else {
+    caja.innerHTML = `
+      <h3>WhatsApp</h3>
+      <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap">
+        <span class="punto" style="background:var(--gris); width:10px; height:10px"></span>
+        Sin conectar
+        <button class="accion primario" id="btnConectarWsp">Conectar WhatsApp</button>
+        ${w.error ? `<span style="color:var(--amarillo); font-size:12px">${esc(w.error)}</span>` : ""}
+      </div>
+      <div style="color:var(--tenue); font-size:12px; margin-top:10px">
+        Conviene usar un número dedicado al bot, no el de la empresa: es una conexión
+        no oficial y, si WhatsApp la bloqueara, no querés perder el número principal.
+      </div>`;
+  }
+
+  // Mientras espera el escaneo, refresca para mostrar el QR nuevo y detectar
+  // el momento en que se conecta.
+  clearInterval(temporizadorQr);
+  if (w.estado === "esperando_qr" || w.estado === "desconectado" && w.error?.includes("reintentando"))
+    temporizadorQr = setInterval(pintarWsp, 4000);
+}
+
+// ── Personas ───────────────────────────────────────────────────────
+// Quiénes son, y a quién le llega cada aviso. Es el mismo dato: el teléfono que
+// cargás en la ficha de alguien es el que va a recibir los avisos de su sector.
+async function pintarPersonas() {
+  await pintarUsuarios();
+  await pintarOtrosDestinatarios();
+}
+
+async function pintarOtrosDestinatarios() {
+  const tels = await api("/api/telefonos");
+  const telPorArea = {};
+  for (const t of tels) (telPorArea[t.area] ||= []).push(t);
+  const mails = await api("/api/correos");
+  const mailPorArea = {};
+  for (const m of mails) (mailPorArea[m.area] ||= []).push(m);
+
+  document.getElementById("tablaContactos").innerHTML =
+    (listas.area || []).map(a => {
+      const mios = telPorArea[a.valor] || [];
+      return `
+      <div class="area-avisos">
+        <div class="area-nombre">${esc(a.valor)}</div>
+
+        <div class="area-cuerpo">
+          <div class="rotulo-chico">WhatsApp</div>
+          <div class="chips" style="margin-bottom:8px">
+            ${mios.length ? mios.map(t => `
+              <span class="chip">
+                ${esc(t.numero)}${t.nombre ? ` <span style="color:var(--tenue)">· ${esc(t.nombre)}</span>` : ""}
+                <button data-borrar-tel="${t.id}" title="Quitar">×</button>
+              </span>`).join("")
+              : `<span style="color:var(--tenue); font-size:12px">Ninguno — solo las personas del área</span>`}
+          </div>
+          <form data-tel-area="${esc(a.valor)}" style="display:flex; gap:6px; flex-wrap:wrap">
+            <input name="numero" class="mini" style="width:150px" placeholder="541154897134" inputmode="numeric">
+            <input name="nombre" class="mini" style="width:130px" placeholder="de quién (opcional)">
+            <button class="accion mini" type="submit">Agregar</button>
+          </form>
+
+          <div class="rotulo-chico" style="margin-top:14px">Correo</div>
+          <div class="chips" style="margin-bottom:8px">
+            ${(mailPorArea[a.valor] || []).length
+              ? (mailPorArea[a.valor] || []).map(m => `
+                <span class="chip">
+                  ${esc(m.direccion)}${m.nombre ? ` <span style="color:var(--tenue)">· ${esc(m.nombre)}</span>` : ""}
+                  <button data-borrar-mail="${m.id}" title="Quitar">×</button>
+                </span>`).join("")
+              : `<span style="color:var(--tenue); font-size:12px">Ninguno — solo las personas del área</span>`}
+          </div>
+          <form data-mail-area="${esc(a.valor)}" style="display:flex; gap:6px; flex-wrap:wrap">
+            <input name="direccion" class="mini" style="width:230px" placeholder="area@ayaxseguridad.com.ar">
+            <input name="nombre" class="mini" style="width:130px" placeholder="de quién (opcional)">
+            <button class="accion mini" type="submit">Agregar</button>
+          </form>
+        </div>
+      </div>`;
+    }).join("") + `
+    <div style="color:var(--tenue); font-size:12px; margin-top:10px">
+      Estos se suman a las personas del área. Si el número ya es el de alguien de arriba,
+      el aviso sale una sola vez.
+    </div>`;
+}
+
+async function pintarAvisos() {
+  await pintarWsp();
+  const d = await api("/api/avisos");
+  const c = listas._config;
+  const simulando = c.modo_envio !== "real";
+  // Una copia del CRM no manda nada aunque diga "enviar de verdad". Se avisa acá
+  // para que nadie crea que este panel está avisando al personal cuando no lo hace.
+  const copia = !(await api("/api/quien")).es_produccion;
+
+  document.getElementById("modoEnvio").innerHTML = `
+    <h3>Modo</h3>
+    ${copia ? `<div class="aviso" style="background:#38bdf818; border:1px solid #38bdf850; color:#7dd3fc">
+        <b>Esta es una copia, no el CRM de la nube.</b> No manda WhatsApp ni correos,
+        aunque abajo diga «enviar de verdad». Solo envía el que está publicado.
+      </div>` : ""}
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+      <button class="accion ${simulando ? "primario" : ""}" data-modo="simular">Solo mostrar</button>
+      <button class="accion ${!simulando ? "primario" : ""}" data-modo="real">Enviar de verdad</button>
+      <span style="color:var(--suave); font-size:12px">
+        ${copia ? "En una copia los mensajes nunca salen."
+          : simulando ? "El bot arma los mensajes pero no los manda. Sirve para ajustar los textos."
+                      : "⚠️ Los mensajes se están enviando a los destinatarios cargados."}
+      </span>
+    </div>`;
+
+  // Acá solo se muestra a quién le llega. Cargar y quitar destinatarios es otra
+  // tarea y vive en Personas: son dos momentos distintos y mezclarlos hacía que
+  // esta pantalla tuviera de todo.
+  const alc = (await api("/api/personas")).alcance || {};
+  document.getElementById("alcanceAvisos").innerHTML = `<div class="tabla-scroll"><table><thead><tr>
+      <th>Área</th><th>WhatsApp</th><th>Correo</th></tr></thead><tbody>${
+    (listas.area || []).map(a => {
+      const x = alc[a.valor] || { telefonos: 0, correos: 0 };
+      const cel = (n, que) => n
+        ? `<span style="color:var(--verde)">${n} ${que}${n > 1 ? "s" : ""}</span>`
+        : `<span style="color:var(--rojo)">nadie</span>`;
+      return `<tr><td><b>${esc(a.valor)}</b></td>
+        <td>${cel(x.telefonos, "teléfono")}</td>
+        <td>${cel(x.correos, "correo")}</td></tr>`;
+    }).join("")}</tbody></table></div>`;
+
+  document.getElementById("reglasAviso").innerHTML =
+    REGLAS.map(([k, t]) => `
+      <label style="display:block; margin-bottom:8px; cursor:pointer">
+        <input type="checkbox" data-regla="${k}" ${c[k] === "1" ? "checked" : ""}> ${t}
+      </label>`).join("") + `
+      <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:12px">
+        <div><label style="font-size:11px; color:var(--suave)">Resumen diario a las</label><br>
+          <input class="mini" style="width:70px" type="number" min="0" max="23" data-regla-n="hora_resumen" value="${c.hora_resumen}"></div>
+        <div><label style="font-size:11px; color:var(--suave)">Silencio desde</label><br>
+          <input class="mini" style="width:70px" type="number" min="0" max="23" data-regla-n="silencio_desde" value="${c.silencio_desde}"></div>
+        <div><label style="font-size:11px; color:var(--suave)">hasta</label><br>
+          <input class="mini" style="width:70px" type="number" min="0" max="23" data-regla-n="silencio_hasta" value="${c.silencio_hasta}"></div>
+        <div><label style="font-size:11px; color:var(--suave)">Área que recibe copia (ATCL)</label><br>
+          <select class="mini" data-regla-n="area_atcl">
+            ${(listas.area || []).map(a => `<option ${a.valor === c.area_atcl ? "selected" : ""}>${esc(a.valor)}</option>`).join("")}
+          </select></div>
+      </div>
+      <div style="color:var(--tenue); font-size:12px; margin-top:10px">
+        En el horario de silencio no sale ningún aviso, salvo urgencia 1.
+      </div>`;
+
+  const res = await api("/api/avisos/resumen");
+  document.getElementById("vistaResumen").innerHTML = res.length
+    ? res.map(r => `<pre class="msg">${esc(r.texto)}</pre>`).join("")
+    : `<div style="color:var(--tenue)">No hay pedidos abiertos, así que hoy no saldría ningún resumen.</div>`;
+
+}
+
+// ── Auditoría: la vida de cada pedido ──────────────────────────────
+let filtroAudit = "abiertos";
+
+const hora = (ts) => new Date(ts).toLocaleString("es-AR",
+  { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
+
+// "Enviado" quiere decir que WhatsApp lo aceptó, no que le haya llegado a
+// nadie: si el teléfono está apagado o el número no tiene WhatsApp, no llega
+// nunca. Esto muestra qué pasó de verdad con cada mensaje del aviso.
+function entregaWsp(e) {
+  if (!e) return "";
+  const quienes = (est) => e.quienes.filter(q => q.estado === est)
+                                    .map(q => q.nombre).join(", ");
+  const partes = [];
+  if (e.llego)   partes.push(`<span style="color:var(--verde)" title="Le llegó al teléfono de: ${esc(quienes("llego"))}">· llegó a ${e.llego}</span>`);
+  if (e.mandado) partes.push(`<span style="color:var(--amarillo, #eab308)" title="Salió, WhatsApp todavía no confirmó: ${esc(quienes("mandado"))}">· sin confirmar ${e.mandado}</span>`);
+  if (e.fallo)   partes.push(`<span style="color:var(--rojo)" title="No llegó a: ${esc(quienes("fallo"))}">· NO llegó a ${e.fallo}</span>`);
+  return partes.join(" ");
+}
+
+// El correo sale uno solo por aviso, con todas las direcciones del área
+// adentro: por eso es un estado y no una cuenta.
+function entregaMail(c) {
+  if (!c) return "";
+  const t = { llego: ["var(--verde)", "correo llegó"],
+              mandado: ["var(--amarillo, #eab308)", "correo sin confirmar"],
+              fallo: ["var(--rojo)", "correo NO llegó"] }[c.estado];
+  if (!t) return "";
+  return ` <span style="color:${t[0]}" title="${esc(c.destinos)}${c.detalle ? " · " + esc(c.detalle) : ""}">· ${t[1]}</span>`;
+}
+
+// Cada pintada lleva su turno: si mientras tanto salió otra, la respuesta vieja
+// se descarta. Si no, al abrir un pedido desde el link la carga del clic en la
+// pestaña llegaba después y lo tapaba con la lista, con la ficha cerrada.
+let turnoAudit = 0;
+async function pintarAuditoria() {
+  const turno = ++turnoAudit, solo1 = soloAudit;
+  const pedidos = await api(solo1 ? `/api/auditoria?id=${solo1}` : `/api/auditoria?filtro=${filtroAudit}`);
+  const caja = document.getElementById("auditoria");
+  if (!caja || turno !== turnoAudit) return;
+  const solo = document.getElementById("soloUnoAudit");
+  const uno = solo1 && pedidos[0];
+  solo.innerHTML = uno ? avisoSoloUno(uno.numero, uno.abonado, "verTodosAudit")
+    + (uno.lo_tiene_otro ? `<span style="flex-basis:100%">Lo tiene <b>${esc(uno.lo_tiene_otro)}</b>, no vos: no aparece en tu tablero y no lo podés derivar.</span>`
+       : uno.de_otra_area ? `<span style="flex-basis:100%">Es de <b>${esc(uno.area)}</b>, no de tu área: no aparece en tu tablero.</span>` : "") : "";
+  solo.classList.toggle("oculta", !uno);
+
+  document.querySelectorAll("[data-audit]").forEach(b =>
+    b.classList.toggle("primario", b.dataset.audit === filtroAudit));
+
+  if (!pedidos.length) { caja.innerHTML = `<div style="color:var(--tenue)">No hay pedidos para mostrar.</div>`; return; }
+
+  caja.innerHTML = pedidos.map(p => {
+    const cerrado = p.estado === "Cerrado";
+    const dur = p.cerrado_en
+      ? Math.round((p.cerrado_en - p.creado_en - (p.pausa_ms || 0)) / 60000)
+      : null;
+    return `
+    <details class="ficha" data-ped="${p.id}" ${solo1 ? "open" : ""}>
+      <summary>
+        <span class="urg u${p.urgencia}">${p.urgencia}</span>
+        <b>${esc(p.numero)}</b>
+        <span style="color:var(--suave)">${esc(p.abonado)}</span>
+        <span class="num">${esc(p.area)}</span>
+        <span class="etq ${cerrado ? "cerr" : "abto"}">${esc(p.estado)}</span>
+        <span class="num" style="margin-left:auto">${p.avisos} aviso${p.avisos === 1 ? "" : "s"}${
+          dur !== null ? ` · resuelto en ${dur < 60 ? dur + " min" : Math.round(dur / 60) + " h"}` : ""}</span>
+      </summary>
+      <div class="cuerpo">
+        <div class="num" style="margin-bottom:10px">${[
+            p.tipo_solicitud, p.tipo, p.tipo_cliente,
+            p.area_recibe ? "lo recibió " + p.area_recibe : "",
+            p.bykom ? "Bykom " + p.bykom : "",
+          ].filter(Boolean).map(esc).join(" · ")}<br>${esc(p.descripcion)}</div>
+        ${p.linea.map(x => x.tipo === "aviso" ? `
+          <div class="hito aviso-hito">
+            <span class="num">${hora(x.ts)}</span>
+            <b>Aviso a ${esc(x.area)}</b> · ${esc(x.clase)} ·
+            ${x.enviado === 1 ? "enviado" : x.enviado === -1 ? "enviando…" : x.enviado === 2 ? "omitido" : "no enviado"}
+            ${entregaWsp(x.entrega)}${entregaMail(x.correo)}
+            ${x.detalle ? `<span class="num"> (${esc(x.detalle)})</span>` : ""}
+            <pre class="msg" style="margin:5px 0 0">${esc(x.texto)}</pre>
+          </div>` : `
+          <div class="hito">
+            <span class="num">${hora(x.ts)}</span> ${esc(x.texto)}
+            ${x.usuario ? `<span class="num firma"> · ${esc(x.usuario)}</span>` : ""}
+          </div>`).join("")}
+        ${cerrado ? `<div class="hito" style="border-color:var(--verde)">
+            <b>Cerrado</b> — ${esc(p.motivo_cierre)} · causa: ${esc(p.causa_raiz)}${
+              p.aviso_cliente ? ` · se avisó al cliente por ${esc(p.aviso_cliente)}` : ""}</div>` : ""}
+      </div>
+    </details>`;
+  }).join("");
+}
+
+document.addEventListener("click", (e) => {
+  const h = e.target.closest("[data-historia]");
+  if (h) verHistoria(Number(h.dataset.historia));
+
+  const b = e.target.closest("[data-audit]");
+  if ((b || e.target.closest("#verTodosAudit")) && soloAudit) {
+    turnoIr++; soloAudit = null; quitarPedidoDeLaUrl();
+    if (!b) pintarAuditoria();
+  }
+  if (b) { filtroAudit = b.dataset.audit; pintarAuditoria(); }
+});
+
+document.addEventListener("click", async (e) => {
+  const m = e.target.closest("[data-modo]");
+  if (m) {
+    if (m.dataset.modo === "real" &&
+        !confirm("A partir de ahora los avisos se mandan de verdad a los destinatarios cargados. ¿Seguimos?")) return;
+    await api("/api/config", { modo_envio: m.dataset.modo });
+    await cargarListas(); pintarAvisos();
+  }
+  if (e.target.id === "btnConectarWsp") { await api("/api/wsp/conectar", {}); setTimeout(pintarWsp, 1500); }
+  if (e.target.id === "btnSalirWsp" && confirm("¿Desconectar el WhatsApp del bot?")) {
+    await api("/api/wsp/salir", {}); setTimeout(pintarWsp, 1000);
+  }
+  if (e.target.id === "btnProbarWsp") {
+    const n = prompt("¿A qué número mando la prueba?\n(con código de área, ej: 3571 123456)");
+    if (n) {
+      try { await api("/api/wsp/probar", { numero: n }); alert("Mensaje enviado."); }
+      catch (err) { alert("No se pudo enviar: " + err.message); }
+    }
+  }
+  if (e.target.id === "btnRevisar") { await api("/api/avisos/revisar", {}); pintarAvisos(); }
+});
+
+document.addEventListener("change", async (e) => {
+  if (e.target.dataset.regla) {
+    await api("/api/config", { [e.target.dataset.regla]: e.target.checked ? "1" : "0" });
+    await cargarListas();
+  }
+  if (e.target.dataset.reglaN) {
+    await api("/api/config", { [e.target.dataset.reglaN]: e.target.value });
+    await cargarListas();
+  }
+});
+
+document.addEventListener("blur", async (e) => {
+  const area = e.target.dataset?.cw || e.target.dataset?.cc;
+  if (!area) return;
+  const fila = e.target.closest("tr");
+  await api("/api/contactos", {
+    area,
+    whatsapp: fila.querySelector("[data-cw]").value.trim(),
+    correo: fila.querySelector("[data-cc]").value.trim(),
+  });
+}, true);
+
+// ── Estadística ────────────────────────────────────────────────────
+let periodoSel = "mes";
+const PERIODOS = [["mes", "Este mes"], ["mes_anterior", "Mes anterior"], ["30", "Últimos 30 días"], ["todo", "Todo"]];
+
+async function pintarStats() {
+  const d = await api(`/api/estadistica?periodo=${periodoSel}`);
+  const t = d.totales;
+
+  document.getElementById("periodos").innerHTML = PERIODOS.map(([k, r]) => `
+    <button class="btnf ${periodoSel === k ? "sel" : ""}" data-periodo="${k}">
+      <span class="rot">${r}</span></button>`).join("");
+
+  document.getElementById("statTotales").innerHTML = [
+    ["Cargados", t.cargados, "var(--texto)"],
+    ["Cerrados", t.cerrados, "var(--verde)"],
+    ["Abiertos", t.abiertos, "var(--amarillo)"],
+    ["Dentro del plazo", t.pct_plazo === null ? "—" : t.pct_plazo + "%",
+      t.pct_plazo === null ? "var(--gris)" : t.pct_plazo >= 80 ? "var(--verde)" : t.pct_plazo >= 50 ? "var(--amarillo)" : "var(--rojo)"],
+    ["Tardan en tomarlo", t.horas_respuesta === null ? "—" : t.horas_respuesta + " h", "var(--azul)"],
+    ["Tardan en resolver", t.horas_resolucion === null ? "—" : t.horas_resolucion + " h", "var(--azul)"],
+  ].map(([r, n, col]) => `
+    <div class="btnf tarjeta-dato" style="cursor:default">
+      <span class="rot">${r}</span><span class="n" style="color:${col}">${n}</span>
+    </div>`).join("");
+
+  const tabla = (titulo, filas, etiqueta) => !filas.length ? "" : `
+    <div class="conf">
+      <h3>${titulo}</h3>
+      <table><thead><tr>
+        <th>${etiqueta}</th><th>Pedidos</th><th>Cerrados</th><th>En plazo</th><th>Promedio</th>
+      </tr></thead><tbody>
+      ${filas.map(f => `<tr>
+        <td><b>${esc(f.valor)}</b></td>
+        <td>${f.total}</td>
+        <td>${f.cerrados}</td>
+        <td style="color:${f.pct_plazo === null ? "var(--tenue)" : f.pct_plazo >= 80 ? "var(--verde)" : f.pct_plazo >= 50 ? "var(--amarillo)" : "var(--rojo)"}">
+          ${f.pct_plazo === null ? "—" : f.pct_plazo + "%"}</td>
+        <td>${f.horas_prom === null ? "—" : f.horas_prom + " h"}</td>
+      </tr>`).join("")}
+      </tbody></table>
+    </div>`;
+
+  const simple = (titulo, filas, etiqueta, nota) => !filas.length ? "" : `
+    <div class="conf">
+      <h3>${titulo}</h3>
+      ${nota ? `<div style="color:var(--tenue); font-size:12px; margin-bottom:10px">${nota}</div>` : ""}
+      <table><thead><tr><th>${etiqueta}</th><th>Cantidad</th></tr></thead><tbody>
+      ${filas.map(f => `<tr><td><b>${esc(f.valor)}</b></td><td>${f.total}</td></tr>`).join("")}
+      </tbody></table>
+    </div>`;
+
+  document.getElementById("statTablas").innerHTML = [
+    tabla("Por área", d.por_area, "Área"),
+    tabla("Por urgencia", d.por_urgencia.sort((a, b) => a.valor - b.valor), "Urgencia"),
+    simple("Por tipo de pedido", d.por_tipo, "Tipo"),
+    simple("Por dónde entran", d.por_canal, "Canal"),
+    simple("Causas raíz", d.causas, "Causa",
+      "Es la lista que dice qué comprar, qué stockear y qué capacitar."),
+    simple("Motivos de cierre", d.motivos, "Motivo"),
+    !d.reincidencia.length ? "" : `
+      <div class="conf">
+        <h3>Reincidencias</h3>
+        <div style="color:var(--tenue); font-size:12px; margin-bottom:10px">
+          Mismo abonado con el mismo tipo de pedido dentro de los 30 días.
+          Cada una es una visita que se pagó dos veces.
+        </div>
+        <table><thead><tr><th>Abonado</th><th>Tipo</th><th>Veces</th></tr></thead><tbody>
+        ${d.reincidencia.map(r => `<tr>
+          <td><b>${esc(r.nombre)}</b> <span class="num">${esc(r.abonado)}</span></td>
+          <td>${esc(r.tipo)}</td>
+          <td style="color:var(--rojo); font-weight:700">${r.veces}</td>
+        </tr>`).join("")}
+        </tbody></table>
+      </div>`,
+  ].filter(Boolean).join("") ||
+    `<div class="vacio">Todavía no hay pedidos en este período.<br>
+     La estadística se va armando sola a medida que cargan y cierran.</div>`;
+}
+
+document.addEventListener("click", (e) => {
+  const p = e.target.closest("[data-periodo]");
+  if (p) { periodoSel = p.dataset.periodo; pintarStats(); }
+});
+
+// ── Pestañas y arranque ────────────────────────────────────────────
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.remove("activa"));
+  b.classList.add("activa");
+  ["tablero", "nuevo", "altas", "cerrar", "seguimiento", "personas", "avisos", "stats", "config"].forEach(s =>
+    document.getElementById(s).classList.toggle("oculta", s !== b.dataset.tab));
+  if (b.dataset.tab === "config") pintarConfig();
+  if (b.dataset.tab === "personas") pintarPersonas();
+  if (b.dataset.tab === "avisos") pintarAvisos();
+  if (b.dataset.tab === "seguimiento") pintarAuditoria();
+  if (b.dataset.tab === "stats") pintarStats();
+  if (b.dataset.tab === "altas") pintarAltas();
+});
+
+// Los enlaces que mandan a otra solapa desde adentro de un texto.
+document.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-ir-tab]");
+  if (!a) return;
+  e.preventDefault();
+  document.querySelector(`[data-tab="${a.dataset.irTab}"]`)?.click();
+  scrollTo(0, 0);
+});
+
+// Los desplegables del alta. El último renglón agrega un valor a la lista sin
+// tener que ir hasta Configuración y volver a empezar la carga.
+const LISTAS_DEL_ALTA = [
+  ["area_recibe", "area"], ["canal", "canal"], ["area", "area"],
+  ["tipo_solicitud", "tipo_solicitud"], ["tipo", "tipo"], ["tipo_cliente", "tipo_cliente"],
+];
+
+async function cargarListas() {
+  listas = await api("/api/listas");
+  for (const [campo, tipo] of LISTAS_DEL_ALTA) {
+    const sel = document.querySelector(`[name=${campo}]`);
+    if (!sel) continue;
+    const antes = sel.value;
+    sel.dataset.lista = tipo;
+    sel.innerHTML = opciones(tipo) +
+      `<option value="__nuevo__" style="color:var(--azul)">+ Agregar a la lista…</option>`;
+    if (antes && antes !== "__nuevo__") sel.value = antes;
+  }
+  pintarPersonaDestino();
+  const abonados = await api("/api/abonados");
+  document.getElementById("listaAbonados").innerHTML =
+    // Escapado: el nombre lo escribe cualquiera al cargar o corregir un pedido, y
+    // un nombre con HTML adentro se ejecutaba en el navegador de quien abría el panel.
+    abonados.map(a => `<option value="${esc(a.codigo)}">${esc(a.nombre)}</option>`).join("");
+}
+
+// ── Ingreso ────────────────────────────────────────────────────────────────
+let manda = true;      // si el que está puede administrar usuarios y configuración
+let esAdminCrm = true; // Atención al Cliente administra, pero no toca a los administradores
+
+async function verQuien() {
+  const q = await api("/api/quien");
+  manda = q.manda;
+  esAdminCrm = q.es_admin ?? q.manda;
+  const optAdmin = document.querySelector('select[name=rol] option[value=admin]');
+  if (optAdmin) optAdmin.hidden = optAdmin.disabled = !esAdminCrm;
+  if (q.version) document.getElementById("version").textContent = "v" + q.version;
+  document.getElementById("bandaCopia").classList.toggle("oculta", !!q.es_produccion);
+  const entro = !q.pide_ingreso || q.usuario;
+  document.getElementById("tapa").classList.toggle("oculta", !!entro);
+  document.getElementById("quien").classList.toggle("oculta", !q.usuario);
+  if (q.usuario)
+    document.getElementById("quienArea").innerHTML =
+      `<b>${esc(q.usuario)}</b>${q.area ? ` · ${esc(q.area)}` : ""}${q.rol === "admin" ? " 🔑" : ""}`
+      // Que quede a la vista si está viendo solo lo suyo: si no, alguien busca un
+      // pedido, no lo encuentra, y cree que se perdió.
+      + (q.solo_su_area && q.area
+          ? `<span class="num" style="margin-left:8px">solo ${esc(q.area)}</span>` : "");
+  if (!entro)
+    document.getElementById("inArea").innerHTML = q.usuarios
+      .map(u => `<option value="${esc(u.nombre)}">${esc(u.nombre)}${
+        u.area && u.area !== u.nombre ? ` · ${esc(u.area)}` : ""}</option>`).join("");
+  document.body.classList.remove("cargando");
+  return entro;
+}
+
+document.getElementById("btnIngresar").addEventListener("click", async () => {
+  const err = document.getElementById("inError");
+  err.textContent = "";
+  try {
+    await api("/api/ingresar", {
+      usuario: document.getElementById("inArea").value,
+      clave: document.getElementById("inClave").value,
+    });
+    location.reload();
+  } catch (e) { err.textContent = e.message; }
+});
+document.getElementById("inClave").addEventListener("keydown",
+  (e) => { if (e.key === "Enter") document.getElementById("btnIngresar").click(); });
+
+document.getElementById("btnSalir").addEventListener("click", async () => {
+  await api("/api/salir", {});
+  location.reload();
+});
+
+let USUARIOS = [];
+
+async function pintarUsuarios() {
+  const q = await api("/api/quien");
+  const areas = (listas.area || []).map(a => a.valor);
+  USUARIOS = q.usuarios || [];
+
+  // Agrupados por sector: es como se los busca. Sin sector van al final —
+  // el administrador suele no tener uno.
+  const porArea = {};
+  for (const u of USUARIOS) (porArea[u.area || "\u2014 sin sector"] ||= []).push(u);
+  const orden = [...areas.filter(a => porArea[a]), ...Object.keys(porArea).filter(a => !areas.includes(a))];
+
+  const fila = (u) => `<tr>
+    <td><b>${esc(u.nombre)}</b>${u.rol === "admin" ? ' <span title="Administrador">🔑</span>' : ""}</td>
+    <td class="num">${esc(u.telefono || "—")}</td>
+    <td class="num">${esc(u.correo || "—")}</td>
+    <td>${u.solo_su_area && u.area
+        ? `<span style="color:var(--suave)">solo ${esc(u.area)}</span>`
+        : `<span style="color:var(--azul)">ve todo</span>`}</td>
+    <td>${u.telefono || u.correo
+        ? `<span style="color:var(--verde)" title="Recibe los avisos de su área">recibe avisos</span>${
+            u.recibe_resumen === 0 ? `<div class="num" style="color:var(--tenue)">sin resumen diario</div>` : ""}`
+        : `<span style="color:var(--tenue)" title="Sin teléfono ni correo cargado">no recibe</span>`}</td>
+    <td style="text-align:right; white-space:nowrap">${u.rol === "admin" && !esAdminCrm ? "" : `
+      <button class="accion mini" data-editar-usr="${esc(u.nombre)}" title="Modificar">✎</button>
+      <button class="accion mini" data-quitar-usr="${esc(u.nombre)}" title="Dar de baja"
+              style="border-color:var(--rojo); color:var(--rojo)">×</button>`}
+    </td></tr>`;
+
+  document.getElementById("listaPersonas").innerHTML = orden.length
+    ? orden.map(a => `
+        <div style="margin-bottom:14px">
+          <div class="num" style="text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px">${esc(a)}</div>
+          <table class="tabla-usuarios"><tbody>${porArea[a].map(fila).join("")}</tbody></table>
+        </div>`).join("")
+      + (areas.some(a => !porArea[a])
+          ? `<div class="aviso" style="background:#FBBF2418; border:1px solid #FBBF2450; color:#FCD34D">
+               <b>Sin ninguna persona cargada:</b> ${areas.filter(a => !porArea[a]).map(esc).join(", ")}.
+               Esas áreas no pueden entrar al panel, y sus avisos solo llegan si hay otros
+               destinatarios cargados más abajo.</div>` : "")
+    : `<div class="vacio">Todavía no hay personas cargadas</div>`;
+
+  document.querySelector("#formUsuario [name=sector]").innerHTML =
+    `<option value="">— sin sector —</option>` + areas.map(a => `<option>${esc(a)}</option>`).join("");
+  document.getElementById("pedir_ingreso").checked = listas._config.pedir_ingreso === "1";
+  document.getElementById("cajaUsuarios").classList.toggle("oculta", !manda);
+}
+
+// A quién le llega cada área: teléfonos y correos
+document.addEventListener("submit", async (e) => {
+  const areaTel = e.target.dataset?.telArea;
+  const areaMail = e.target.dataset?.mailArea;
+  if (!areaTel && !areaMail) return;
+  e.preventDefault();
+  try {
+    if (areaTel)
+      await api("/api/telefonos", { area: areaTel, numero: e.target.numero.value, nombre: e.target.nombre.value });
+    else
+      await api("/api/correos", { area: areaMail, direccion: e.target.direccion.value, nombre: e.target.nombre.value });
+    e.target.reset();
+    pintarAvisos();
+  } catch (err) { alert(err.message); }
+});
+
+document.addEventListener("click", async (e) => {
+  const tel = e.target.closest("[data-borrar-tel]");
+  const mail = e.target.closest("[data-borrar-mail]");
+  if (!tel && !mail) return;
+  if (!confirm(`¿Quitar este ${tel ? "teléfono" : "correo"}? Deja de recibir los avisos del área.`)) return;
+  if (tel) await api("/api/telefonos/borrar", { id: Number(tel.dataset.borrarTel) });
+  else await api("/api/correos/borrar", { id: Number(mail.dataset.borrarMail) });
+  pintarAvisos();
+});
+
+document.getElementById("formUsuario").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target, err = document.getElementById("usrError");
+  // Un segundo clic mientras guarda mandaba la misma alta dos veces: la primera
+  // entraba y la segunda volvía con «ya hay alguien cargado», un error falso.
+  const boton = f.querySelector("button[type=submit]");
+  if (boton.disabled) return;
+  err.textContent = "";
+  const cuerpo = {
+    nombre: f.nombre.value, sector: f.sector.value, rol: f.rol.value,
+    telefono: f.telefono.value, correo: f.correo.value,
+    solo_su_area: f.solo_su_area.checked,
+    recibe_resumen: f.recibe_resumen.checked,
+    // El nombre bloqueado significa que se llegó por el lápiz. Sin esta marca el
+    // servidor rechaza pisar a alguien que ya existe.
+    modificando: f.nombre.readOnly,
+  };
+  // La clave vacía significa "no la toques": así se corrige un teléfono sin
+  // tener que volver a escribirle la clave a la persona.
+  if (f.clave.value) cuerpo.clave = f.clave.value;
+  boton.disabled = true;
+  try {
+    await api("/api/usuarios", cuerpo);
+    limpiarFormUsuario();
+    await pintarUsuarios();
+  } catch (e2) { err.textContent = e2.message; }
+  finally { boton.disabled = false; }
+});
+
+function limpiarFormUsuario() {
+  const f = document.getElementById("formUsuario");
+  f.reset();
+  f.solo_su_area.checked = true;
+  f.recibe_resumen.checked = true;
+  document.getElementById("usrError").textContent = "";
+  f.nombre.readOnly = false;
+  f.querySelector("button[type=submit]").textContent = "Guardar usuario";
+}
+document.getElementById("usrLimpiar").onclick = limpiarFormUsuario;
+
+// El lápiz de cada usuario carga sus datos en el mismo formulario: alta y
+// modificación son la misma pantalla, con el nombre bloqueado porque es su
+// identidad — para renombrar a alguien hay que darlo de baja y cargarlo de nuevo.
+function editarUsuario(u) {
+  const f = document.getElementById("formUsuario");
+  f.nombre.value = u.nombre; f.nombre.readOnly = true;
+  f.sector.value = u.area || "";
+  f.telefono.value = u.telefono || "";
+  f.correo.value = u.correo || "";
+  f.rol.value = u.rol;
+  f.solo_su_area.checked = !!u.solo_su_area;
+  f.recibe_resumen.checked = u.recibe_resumen !== 0;
+  f.clave.value = "";
+  f.querySelector("button[type=submit]").textContent = "Guardar cambios";
+  document.getElementById("usrError").textContent = "";
+  f.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+document.getElementById("guardarIngreso").onclick = async () => {
+  const encender = document.getElementById("pedir_ingreso").checked;
+  if (encender && !confirm(
+      "A partir de ahora el panel va a pedir área y clave a todos.\n\n" +
+      "¿Cada área ya tiene la suya?"))
+    return;
+  try {
+    await api("/api/config", { pedir_ingreso: encender ? "1" : "0" });
+    await cargarListas();
+    alert(encender
+      ? "Listo: el panel ya pide ingreso."
+      : "Listo: el panel abre sin pedir nada.");
+  } catch (err) { alert(err.message); document.getElementById("pedir_ingreso").checked = !encender; }
+};
+
+document.addEventListener("click", async (e) => {
+  const ed = e.target.closest("[data-editar-usr]");
+  if (ed) {
+    const u = USUARIOS.find(x => x.nombre === ed.dataset.editarUsr);
+    if (u) editarUsuario(u);
+    return;
+  }
+  const b = e.target.closest("[data-quitar-usr]");
+  if (!b) return;
+  if (!confirm(`¿Dar de baja a ${b.dataset.quitarUsr}?\n\n`
+    + `No se borra nada de lo que hizo: sus movimientos quedan firmados igual. `
+    + `Simplemente deja de poder entrar.`)) return;
+  try {
+    await api("/api/usuarios/baja", { nombre: b.dataset.quitarUsr });
+    await pintarUsuarios();
+  } catch (err) { alert(err.message); }
+});
+
+// ── Abrir directo en un pedido ─────────────────────────────────────────────
+// Los avisos de WhatsApp llegan con un link .../?p=12: el que lo abre desde el
+// celular tiene que caer en ese pedido, no en el tablero entero.
+// ── El buscador de la barra ──────────────────────────────────────────────
+// Existe para lo contrario de una pestaña: llegar a un pedido sin saber dónde
+// está. Busca en todos —abiertos, esperando cierre y cerrados— y después usa
+// irAlPedido, que ya sabe llevarte al tablero o a Seguimiento según el caso.
+let qTimer = null, qLista = [], qSel = -1, qTotal = 0, qHayMas = false;
+
+function pintarResultados() {
+  const caja = document.getElementById("qResultados");
+  if (!qLista.length) {
+    caja.innerHTML = `<div class="nada">No encontré ningún reclamo con eso.</div>`;
+    caja.classList.remove("oculta");
+    return;
+  }
+  caja.innerHTML = qLista.map((r, n) => `
+    <div class="r${n === qSel ? " sel" : ""}" data-ir="${r.id}">
+      <b>${esc(r.numero)}</b> · ${esc(r.abonado)}
+      <div class="det">${esc(r.descripcion)}</div>
+      <div class="det">${esc(r.area)} · ${esc(r.estado)}${
+        r.lo_tiene_otro ? ` · <span class="aj">lo tiene ${esc(r.lo_tiene_otro)}</span>` : r.ajeno ? ` · <span class="aj">de otra área</span>` : ""}</div>
+    </div>`).join("") + (qTotal > qLista.length
+      ? `<div class="nada">Se muestran ${qLista.length} de ${qTotal}. Escribí algo más
+         preciso —el número de reclamo, el código de abonado— para achicar la lista.</div>`
+      : qTotal > 1 ? `<div class="nada">${qTotal} reclamos</div>` : "");
+  caja.classList.remove("oculta");
+}
+
+function cerrarResultados() {
+  document.getElementById("qResultados").classList.add("oculta");
+  qLista = []; qSel = -1; qTotal = 0; qHayMas = false;
+}
+
+async function buscar(texto) {
+  if (texto.trim().length < 2) { cerrarResultados(); return; }
+  try {
+    const d = await api(`/api/buscar?q=${encodeURIComponent(texto.trim())}`);
+    qLista = d.resultados || []; qSel = qLista.length ? 0 : -1;
+    qTotal = d.total || qLista.length; qHayMas = !!d.hay_mas;
+    pintarResultados();
+  } catch { cerrarResultados(); }
+}
+
+(function engancharBuscador() {
+  const inp = document.getElementById("qBuscar");
+  if (!inp) return;
+  // Se busca mientras se escribe, con una pausa: sin ella cada tecla es una
+  // consulta y la lista parpadea.
+  inp.addEventListener("input", () => {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(() => buscar(inp.value), 250);
+  });
+  inp.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { cerrarResultados(); inp.blur(); return; }
+    if (!qLista.length) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); qSel = (qSel + 1) % qLista.length; pintarResultados(); }
+    if (e.key === "ArrowUp")   { e.preventDefault(); qSel = (qSel - 1 + qLista.length) % qLista.length; pintarResultados(); }
+    if (e.key === "Enter" && qSel >= 0) {
+      e.preventDefault();
+      const id = qLista[qSel].id;
+      cerrarResultados(); inp.value = ""; inp.blur();
+      irAlPedido(id);
+    }
+  });
+  document.getElementById("qResultados").addEventListener("click", (e) => {
+    const r = e.target.closest("[data-ir]");
+    if (!r) return;
+    const id = Number(r.dataset.ir);
+    cerrarResultados(); inp.value = ""; inp.blur();
+    irAlPedido(id);
+  });
+  // Un clic afuera cierra la lista, como cualquier menú.
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".buscador")) cerrarResultados();
+  });
+})();
+
+// Cada apertura lleva su turno: si mientras esperaba se eligió otro pedido o
+// se pidió «Ver todos», la vieja no toca nada al volver. Si no, terminaba
+// buscando su pedido en la pantalla del nuevo y avisaba «no se encontró».
+let turnoIr = 0;
+async function irAlPedido(id) {
+  const turno = ++turnoIr;
+  // Se muestra solo ese pedido: marcarlo en medio de la lista, en el celular,
+  // parecía el CRM de siempre y había que buscarlo igual.
+  soloPedido = soloAudit = null;
+  pedidoEnLaUrl(id);
+  if (datos.items.some(i => i.id === id)) {
+    // Está abierto y es del tablero de quien entra: ahí se lo puede trabajar.
+    filtro = null; filtroAreaSel = ""; soloPedido = id;
+    document.querySelector('[data-tab="tablero"]').click();
+    await cargarTablero();
+    if (turno !== turnoIr) return;
+    document.querySelector(`[data-fila="${id}"]`)?.classList.add("marcada");
+    scrollTo(0, 0);
+    return;
+  }
+  // Cerrado, esperando cierre, viejo o de otra área: su historia, pedida por id.
+  // El clic en la pestaña también pinta; esa respuesta se descarta por el turno.
+  soloAudit = id;
+  document.querySelector('[data-tab="seguimiento"]').click();
+  await pintarAuditoria();
+  if (turno !== turnoIr) return;
+  scrollTo(0, 0);
+  if (!document.querySelector(`[data-ped="${id}"]`)) {
+    soloAudit = null; quitarPedidoDeLaUrl();
+    pintarAuditoria();
+    alert("No se encontró ese pedido. Puede haber sido anulado.");
+  }
+}
+
+(async () => {
+  try {
+    if (!await verQuien()) return;    // sin ingresar no se carga nada
+  } catch (e) {
+    // Si no se puede ni preguntar quién es, mejor mostrar el panel con el error
+    // a la vista que dejar la pantalla en blanco.
+    document.body.classList.remove("cargando");
+    alert("No se pudo contactar al servidor del CRM: " + e.message);
+    return;
+  }
+  await cargarListas(); await cargarTablero(); setInterval(cargarTablero, 30000);
+  await altasVerAcceso();
+  const q = new URLSearchParams(location.search);
+  // Se puede abrir directo en una pestaña: .../?tab=avisos. Sirve para mandarle
+  // a alguien el link de dónde tiene que mirar, en vez de explicarle el camino.
+  const tab = q.get("tab");
+  if (tab) document.querySelector(`[data-tab="${CSS.escape(tab)}"]`)?.click();
+  const pedido = Number(q.get("p"));
+  if (pedido) irAlPedido(pedido);
+})();
+</script>
+<script src="altas.js"></script>
+</body>
+</html>

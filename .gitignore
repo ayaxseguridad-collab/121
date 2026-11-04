@@ -1,3 +1,8 @@
+# Datos y credenciales: nunca al repositorio
+datos/
+node_modules/
+*.log
+
 
 
 # fabrica:inicio
