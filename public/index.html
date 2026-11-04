@@ -1798,11 +1798,11 @@ async function pintarAvisos() {
       </label>`).join("") + `
       <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:12px">
         <div><label style="font-size:11px; color:var(--suave)">Resumen diario a las</label><br>
-          <input class="mini" style="width:70px" type="number" min="0" max="23" data-regla-n="hora_resumen" value="${c.hora_resumen}"></div>
+          <input class="mini" style="width:70px" type="number" min="0" max="23" data-regla-n="hora_resumen" value="${esc(c.hora_resumen)}"></div>
         <div><label style="font-size:11px; color:var(--suave)">Silencio desde</label><br>
-          <input class="mini" style="width:70px" type="number" min="0" max="23" data-regla-n="silencio_desde" value="${c.silencio_desde}"></div>
+          <input class="mini" style="width:70px" type="number" min="0" max="23" data-regla-n="silencio_desde" value="${esc(c.silencio_desde)}"></div>
         <div><label style="font-size:11px; color:var(--suave)">hasta</label><br>
-          <input class="mini" style="width:70px" type="number" min="0" max="23" data-regla-n="silencio_hasta" value="${c.silencio_hasta}"></div>
+          <input class="mini" style="width:70px" type="number" min="0" max="23" data-regla-n="silencio_hasta" value="${esc(c.silencio_hasta)}"></div>
         <div><label style="font-size:11px; color:var(--suave)">Área que recibe copia (ATCL)</label><br>
           <select class="mini" data-regla-n="area_atcl">
             ${(listas.area || []).map(a => `<option ${a.valor === c.area_atcl ? "selected" : ""}>${esc(a.valor)}</option>`).join("")}
