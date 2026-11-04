@@ -1,0 +1,349 @@
+{
+  "_comment": "Configuración del workspace Talent Engine. El bloque 'labels' es una PROYECCIÓN de UUIDs de la autoridad examples/label-taxonomy.json (verificada contra la API — recibo en examples/label-taxonomy.receipt.json); su paridad la comprueba scripts/check-taxonomy-parity.sh. REGLA FAIL-CLOSED para duplicados: si un nombre tiene más de un label vivo, aquí lleva id null + duplicate_sites (elegir el UUID del team de la issue al usarlo); jamás se escoge un UUID arbitrario. Los UUIDs de team/initiatives/workflowStates/projects se verificaron EN VIVO el 2026-09-05 con las queries del bloque final (re-verificar antes de fijarlos en otro sitio: un workspace cambia). AVISO para quien instale este skill fuera de Talent Engine: estos valores son los REALES del workspace Talent Engine; sustituye team, estados, initiatives, projects y labels por los de tu propio workspace (queries al final) antes de usar el config.",
+  "workspace": {
+    "name": "Talent Engine",
+    "urlKey": "talent-engine"
+  },
+  "team": {
+    "name": "Talent Engine",
+    "key": "TAL",
+    "id": "6a99ed4d-c2d3-4028-be75-4ff014b49f38",
+    "cyclesEnabled": false,
+    "issueEstimationType": "notUsed",
+    "_note": "Verificado 2026-09-05: el team NO usa cycles ni estimación nativa. El campo estimate (1-5) se rellena por API como convención de la casa; los workflows de cycle de este skill son de uso libre."
+  },
+  "initiatives": [
+    {
+      "name": "Talent Engine",
+      "id": "e445b88c-292b-4a7f-a4bd-0866b635e075",
+      "status": "Active",
+      "vertical": "fabrica",
+      "_note": "Initiative META (capa de orquestación/fábrica). El trabajo de PRODUCTO de Academia Ejemplo va SIEMPRE a Academia Ejemplo 2026 (regla 21 de CLAUDE.md)."
+    },
+    {
+      "name": "Talent Portafolio",
+      "id": "f101a023-8a61-47f2-8de3-ebe0890a598e",
+      "status": "Active"
+    },
+    {
+      "name": "Genius Arena",
+      "id": "35b1de58-5a0f-46aa-81c0-c399e435df59",
+      "status": "Active",
+      "vertical": "genius-arena"
+    },
+    {
+      "name": "Talent Sales Suite 2026",
+      "id": "896505cb-29d5-4d09-96b4-760a21451d44",
+      "status": "Active"
+    },
+    {
+      "name": "Event Engine 2026",
+      "id": "504307d6-b347-4eb3-a50a-f6967b1eb459",
+      "status": "Active"
+    },
+    {
+      "name": "Academia Ejemplo 2026",
+      "id": "cfcbfe90-efd4-4faa-a702-d2532d64d9db",
+      "status": "Active",
+      "vertical": "academy",
+      "_note": "Única initiative válida para el producto de este repositorio (regla 21)."
+    },
+    {
+      "name": "Talent Land",
+      "id": "c95506de-816d-4f01-b2b9-5e3a1a29b7e3",
+      "status": "Active",
+      "vertical": "land-mx"
+    },
+    {
+      "name": "Bootcamp Cripto 2026",
+      "id": "290f52e1-55e7-46a9-871d-a3e2e357c765",
+      "status": "Active",
+      "vertical": "bootcamp"
+    },
+    {
+      "name": "Talent Land Online 2026",
+      "id": "6aa1ad4e-48d9-4e6b-a011-d18daf54c5f3",
+      "status": "Active",
+      "vertical": "land-online"
+    },
+    {
+      "name": "Talent Media 2026",
+      "id": "51dfb51d-8904-41ae-bb41-571b7112bb9d",
+      "status": "Active",
+      "vertical": "media"
+    }
+  ],
+  "labels": {
+    "_comment": "Proyección de la autoridad label-taxonomy.json. Verificada 2026-09-05 contra el recibo (108 labels, paginación completa).",
+    "vertical": [
+      {
+        "name": "vertical/academy",
+        "id": "f929db9c-ad84-43c7-b34d-e32479eef0b3"
+      },
+      {
+        "name": "vertical/bootcamp",
+        "id": "73a406f8-4bfb-4971-9ba3-0a55433d46ee"
+      },
+      {
+        "name": "vertical/fabrica",
+        "id": null,
+        "duplicate_sites": {
+          "TAL": "185bfac2-c2b2-4f43-a674-0609c2d5f2ad",
+          "BUG": "95e01fa6-f02f-411f-96fc-9cc89bccfc60"
+        }
+      },
+      {
+        "name": "vertical/genius-arena",
+        "id": "097dfdd5-62aa-41e0-bed8-61301a5aafd4"
+      },
+      {
+        "name": "vertical/land-es",
+        "id": null,
+        "duplicate_sites": {
+          "TAL": "7dd2c9ca-3485-49ae-b3a8-e24bb60365bf",
+          "BUG": "f3bf0256-e2e7-477a-b5d8-7abc9212871e"
+        }
+      },
+      {
+        "name": "vertical/land-mx",
+        "id": "00311d24-5d51-4fd8-a5b5-cb36b71c52b1"
+      },
+      {
+        "name": "vertical/land-online",
+        "id": "35cbcefd-4cff-47d6-bab6-9a6a44c5ad43"
+      },
+      {
+        "name": "vertical/media",
+        "id": "0a3941c1-a73b-4a18-b880-f0fc00830066"
+      }
+    ],
+    "kind": [
+      {
+        "name": "kind:feat",
+        "id": "69adc6b3-e3d2-4519-8925-5d2976bf3e11"
+      },
+      {
+        "name": "kind:fix",
+        "id": "45a98b6e-79b4-41d2-b65a-05cd35d43307"
+      },
+      {
+        "name": "kind:chore",
+        "id": "09a82488-88e5-431a-9a76-d5f01075025a"
+      },
+      {
+        "name": "kind:refactor",
+        "id": "6edf0a2f-1e11-4992-b22a-7f4fd6932b1c"
+      },
+      {
+        "name": "kind:docs",
+        "id": "fbf3af70-813d-4bbb-9524-076072c1bdaf"
+      },
+      {
+        "name": "kind:hotfix",
+        "id": "1bcf99e7-9617-400a-bc85-1e9eca0e1949"
+      },
+      {
+        "name": "kind:adr",
+        "id": "4551d48a-dab3-44d0-a24a-3f8258bf30c1"
+      },
+      {
+        "name": "kind:decision-pending",
+        "id": "8f97f4de-73b8-4894-8081-297a36c0cecb"
+      },
+      {
+        "name": "kind:test",
+        "id": null,
+        "duplicate_sites": {
+          "TAL": "8a612199-590c-4762-b468-81e9986651f8",
+          "BUG": "778f8b56-9187-4469-ba0a-3973f2a2715d"
+        }
+      }
+    ],
+    "actor": [
+      {
+        "name": "actor/human",
+        "id": "9025c3df-3e83-498f-aa60-fb9426d4aae9"
+      },
+      {
+        "name": "actor/ai",
+        "id": "388c4d1e-ff5f-4f54-933b-cb3e11bfc8a8"
+      },
+      {
+        "name": "actor:needs-review",
+        "id": null,
+        "duplicate_sites": {
+          "TAL": "7bc5436b-05fd-4523-a364-1de3220c8e67",
+          "BUG": "a1c31ac2-3589-4e7d-937d-f4d302f6339e"
+        }
+      }
+    ],
+    "sev": [
+      {
+        "name": "sev:bloqueante",
+        "id": "d9c27075-cf92-410b-aed5-b0a41819375e"
+      },
+      {
+        "name": "sev:capital",
+        "id": "c29d906b-c60f-4e15-a7dd-c944828090b5"
+      },
+      {
+        "name": "sev:degradado",
+        "id": "9f38a089-7779-4d01-9c0a-3d6e132eb5d5"
+      },
+      {
+        "name": "sev:cosmetico",
+        "id": "635512d5-a3fb-4ed6-88c4-766b9f7fd505"
+      }
+    ],
+    "legacy": [
+      {
+        "name": "Bug",
+        "id": "4e83fd50-ad51-4943-916b-3f29d64b487c",
+        "_note": "[LEGACY] heredada del onboarding; el tipo vigente se expresa con kind:fix. Su limpieza es decisión del workspace."
+      },
+      {
+        "name": "Feature",
+        "id": "e8292f81-d2a0-4c33-b909-113652c03506",
+        "_note": "[LEGACY] heredada del onboarding; el tipo vigente se expresa con kind:feat. Su limpieza es decisión del workspace."
+      },
+      {
+        "name": "Improvement",
+        "id": "5c114a74-9f66-4f85-b923-40f393e52592",
+        "_note": "[LEGACY] heredada del onboarding; el tipo vigente se expresa con kind:refactor. Su limpieza es decisión del workspace."
+      }
+    ],
+    "coord": [
+      {
+        "name": "coord-defi-c1",
+        "id": "05866459-86ec-469d-9ed4-b90540e8f6d9"
+      },
+      {
+        "name": "coord-defi-c2",
+        "id": "ac2e197e-126b-489c-8ab3-c114bf1c6b0a"
+      }
+    ],
+    "reservado": [
+      {
+        "name": "reservado/C1",
+        "id": null,
+        "duplicate_sites": {
+          "TAL": "d4cc43ab-cf9e-432c-a745-a91f453c908d",
+          "BUG": "f09e7f95-f2a6-4e20-a6fd-f6f742a28a2c"
+        }
+      },
+      {
+        "name": "reservado/C2",
+        "id": null,
+        "duplicate_sites": {
+          "TAL": "aea741ea-158d-4aac-9fee-6de3f29b9ccf",
+          "BUG": "a47a3b9b-b990-4895-baf2-c2d64c26d098"
+        }
+      }
+    ]
+  },
+  "workflowStates": {
+    "_comment": "Estados de workflow del team TAL, verificados 2026-09-05 (9 estados; NO existe estado de tipo triage; Duplicate tiene type duplicate, no canceled). Blocked lo reutiliza la fábrica como «Needs Input» de las órdenes de trabajo.",
+    "backlog": {
+      "name": "Backlog",
+      "id": "db82d3f5-b868-4215-99fb-3869f4d02c17",
+      "type": "backlog"
+    },
+    "todo": {
+      "name": "Todo",
+      "id": "b756c82e-d3fb-46b2-ba77-7926d0449103",
+      "type": "unstarted"
+    },
+    "inProgress": {
+      "name": "In Progress",
+      "id": "c56b20f2-0591-4927-a788-1e0a02463b64",
+      "type": "started"
+    },
+    "done": {
+      "name": "Done",
+      "id": "21e67cf9-6d51-45dd-b072-1e0f5a22f2ef",
+      "type": "completed"
+    },
+    "canceled": {
+      "name": "Canceled",
+      "id": "62a24e22-b82e-42b7-9561-d5acbada6612",
+      "type": "canceled"
+    },
+    "duplicate": {
+      "name": "Duplicate",
+      "id": "db5265e4-7999-4899-a2c7-5766fff8b0e7",
+      "type": "duplicate"
+    },
+    "inReview": {
+      "name": "In Review",
+      "id": "73efee12-f59f-4891-98b3-3ca05ffb6e23",
+      "type": "started"
+    },
+    "blocked": {
+      "name": "Blocked",
+      "id": "da1e401b-b98b-432f-a406-ece1cb9ae4f7",
+      "type": "unstarted"
+    },
+    "awaitingPushApproval": {
+      "name": "Awaiting push approval",
+      "id": "9cbe1b4a-ac2c-448f-9ea4-1cc98919025c",
+      "type": "started"
+    }
+  },
+  "estimates": {
+    "_note": "El team TAL tiene issueEstimationType=notUsed (2026-09-05): estimate NO es una configuración del team sino una CONVENCIÓN de la casa que se escribe por API.",
+    "scale": "convención de la casa (1, 2, 3, 5)",
+    "values": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "rules": {
+      "max_per_issue": 5,
+      "split_threshold": 5,
+      "bundle_max": 5,
+      "_note": "Si una issue requiere estimate >5, romper en sub-issues; un bundle/encargo no supera 5 en total (talent-orchestrator ref 08)."
+    }
+  },
+  "agents": {
+    "_comment": "Agentes de terceros configurados (userId null = no instalado; se rellena con el id del app user al instalarlo desde el directorio de agentes de Linear). Los labels de selección deben EXISTIR en el recibo verificado antes de referenciarse aquí.",
+    "cyrus": {
+      "installed": false,
+      "userId": null,
+      "labels_for_workflow_selection": [
+        "actor/ai"
+      ]
+    },
+    "cursor": {
+      "installed": false,
+      "userId": null
+    }
+  },
+  "queries_to_fill_uuids": {
+    "_comment": "Queries con las que se verificaron los UUIDs de arriba (2026-09-05). Los UUIDs de labels NO se rellenan a mano: los gobierna el recibo + scripts/check-taxonomy-parity.sh.",
+    "team_id": "{ teams(filter: { key: { eq: \"TAL\" } }) { nodes { id name key } } }",
+    "initiative_ids": "{ initiatives(first: 20) { nodes { id name } } }",
+    "workflow_state_ids": "{ team(id: \"6a99ed4d-c2d3-4028-be75-4ff014b49f38\") { cyclesEnabled issueEstimationType states { nodes { id name type position } } } }",
+    "project_ids": "{ initiative(id: \"<initiative-id>\") { projects(first: 50) { nodes { id name state } } } }"
+  },
+  "projects": {
+    "_comment": "Projects vivos usados por la fábrica (verificados 2026-09-05). El resto de projects de cada initiative se lista con la query del bloque final; elegir por afinidad del trabajo, nunca inventar.",
+    "items": [
+      {
+        "name": "Update 3.0",
+        "id": "8ea3ca4e-c14a-4b2f-a673-fe6d70c35948",
+        "initiative": "Academia Ejemplo 2026"
+      },
+      {
+        "name": "Talent Factory",
+        "id": "7d7edf6d-b6ed-465e-90b5-2f9ceb173fe3",
+        "initiative": "Talent Engine"
+      },
+      {
+        "name": "Coordinación Multi Canal",
+        "id": "5d829bf6-9a6e-4be0-99ef-fe0c0e4e4228",
+        "initiative": "Talent Engine"
+      }
+    ]
+  }
+}

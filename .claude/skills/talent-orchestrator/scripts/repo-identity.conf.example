@@ -1,0 +1,5 @@
+# repo-identity.conf.example — PLANTILLA de la identidad POR REPO del orquestador (data-only KEY=VALUE).
+# Copiar a repo-identity.conf (misma carpeta) y sustituir cada marcador PENDIENTE-<CLAVE>, o generarlo con
+# `sync-package.sh --migrate-identity` (valor ADJUDICADO vía --approved). Un marcador PENDIENTE-* NO es un valor.
+PKG_IDENTITY_PROJECT=PENDIENTE-PKG_IDENTITY_PROJECT
+TORC_HOST_ENV_REL=PENDIENTE-TORC_HOST_ENV_REL

@@ -1,0 +1,15 @@
+Orden de trabajo para **__COORD__** (repo __REPO__).
+
+El coordinador **LEE** esta orden y despacha cada issue **a mano** (`dispatch.sh <carril> <TAL-id>`); no hay consumidor automatico.
+
+Issues, respetando precedencia:
+__ISSUE_LIST__
+
+DoD: todos los encargos entregados como PR draft + HANDOFF verificado (verify-handoff.sh == 0) + issues In Review; el merge, el apply y el Done de cada issue los produce el Mergeador.
+**Cierre:** al terminar, mueve esta orden a **Done**. Si te bloqueas: muevela al estado **__NEEDS_INPUT_STATE__** y deja la pregunta exacta aqui.
+
+Bloque machine-readable (el Orquestador lo **necesita** para la reserva; extrae `issue_ids` con `jq` si quieres):
+
+```json
+__JSON_BLOCK__
+```

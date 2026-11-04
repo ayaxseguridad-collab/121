@@ -1,0 +1,38 @@
+  [verify-handoff]   OK  rama válida según validar-rama-pr.sh (misma regla que el required check)
+  [verify-handoff]   OK  surfaces dentro del allowlist: []
+  [verify-handoff]   OK  sensitive coherente con surfaces
+  [verify-handoff]   OK  migration_slots con formato estable: []
+  [verify-handoff]   OK  body contiene closes/fixes/resolves ABC-1234
+  [verify-handoff] RESULTADO: ENTREGA VÁLIDA ✓ (PR #4 draft + HANDOFF completo @ 90b14f333c06).
+
+  Hallazgos que dejo como trabajo nuevo, ya declarados en el HANDOFF y fuera del alcance sellado de esta
+  issue:
+
+  - Build roto en main: validar-build falla con TS2307 en @/lib/utils, porque .gitignore:34 lib/ ignora
+    apps/backoffice/src/lib/utils.ts.
+  - CI de documentación ya roto: la referencia mostraba 1707 errores de markdownlint y 7 enlaces rotos en     
+    otros docs. El fichero nuevo aporta 0 de ambos.
+  - Discrepancia menor: la issue cita # Talent Agents en README.md:1, pero la línea real es # Talent-Agents.  
+
+  El merge, los checks y CodeRabbit corresponden a la estación de merge. No espero CI, no rebaseo y no fusiono
+  nada.                                                                                                       
+
+✻ Brewed for 57s · done 5:28 PM                                                                               
+
+❯ /model                                                                                                      
+───────────────────────────────────────────────────────────────────────────────────── document-factory-essay ─
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Select model                                                                                       
+  Switch between Claude models. Your pick becomes the default for new sessions. For other/previous model    
+  names, specify with --model.                                                                              
+                                                                                             
+    1. Default (recommended)  Sonnet 5.5 · Efficient for routine tasks                                      
+  ❯ 2. Sonnet ✔               Sonnet 5.5 · Efficient for routine tasks                             
+    3. Fable                  Fable 5.1 · Most capable for your hardest and longest-running tasks           
+    4. Opus                   Opus 5.5 · Best for everyday, complex tasks                            
+    5. Haiku                  Haiku 4.5 · Fastest for quick answers                                         
+                                                                                                            
+  ● High effort ←/→ to adjust                                                                               
+                                                                                                          
+  Enter to set as default · s to use this session only · Esc to cancel                                      

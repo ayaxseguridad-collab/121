@@ -1,0 +1,37 @@
+# Casos de la puerta. Un caso por linea, separado por TABULADORES:
+#
+#   nombre <TAB> veredicto_esperado <TAB> entorno <TAB> fragmento que debe aparecer en el motivo
+#
+# veredicto: autoriza | rechaza
+# entorno:   asignaciones separadas por espacios que se exportan antes de llamar a la sonda
+#            ('-' si no hace falta ninguna)
+# fragmento: '-' cuando autoriza; si rechaza, un trozo literal del motivo que se espera
+#
+# La maquina de referencia es 2x 16311 MiB compute 12.0. Todo lo demas debe rechazarse.
+#
+# Nota sobre los casos de distribucion: LL_DISTRO_ID simula el ID de /etc/os-release,
+# NO la ausencia de apt-get (que se comprueba aparte, sobre la maquina real). Por eso
+# se llaman "ID no soportado" y no "sin apt": el caso que cubren es el del ID.
+
+referencia 2x16311	autoriza	FAKE_GPUS=RTX_5060_Ti|16311|12.0;RTX_5060_Ti|16311|12.0	-
+1 tarjeta de 16 GB	rechaza	FAKE_GPUS=RTX_5060_Ti|16311|12.0	hay 1 tarjeta(s) y hacen falta exactamente 2
+1 tarjeta de 32 GB	rechaza	FAKE_GPUS=RTX_5090|32607|12.0	hay 1 tarjeta(s) y hacen falta exactamente 2
+3 tarjetas	rechaza	FAKE_GPUS=RTX_5060_Ti|16311|12.0;RTX_5060_Ti|16311|12.0;RTX_5060_Ti|16311|12.0	hay 3 tarjeta(s) y hacen falta exactamente 2
+4 tarjetas	rechaza	FAKE_GPUS=RTX_5060_Ti|16311|12.0;RTX_5060_Ti|16311|12.0;RTX_5060_Ti|16311|12.0;RTX_5060_Ti|16311|12.0	hay 4 tarjeta(s) y hacen falta exactamente 2
+8 tarjetas	rechaza	FAKE_GPUS=A|16311|12.0;A|16311|12.0;A|16311|12.0;A|16311|12.0;A|16311|12.0;A|16311|12.0;A|16311|12.0;A|16311|12.0	hay 8 tarjeta(s) y hacen falta exactamente 2
+2x 8 GB	rechaza	FAKE_GPUS=RTX_4060|8188|8.9;RTX_4060|8188|8.9	la tarjeta mas pequenia tiene 8188 MiB
+2x 12 GB	rechaza	FAKE_GPUS=RTX_5070|12282|12.0;RTX_5070|12282|12.0	la tarjeta mas pequenia tiene 12282 MiB
+2x 14 GB (28 GB agregados)	rechaza	FAKE_GPUS=X|14336|12.0;X|14336|12.0	28672 MiB de VRAM en total
+15 GB por tarjeta (30 agregados)	rechaza	FAKE_GPUS=X|15360|12.0;X|15360|12.0	la tarjeta mas pequenia tiene 15360 MiB
+justo por debajo del agregado	rechaza	FAKE_GPUS=X|15999|12.0;X|15999|12.0	la tarjeta mas pequenia tiene 15999 MiB
+justo en el umbral	autoriza	FAKE_GPUS=X|16000|12.0;X|16000|12.0	-
+tarjetas heterogeneas	rechaza	FAKE_GPUS=RTX_5090|32607|12.0;RTX_5060_Ti|16311|12.0	las tarjetas no son iguales
+compute 8.9 (Ada, sin NVFP4)	rechaza	FAKE_GPUS=RTX_4080|16376|8.9;RTX_4080|16376|8.9	capacidad de computo 8.9
+compute 9.0 (Hopper, sin NVFP4)	rechaza	FAKE_GPUS=H100|16376|9.0;H100|16376|9.0	capacidad de computo 9.0
+compute 10.0 (Blackwell centro de datos)	autoriza	FAKE_GPUS=B200|16376|10.0;B200|16376|10.0	-
+sin tarjetas	rechaza	FAKE_GPUS=	no devuelve tarjetas
+disco insuficiente	rechaza	FAKE_GPUS=RTX_5060_Ti|16311|12.0;RTX_5060_Ti|16311|12.0 MIN_DISCO_GB=999999 MIN_DISCO_MODELOS_GB=999999 MIN_DISCO_DOCKER_GB=999999	Disco:
+disco bajo el umbral	rechaza	FAKE_GPUS=X|16000|12.0;X|16000|12.0 FAKE_DISCO_GB=69	Disco: quedan 69 GB libres y hacen falta 70
+disco en el umbral	autoriza	FAKE_GPUS=X|16000|12.0;X|16000|12.0 FAKE_DISCO_GB=70	-
+Debian (ID no rodado)	rechaza	FAKE_GPUS=RTX_5060_Ti|16311|12.0;RTX_5060_Ti|16311|12.0 LL_DISTRO_ID=debian	Lo rodado es Ubuntu
+Fedora (ID no soportado)	rechaza	FAKE_GPUS=RTX_5060_Ti|16311|12.0;RTX_5060_Ti|16311|12.0 LL_DISTRO_ID=fedora	Lo rodado es Ubuntu

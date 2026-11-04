@@ -1,0 +1,11 @@
+
+
+# fabrica:inicio
+.claude/.motor-go
+.claude/.audit-go
+.claude/.draft-handoff
+.claude/.cr-review-ok
+.claude/.cr-review-*
+.claude/tf-manifest.conf
+.env.local
+# fabrica:fin

@@ -1,0 +1,18 @@
+# ~/.codex/config.toml del golden — sembrado por 02-golden.sh (TAL-1552).
+# Objetivo: que el CLI del pane de auditoría arranque SIN prompts interactivos que rompan el relay.
+#
+# 1) Suprime el chequeo de actualización al arrancar. En estos contenedores el update SIEMPRE fallaría
+#    (el usuario del carril no tiene permisos sobre el prefix global de npm → EACCES) y mataría el
+#    proceso, dejando el pane en un shell; el binario se mantiene root-managed en la última estable.
+check_for_update_on_startup = false
+#
+# 1b) [TAL-CEO-CODEX-MODELO-SOL-MEDIUM] Fijado por config, no a mano por el coordinador: el
+#     auditor arranca SIEMPRE en gpt-5.6-sol con reasoning medium en todo canal nuevo.
+model = "gpt-5.6-sol"
+model_reasoning_effort = "medium"
+#
+# 2) Siembra la confianza del repo del carril (evita el prompt "trust directory" en cada arranque).
+#    El path se renderiza con __CUSER__ / __REPO_DIR__ (mismo patrón que tokens.bashrc.tmpl).
+#    El bypass de approvals/sandbox lo aporta el alias de lanzamiento del carril; aquí NO se toca.
+[projects."/home/__CUSER__/__REPO_DIR__"]
+trust_level = "trusted"

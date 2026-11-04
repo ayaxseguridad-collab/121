@@ -1,0 +1,52 @@
+[Unit]
+Description=vLLM — @@MODEL_ID@@ (TP=@@TP_SIZE@@, 5 clientes)
+After=docker.service nvidia-powerlimit.service network-online.target
+Requires=docker.service
+Wants=nvidia-powerlimit.service
+
+[Service]
+Restart=always
+RestartSec=15
+TimeoutStartSec=0
+TimeoutStopSec=90
+ExecStartPre=-/usr/bin/docker rm -f vllm
+ExecStart=/usr/bin/docker run --rm --name vllm \
+  --runtime nvidia --gpus all \
+  --ipc=host \
+  -v @@LL_MODELS@@:/root/.cache/huggingface \
+  -p @@BIND_ADDR@@:@@PORT_MOTOR@@:8000 \
+  --env-file @@ENV_FILE@@ \
+  @@VLLM_IMAGE@@ \
+    --model @@MODEL_ID@@ \
+    --served-model-name @@SERVED_NAME@@ \
+    --tensor-parallel-size @@TP_SIZE@@ \
+    --disable-custom-all-reduce \
+    --moe-backend @@MOE_BACKEND@@ \
+    --max-model-len @@MAX_MODEL_LEN@@ \
+    --max-num-seqs @@MAX_NUM_SEQS@@ \
+    --gpu-memory-utilization @@GPU_MEM_UTIL@@ \
+    --enable-prefix-caching \
+    --limit-mm-per-prompt "{\"image\":0,\"video\":0}" \
+    --reasoning-parser qwen3 \
+    --tool-call-parser qwen3_xml --enable-auto-tool-choice
+ExecStop=/usr/bin/docker stop -t 60 vllm
+
+[Install]
+WantedBy=multi-user.target
+
+# Notas que cuestan caras si se olvidan:
+#
+# --gpus all, NO --gpus '"device=0,1"': la segunda forma no sobrevive al parseo de
+#   ExecStart y systemd aborta con «cannot set both Count and DeviceIDs».
+#
+# NO hay --api-key en esta linea, y es a proposito: los argumentos de un proceso los
+#   lee cualquier usuario con `ps`, asi que poner ahi las cinco claves de usuario
+#   destruiria la atribucion por usuario. El motor toma UNA clave interna de
+#   VLLM_API_KEY, en el fichero de entorno (modo 0600). Quien autentica a los cinco
+#   usuarios es el medidor, que ademas es el unico que habla con el motor.
+#
+# --max-num-seqs 16: el valor por defecto de vLLM (256) impide arrancar con este
+#   modelo por los bloques Mamba de las capas lineales.
+#
+# La imagen va fijada por DIGEST, no por :latest. Una etiqueta movil hace que la
+#   maquina de dentro de tres meses no sea la que se roda hoy.

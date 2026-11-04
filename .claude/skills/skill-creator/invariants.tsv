@@ -1,0 +1,39 @@
+INV-SC-001	SKILL.md	MUST	validate_skill\.py	validador-estructural
+INV-SC-002	SKILL.md	MUST	Gold Standard	gold-standard-27
+INV-SC-003	scripts/validate_skill.py	MUST	MAX_SKILL_MD_LINES	limite-500-lineas
+INV-SC-004	scripts/validate-package.sh	MUST	^set -euo pipefail$	validador-pulso-propio
+INV-SC-005	scripts/lib-package.sh	MUST	A-Za-z0-9\._/-	M3-charset-cerrado
+INV-SC-006	references/09-paquete-de-fabrica.md	MUST	ratchet	D6-regla-ratchet
+INV-SC-007	assets/package.manifest	MUST	^member=linear-skill$	R2-ancla-member
+INV-SC-008	assets/package.manifest	MUST	^member=skill-creator$	R2-ancla-member
+INV-SC-009	assets/package.manifest	MUST	^member=talent-channel-operation$	R2-ancla-member
+INV-SC-010	assets/package.manifest	MUST	^member=talent-channels$	R2-ancla-member
+INV-SC-011	assets/package.manifest	MUST	^member=talent-coordination$	R2-ancla-member
+INV-SC-012	assets/package.manifest	MUST	^member=talent-issue-craft$	R2-ancla-member
+INV-SC-013	assets/package.manifest	MUST	^member=talent-merger$	R2-ancla-member
+INV-SC-014	assets/package.manifest	MUST	^member=talent-orchestrator$	R2-ancla-member
+INV-SC-015	assets/package.manifest	MUST	^member=talent-repo-onboarding$	R2-ancla-member
+INV-SC-016	assets/package.manifest	MUST	^overlay=talent-channel-operation:scripts/repo-identity\.conf$	R2-ancla-overlay
+INV-SC-017	assets/package.manifest	MUST	^overlay=talent-orchestrator:scripts/repo-identity\.conf$	R2-ancla-overlay
+INV-SC-018	assets/package.manifest	MUST	^overlay-prefix=talent-channel-operation:references/anexo-$	R2-ancla-overlay
+INV-SC-019	assets/package.manifest	MUST	^overlay-prefix=talent-merger:references/anexo-$	R2-ancla-overlay
+INV-SC-020	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-SC-021	SKILL.md	MUST	09-paquete-de-fabrica	paquete-D6-enlace-doctrina
+INV-SC-022	references/claude-md-registration.md	MUST	talent-repo-onboarding	review-pr13-propagacion-vs-registro
+INV-SC-023	assets/package.manifest	MUST	^member=talent-context$	R2-ancla-member-10o-miembro-f0-2026-07-23
+INV-SC-024	assets/package.manifest	MUST	^member=talent-llm-local$	R2-ancla-member-11o-miembro-TAL-3509
+INV-SC-025	assets/package.manifest	MUST	^member=talent-pm$	R2-ancla-member-12o-miembro-TAL-3650
+INV-SC-026	assets/package.manifest	MUST	^member=talent-buzz$	R2-ancla-member-14o-miembro-entrega1-2026-07-30
+INV-SC-027	assets/package.manifest	MUST	^member=talent-prd$	R2-ancla-member-15o-miembro-TAL-3681
+INV-SC-028	assets/package.manifest	MUST	^member=talent-ceo$	R2-ancla-member-16o-miembro-TAL-5444
+INV-SC-029	assets/package.manifest	MUST	^overlay-prefix=talent-ceo:references/anexo-$	R2-ancla-overlay-16o-miembro-TAL-5444
+INV-SC-030	scripts/validate-package.sh	MUST	pkg_parse_identity_conf "\$ROOT/talent-channel-operation/scripts/repo-identity.conf"	anexo-adjudicado-8041
+INV-SC-031	scripts/validate-package.sh	MUST	F59-instancia-anexo-sin-match	anexo-must-fail-closed-8041
+INV-SC-032	scripts/validate-package.sh	MUST	PROC-M13 no aplica al stack	anexo-aplicabilidad-stack-8041
+INV-SC-033	scripts/validate-package.sh	MUST	F64-instancia-stack-invalido	anexo-stack-fail-closed-8041
+INV-SC-034	references/09-paquete-de-fabrica.md	MUST	selección incluye `talent-channels`	guarda-segun-seleccion-8041
+INV-SC-035	references/09-paquete-de-fabrica.md	MUST	TB_BUZZ_SIN_RED=1	bateria-sin-transporte-8041
+INV-SC-036	references/09-paquete-de-fabrica.md	MUST	Solo PROC-M13 admite omisión completa sin resumen	resumen-obligatorio-ronda2-8041
+INV-SC-037	references/09-paquete-de-fabrica.md	MUST	un contador positivo falla	antifugas-fail-closed-ronda2-8041
+INV-SC-038	scripts/validate-package.sh	MUST	F68-reparto-con-version-fija	gate-modelos-doctrina-sin-versiones
+INV-SC-039	scripts/validate-package.sh	MUST	F73-excepcion-no-se-extiende-a-otro-fichero	excepcion-personal-nominal-no-por-directorio

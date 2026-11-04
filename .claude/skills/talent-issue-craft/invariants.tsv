@@ -1,0 +1,9 @@
+INV-IC-001	SKILL.md	MUST	issue-craft:v1	marcador-clasificacion
+INV-IC-002	references/01-nucleo-y-despachabilidad.md	MUST	Gate de despachabilidad	gate-backlog-a-todo
+INV-IC-003	SKILL.md	MUST	fail-closed	audit-issue-fail-closed
+INV-IC-004	templates/00-nucleo.md	MUST	GATE DE DESPACHO: cero decisiones abiertas	nucleo-decisiones-regimen
+INV-IC-005	references/01-nucleo-y-despachabilidad.md	MUST	MISMO comportamiento observable	paquete-v1-m1-test-confianza
+INV-IC-006	references/02-verificaciones.md	MUST	MISMO comportamiento observable	paquete-v1-m1-test-confianza
+INV-IC-007	references/03-linear-nativo.md	MUST	templateData	TAL-3089-shape-congelado
+INV-IC-008	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-IC-009	templates/00-nucleo.md	MUST	Contratos cross-pieza	TAL-5158-clausula-cross-pieza-narrativa

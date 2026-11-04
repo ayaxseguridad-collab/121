@@ -1,0 +1,26 @@
+[Unit]
+Description=Medidor de tokens por usuario (proxy @@PORT_MEDIDOR@@ -> motor @@PORT_MOTOR@@)
+After=network-online.target
+Wants=vllm.service
+
+[Service]
+User=@@LL_USER@@
+Environment=METER_ADDR=@@BIND_ADDR@@
+Environment=METER_PORT=@@PORT_MEDIDOR@@
+Environment=UPSTREAM=http://@@BIND_ADDR@@:@@PORT_MOTOR@@
+Environment=HIST_DIR=@@LL_STATE@@/history
+# Dos ficheros: las claves de los cinco usuarios (0640) y la clave interna del
+# motor (0600). systemd los lee como administrador antes de bajar privilegios,
+# asi que el proceso las tiene sin que ninguna toque un argumento de proceso.
+EnvironmentFile=@@KEYS_FILE@@
+EnvironmentFile=@@ENV_FILE@@
+ExecStart=/usr/bin/python3 @@LL_PREFIX@@/token-meter.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+# TODOS los clientes hablan con el medidor, nadie con el motor: si alguien apunta
+# al motor directo, su consumo desaparece del reparto por usuario y las cuentas
+# dejan de cuadrar sin que salte ningun error.

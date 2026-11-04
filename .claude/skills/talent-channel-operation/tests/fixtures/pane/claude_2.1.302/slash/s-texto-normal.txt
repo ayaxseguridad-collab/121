@@ -1,0 +1,11 @@
+ ▐▛███▛█   Claude Code v2.1.302
+▝▜██████▀  Sonnet 5.5 · Claude API
+ ▝▝   ▝▝   /…/Repo-Neutro
+
+  Get to finished work sooner with Opus 5.5. Switch anytime with /model.
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ hola texto normal          
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Sonnet 5.5] ctx: N/A                                                         Ctrl+Y to paste deleted text
+  ⏵⏵ bypass permissions on (shift+tab to cycle)                                                            

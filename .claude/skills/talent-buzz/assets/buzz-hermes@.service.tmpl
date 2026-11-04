@@ -1,0 +1,20 @@
+[Unit]
+Description=Buzz ACP harness - hermes-%i (especialista con modelo local)
+After=network-online.target docker.service
+
+[Service]
+# Aislamiento POR INSTANCIA (ronda de seguridad, hallazgo 3): cada hermes
+# corre como su propio usuario — una instancia comprometida no puede leer el
+# estado ni el workdir de las demas. El padre /var/lib/buzz-hermes es 0711
+# root:root (solo travesia) y cada /N es 0700 de su hermesbot%i.
+User=hermesbot%i
+Group=hermesbot%i
+WorkingDirectory=/var/lib/buzz-hermes/%i
+EnvironmentFile=@ACP_DIR@/hermes-%i.env
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=@BIN_DIR@/buzz-acp
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

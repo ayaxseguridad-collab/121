@@ -1,0 +1,8 @@
+✢ Onioning… (32s · ↓ 2.9k tokens)
+  ⎿  Tip: Working on a plan or design doc? Ask Claude to publish it as an
+     artifact — a polished web page you can open in your browser.
+────────────────────────────────────────────────────────�
+❯ 
+────────────────────────────────────────────────────────�
+  [Sonnet 5.5] ctx: 11%
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents

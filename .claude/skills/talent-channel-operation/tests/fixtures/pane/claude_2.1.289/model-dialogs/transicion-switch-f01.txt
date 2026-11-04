@@ -1,0 +1,50 @@
+  ⎿  Set model to Opus 5.5 and saved as your default for new sessions
+
+❯ /model
+  ⎿  Set model to Sonnet 5.5 and saved as your default for new sessions
+
+❯ /effort high
+  ⎿  Set effort level to high (saved as your default for new sessions): Comprehensive implementation with
+     extensive testing and documentation
+
+❯ /model
+  ⎿  Set model to Opus 5.5 and saved as your default for new sessions
+
+❯ /model
+  ⎿  Set model to Sonnet 5.5 and saved as your default for new sessions
+
+❯ Responde solo con la palabra: caliente
+
+● caliente
+
+✻ Worked for 1s · done 5:05 PM
+
+❯ /model
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Switch model?
+  Your next response will be slower and use more tokens
+
+  This conversation is cached for the current model. Switching to Opus 5.5 means the full history gets
+  re-read on your next message.
+
+  ❯ 1. Yes, switch to Opus 5.5
+    2. No, go back
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

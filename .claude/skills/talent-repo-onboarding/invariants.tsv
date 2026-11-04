@@ -1,0 +1,10 @@
+INV-RO-001	SKILL.md	MUST	sha256	G11-artefactos-fail-closed
+INV-RO-002	SKILL.md	MUST	validate-manifest\.sh	G12-ruta-exacta-validador
+INV-RO-003	SKILL.md	MUST	NO existe	G12-talent-factory-scripts-no-existe
+INV-RO-004	SKILL.md	MUST	core\.hooksPath	hook-nunca-corre-sin-hookspath
+INV-RO-005	SKILL.md	MUST	drafts	cr-drafts-false-quema-reviews
+INV-RO-006	scripts/verify-repo-parity.sh	MUST	MANUAL-PENDING	estados-sellados-checker
+INV-RO-007	references/03-verificacion-y-ensayo.md	MUST	604800	receipts-ttl-contractual
+INV-RO-008	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-RO-009	SKILL.md	MUST	Carve-out de canónicos	paquete-D4-carve-out-ratcheteado
+INV-RO-010	assets/bloque-reglas-fabrica.md	MUST	Variante TREN	TAL-5158-variante-tren-bloque-reglas

@@ -1,0 +1,6 @@
+────────────────────────────────────────────────────────�
+❯ lee /home/USER/.tco-relay/dispatch.0123456789abcdef.txt — es tu brief de tarea; síguelo y presenta el
+  plan con ExitPlanMode
+────────────────────────────────────────────────────────�
+  [Opus 5.5] ctx: N/A
+  ⏸ plan mode on (shift+tab to cycle)

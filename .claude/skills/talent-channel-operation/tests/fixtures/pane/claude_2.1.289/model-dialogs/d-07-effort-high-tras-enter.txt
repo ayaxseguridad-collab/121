@@ -1,0 +1,50 @@
+✻ Cogitated for 19s · done 7:37 AM                                                                            
+                                                              
+❯ Responde solo con la palabra: recibido-humo                                                                 
+
+● recibido-humo                                                                                               
+                      
+✻ Cogitated for 1s · done 11:38 AM                                                                            
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Sonnet 5.5
+
+❯ /model                                                                                                      
+  ⎿  Kept model as Sonnet 5.5
+
+❯ /model                                                                                                      
+  ⎿  Set model to Opus 5.5 and saved as your default for new sessions
+
+❯ /effort xhigh                                                                                               
+  ⎿  Set effort level to xhigh (saved as your default for new sessions): Deeper reasoning than high, just
+     below maximum (on supported models)
+
+❯ /model                                                                                                      
+  ⎿  Set model to Sonnet 5.5 and saved as your default for new sessions
+
+❯ /effort high                                                                                                
+  ⎿  Set effort level to high (saved as your default for new sessions): Comprehensive implementation with
+     extensive testing and documentation
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Sonnet 5.5] ctx: 5%                                                                      ● high · /effort
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · ← for agents
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

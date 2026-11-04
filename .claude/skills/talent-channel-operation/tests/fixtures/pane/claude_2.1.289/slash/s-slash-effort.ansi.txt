@@ -1,0 +1,50 @@
+
+  En el siglo XX surgieron nuevas familias: el vidrio borosilicatado (Pyrex), resistente a los cambios
+  térmicos; el vidrio templado y laminado, que protege automóviles y edificios; y las fibras ópticas, que
+  transportan datos de un continente a otro en haces de luz. Las pantallas de teléfonos, con vidrios
+  reforzados químicamente, cabe decir que se llevan en el bolsillo de miles de millones de personas.
+
+  Hoy el vidrio también se asocia a la sostenibilidad, porque se recicla indefinidamente sin perder calidad.
+  Un material descubierto en la prehistoria sigue siendo, cinco mil años después, una pieza clave de la
+  ciencia, la arquitectura y la vida diaria.                                                                  
+
+␛[38;5;246m✻␛[39m ␛[38;5;246mCogitated for 19s · done 7:37 AM␛[39m                                                                            
+                                                              
+␛[38;5;246m␛[48;5;237m❯ ␛[38;5;231mResponde solo con la palabra: recibido-humo␛[39m                                                                 
+
+␛[38;5;231m␛[49m●␛[39m recibido-humo                                                                                               
+                      
+␛[38;5;246m✻␛[39m ␛[38;5;246mCogitated for 1s · done 11:38 AM␛[39m                                                                            
+
+␛[38;5;246m␛[48;5;237m❯␛[39m ␛[38;5;231m/model␛[39m ␛[49m                                                                                                     
+␛[38;5;246m  ⎿  ␛[39mKept model as ␛[38;5;153mSonnet 5.5
+
+␛[38;5;244m──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+␛[39m❯ ␛[38;5;153m/effort␛[39m                                                                                                     
+␛[38;5;244m──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+␛[39m  ␛[38;5;153m/␛[1meffort␛[0m␛[38;5;153m                           Set ␛[1meffort␛[0m␛[38;5;153m level for model usage␛[39m                                        
+  ␛[38;5;246m/talent-channel-operation         Coordinador multi-canal de la 1ª estación de la fábrica (ADR-0043) que␛[39m  
+                                    ␛[38;5;246mlleva␛[39m ␛[38;5;246mencargos␛[39m ␛[38;5;246mde␛[39m ␛[38;5;246mLinear␛[39m ␛[38;5;246ma␛[39m ␛[38;5;246mPR␛[39m ␛[38;5;246mDRAFT␛[39m ␛[38;5;246m+␛[39m ␛[38;5;246mHANDOFF␛[39m ␛[38;5;246musando␛[39m ␛[38;5;246mcanales␛[39m ␛[38;5;246mtmux␛[39m ␛[38;5;246men␛[39m ␛[38;5;246mIn…
+␛[39m  ␛[38;5;246m/code-review␛[39m                      ␛[38;5;246mReview␛[39m ␛[38;5;246mthe␛[39m ␛[38;5;246mcurrent␛[39m ␛[38;5;246mdiff,␛[39m ␛[38;5;246mor␛[39m ␛[38;5;246ma␛[39m ␛[38;5;246mPR␛[39m ␛[38;5;246mnumber/branch/path␛[39m ␛[38;5;246mtarget,␛[39m ␛[38;5;246mfor
+␛[39m                                    ␛[38;5;246mcorrectness␛[39m ␛[38;5;246mbugs␛[39m ␛[38;5;246m(plus␛[39m ␛[38;5;246mreuse/simplification/efficiency␛[39m ␛[38;5;246mcleanups␛[39m ␛[38;5;246mwhere␛[39m ␛[38;5;246mt…
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

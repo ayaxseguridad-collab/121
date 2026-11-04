@@ -1,0 +1,94 @@
+# coderabbit-politica.yaml — Política base de CodeRabbit para repos de la fábrica
+# derivado-de .coderabbit.yaml@a2728bf87f54 — 2026-07-22
+#
+# Clase EQUIVALENTE: adaptar los path_instructions, tone_instructions e idioma al repo
+# destino. Los campos obligatorios (marcados con [REQUERIDO]) NO son negociables.
+# Los campos marcados con [ADAPTAR] se personalizan por repo.
+#
+# Instrucciones de uso:
+# 1. Copiar este archivo como .coderabbit.yaml en la raíz del repo destino.
+# 2. Actualizar el comentario de procedencia con el SHA del commit del repo TA.
+# 3. Ajustar los campos marcados con [ADAPTAR].
+# 4. NO cambiar los campos [REQUERIDO]: son el contrato estructural verificado por
+#    verify-repo-parity.sh (checker estructura:coderabbit).
+
+# [ADAPTAR] Idioma de los reviews
+language: "es"
+
+# [REQUERIDO] tone_instructions: política de severidad solo-bloqueantes
+# Límite: 250 caracteres (CodeRabbit lo trunca en UI pero respeta en API).
+tone_instructions: "Solo bloqueantes: bugs, seguridad/secrets/RLS, OWASP, contratos, concurrencia, auth, fallos operacionales y breaking changes. NO minor/nitpick/style/naming/docstring/refactor."
+
+early_access: true
+enable_free_tier: true
+
+reviews:
+  # [REQUERIDO] Solo bloqueantes — no genera ruido cosmético
+  profile: "chill"
+  # [REQUERIDO] Exige cambios cuando hay bloqueantes (no solo comenta)
+  request_changes_workflow: true
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  # [ADAPTAR] Instrucciones del summary — ajustar según el stack del repo
+  high_level_summary_instructions: |
+    Incluir: 1) Resumen del cambio, 2) Archivos críticos modificados,
+    3) Impacto en producción (alto/medio/bajo), 4) Requiere migración Supabase (si/no).
+  review_status: true
+  commit_status: true
+  fail_commit_status: true
+  collapse_walkthrough: true
+  # [REQUERIDO] No revisar PRs en estado draft
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+
+  # [ADAPTAR] Filtros de paths — ajustar a la estructura del repo destino
+  path_filters:
+    # Excluir archivos generados y de config de herramientas
+    - "!**/*.lock"
+    - "!**/dist/**"
+    - "!**/node_modules/**"
+    - "!**/.next/**"
+
+  # [ADAPTAR] Instrucciones por ruta — política de severidad detallada
+  path_instructions:
+    - path: "**/*"
+      instructions: |
+        Política de severidad SOLO-BLOQUEANTES para este repo:
+
+        INCLUIR (comentar y bloquear):
+        - Secret/credencial expuesta o en riesgo
+        - Fallo de RLS o auth (datos expuestos sin gate)
+        - Bug funcional confirmado (la lógica produce resultados incorrectos)
+        - Vulnerabilidad OWASP Top 10
+        - Contrato roto (type mismatch, API incompatible, schema incorrecto)
+        - Problema de concurrencia (race condition, deadlock)
+        - Fallo operacional (crash en prod, retry infinito, leak de recursos)
+        - Breaking change no documentado
+
+        EXCLUIR (no comentar):
+        - Estilo, nombres, docstrings, comentarios cosméticos
+        - Refactors opcionales que no afectan comportamiento
+        - Sugerencias de "podría mejorarse" sin bug concreto
+        - Minor/nitpick de cualquier tipo
+
+tools:
+  # [REQUERIDO] SAST y linters habilitados
+  gitleaks:
+    enabled: true
+  trufflehog:
+    enabled: true
+  opengrep:
+    enabled: true
+  # [ADAPTAR] Habilitar / deshabilitar según el repo destino
+  eslint:
+    enabled: true
+  markdownlint:
+    enabled: true
+  yamllint:
+    enabled: true
+
+chat:
+  auto_reply: true

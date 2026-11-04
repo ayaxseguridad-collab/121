@@ -1,0 +1,13 @@
+INV-TC-001	SKILL.md	MUST	60 %	umbral-compact-60-protocolo-lead-2026-07-08
+INV-TC-002	SKILL.md	MUST	checkpoint limpio	compactar-solo-en-checkpoint-limpio
+INV-TC-003	SKILL.md	MUST	fichero de regreso	regreso-escrito-fuera-y-verificado
+INV-TC-004	SKILL.md	MUST	paso-0	paso-0-primer-acto-post-compact
+INV-TC-005	SKILL.md	MUST	REGRESO-FIN	marcador-anti-truncado-code-gate-r3-pr1158
+INV-TC-006	SKILL.md	MUST	token-only	token-only-sin-mcp
+INV-TC-007	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-TC-008	references/06-ley-actor-degradado.md	MUST	Alta fresca con brief de reglas duras	TAL-4731-pz1-ley-actor-degradado-lead-23ago
+INV-TC-009	references/03-paso-0-post-relevo.md	MUST	FIN-REGRESO-	bancos-numerados-bN-marcador-cierre-TAL-5450
+INV-TC-010	SKILL.md	MUST	install-statusline\.sh	TAL-8038-barra-ctx-y-renderer-clasico
+INV-TC-011	SKILL.md	MUST	(está|esta) PROHIBIDO en actores persistentes	TAL-8043-clear-prohibido-en-actores-persistentes
+INV-TC-012	references/03-paso-0-post-relevo.md	MUST	NO acredita al actor	TAL-8043-el-paso-0-no-acredita-al-actor
+INV-TC-013	references/03-paso-0-post-relevo.md	MUST	NO ACREDITADO hasta re-acreditar	TAL-8043-tras-clear-reinicio-o-sesion-nueva-no-acreditado

@@ -1,0 +1,19 @@
+[Unit]
+Description=Buzz pair relay (emparejamiento de dispositivos NIP-AB)
+After=network-online.target
+
+[Service]
+DynamicUser=yes
+# Frontera M2: el bind lo fija montar.sh a la IP del tailnet (o loopback en
+# modo dominio) — NUNCA a todas las interfaces.
+Environment=BUZZ_PAIR_RELAY_BIND_ADDR=@BIND_ADDR@
+ExecStart=@BIN_DIR@/buzz-pair-relay
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

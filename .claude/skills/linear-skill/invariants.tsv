@@ -1,0 +1,102 @@
+INV-LS-001	SKILL.md	MUST	NO MCP	token-only-sin-mcp
+INV-LS-002	SKILL.md	MUST	labelIds	labelids-reemplaza-array
+INV-LS-003	SKILL.md	MUST	dedupe	dedupe-antes-de-crear
+INV-LS-004	SKILL.md	MUST	magic words	cierre-por-magic-word
+INV-LS-005	SKILL.md	MUST	pregunta al humano	no-adivinar-clasificacion
+INV-LS-006	SKILL.md	MUST	trazabilidad	sin-token-no-fabricar-issues
+INV-LS-007	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-LS-008	SKILL.md	MUST	constantes compartidas del workspace	review-pr13-C-frontera-workspace
+INV-LS-009	examples/label-taxonomy.json	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-010	examples/talent-engine-config.json	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-011	references/01-data-model.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-012	references/06-agents-sdk.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-013	prompts/crear-issue.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-014	prompts/buscar-y-deduplicar.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-015	prompts/issue-template-bug.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-016	prompts/issue-template-feature.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-017	prompts/weekly-report.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-018	workflows/02-triage-y-delegar.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-019	workflows/03-cycle-planning.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-020	workflows/05-bug-handling.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-021	examples/issue-templates/bug.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-022	examples/issue-templates/feature.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-023	examples/issue-templates/tarea-delegable-a-ia.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-024	examples/agent-guidance.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-025	examples/claude-md-template.md	MUST_NOT	type/	tal-3366-ratchet-taxonomia
+INV-LS-026	examples/talent-engine-config.json	MUST_NOT	actor/ai-	tal-3366-ratchet-taxonomia
+INV-LS-027	references/06-agents-sdk.md	MUST_NOT	actor/ai-	tal-3366-ratchet-taxonomia
+INV-LS-028	examples/label-taxonomy.json	MUST_NOT	actor/ai-	tal-3366-ratchet-taxonomia
+INV-LS-029	workflows/02-triage-y-delegar.md	MUST_NOT	actor/ai-	tal-3366-ratchet-taxonomia
+INV-LS-030	examples/label-taxonomy.json	MUST_NOT	risk/	tal-3366-ratchet-taxonomia
+INV-LS-031	examples/talent-engine-config.json	MUST_NOT	risk/	tal-3366-ratchet-taxonomia
+INV-LS-032	references/01-data-model.md	MUST_NOT	risk/	tal-3366-ratchet-taxonomia
+INV-LS-033	examples/label-taxonomy.json	MUST_NOT	(^|[^a-z])area/	tal-3366-ratchet-taxonomia
+INV-LS-034	examples/talent-engine-config.json	MUST_NOT	(^|[^a-z])area/	tal-3366-ratchet-taxonomia
+INV-LS-035	references/01-data-model.md	MUST_NOT	(^|[^a-z])area/	tal-3366-ratchet-taxonomia
+INV-LS-036	workflows/05-bug-handling.md	MUST_NOT	(^|[^a-z])area/	tal-3366-ratchet-taxonomia
+INV-LS-037	examples/issue-templates/bug.md	MUST_NOT	(^|[^a-z])area/	tal-3366-ratchet-taxonomia
+INV-LS-038	examples/issue-templates/feature.md	MUST_NOT	(^|[^a-z])area/	tal-3366-ratchet-taxonomia
+INV-LS-039	examples/agent-guidance.md	MUST_NOT	ai/TAL-	tal-3366-ratchet-ramas
+INV-LS-040	examples/claude-md-template.md	MUST_NOT	ai/TAL-	tal-3366-ratchet-ramas
+INV-LS-041	examples/issue-templates/tarea-delegable-a-ia.md	MUST_NOT	ai/TAL-	tal-3366-ratchet-ramas
+INV-LS-042	workflows/02-triage-y-delegar.md	MUST_NOT	ai/TAL-	tal-3366-ratchet-ramas
+INV-LS-043	workflows/05-bug-handling.md	MUST_NOT	(ai|bug)/TAL-	tal-3366-ratchet-ramas
+INV-LS-044	SKILL.md	MUST	nunca .ai/	tal-3366-ratchet-ramas
+INV-LS-045	SKILL.md	MUST	check-taxonomy-parity	tal-3366-gate-paridad
+INV-LS-046	examples/label-taxonomy.json	MUST	kind:feat	tal-3366-ratchet-taxonomia
+INV-LS-047	examples/label-taxonomy.json	MUST	label-taxonomy\.receipt\.json	tal-3366-gate-paridad
+INV-LS-048	examples/talent-engine-config.json	MUST	duplicate_sites	tal-3366-gate-paridad
+INV-LS-049	scripts/check-taxonomy-parity.sh	MUST	pagination\.complete	tal-3366-gate-paridad
+INV-LS-050	scripts/batch-issues.ts	MUST	entero decimal entre 1 y 50	tal-3366-cli-fail-closed
+INV-LS-051	scripts/batch-issues.ts	MUST	Error de uso	tal-3366-cli-fail-closed
+INV-LS-052	examples/agent-guidance.md	MUST_NOT	actor/needs-review	tal-3366-m1-needs-review
+INV-LS-053	examples/issue-templates/tarea-delegable-a-ia.md	MUST_NOT	actor/needs-review	tal-3366-m1-needs-review
+INV-LS-054	workflows/02-triage-y-delegar.md	MUST_NOT	actor/needs-review	tal-3366-m1-needs-review
+INV-LS-055	workflows/04-cycle-review.md	MUST_NOT	actor/needs-review	tal-3366-m1-needs-review
+INV-LS-056	examples/talent-engine-config.json	MUST_NOT	actor/needs-review	tal-3366-m1-needs-review
+INV-LS-057	workflows/05-bug-handling.md	MUST_NOT	(feat|fix|refactor|docs|chore|hotfix)/TAL-	tal-3366-m2-rama-mayusculas
+INV-LS-058	workflows/02-triage-y-delegar.md	MUST_NOT	(feat|fix|refactor|docs|chore|hotfix)/TAL-	tal-3366-m2-rama-mayusculas
+INV-LS-059	examples/agent-guidance.md	MUST_NOT	(feat|fix|refactor|docs|chore|hotfix)/TAL-	tal-3366-m2-rama-mayusculas
+INV-LS-060	examples/claude-md-template.md	MUST_NOT	(feat|fix|refactor|docs|chore|hotfix)/TAL-	tal-3366-m2-rama-mayusculas
+INV-LS-061	examples/issue-templates/tarea-delegable-a-ia.md	MUST_NOT	(feat|fix|refactor|docs|chore|hotfix)/TAL-	tal-3366-m2-rama-mayusculas
+INV-LS-062	scripts/batch-issues.ts	MUST	resolución ambigua	tal-3366-m5-duplicados
+INV-LS-063	scripts/batch-issues.ts	MUST	selftest	tal-3366-m5-duplicados
+INV-LS-064	prompts/crear-issue.md	MUST	vertical/genius-arena	tal-3366-m6-verticales
+INV-LS-065	prompts/crear-issue.md	MUST	vertical/fabrica	tal-3366-m6-verticales
+INV-LS-066	README.md	MUST	check-taxonomy-parity\.sh	tal-3366-m4-actualizacion
+INV-LS-067	examples/label-taxonomy.json	MUST	fondos reales	tal-3366-m3-sev-capital
+INV-LS-068	SKILL.md	MUST	issueAddLabel	tal-5432-labels-existen
+INV-LS-069	SKILL.md	MUST_NOT	no tiene "addLabel"	tal-5432-labels-existen
+INV-LS-070	references/01-data-model.md	MUST_NOT	NO existe `issueAddLabel`	tal-5432-labels-existen
+INV-LS-071	references/04-rate-limits.md	MUST_NOT	NO tiene mutation batch	tal-5432-batch-existe
+INV-LS-072	references/03-graphql-cheatsheet.md	MUST	issueBatchUpdate	tal-5432-batch-existe
+INV-LS-073	references/04-rate-limits.md	MUST	INPUT_ERROR	tal-5432-errores-deterministas
+INV-LS-074	references/04-rate-limits.md	MUST	first must not be greater than 250	tal-5432-first-250
+INV-LS-075	SKILL.md	MUST_NOT	Cycles:\s+1 semana	tal-5432-contexto-real
+INV-LS-076	SKILL.md	MUST_NOT	Fibonacci	tal-5432-contexto-real
+INV-LS-077	SKILL.md	MUST	cyclesEnabled	tal-5432-contexto-real
+INV-LS-078	references/05-webhooks.md	MUST_NOT	lapsed	tal-5432-webhooks-enum-vivo
+INV-LS-079	references/05-webhooks.md	MUST_NOT	Team \| create, update, remove	tal-5432-webhooks-enum-vivo
+INV-LS-080	references/05-webhooks.md	MUST	webhookRotateSecret	tal-5432-webhooks-enum-vivo
+INV-LS-081	references/05-webhooks.md	MUST	highRisk	tal-5432-webhooks-enum-vivo
+INV-LS-082	references/06-agents-sdk.md	MUST	Loops	tal-5432-agentes-al-dia
+INV-LS-083	examples/talent-engine-config.json	MUST_NOT	fill-in	tal-5432-config-sin-placeholders
+INV-LS-084	prompts/batch-update.md	MUST_NOT	projectArchive\(	tal-5432-projectarchive-deprecada
+INV-LS-085	SKILL.md	MUST	Fuera de alcance	tal-5432-limites-declarados
+INV-LS-086	SKILL.md	MUST	Troubleshooting	tal-5432-limites-declarados
+INV-LS-087	SKILL.md	MUST_NOT	@linear/sdk@88	tal-5432-sdk-sin-pin
+INV-LS-088	examples/issue-templates/bug.md	MUST_NOT	sev:<severidad>	tal-3423-sev-enumerados
+INV-LS-089	README.md	MUST_NOT	zip -r [^\n]*\.claude/skills/linear-skill	tal-3429-zip-raiz
+INV-LS-090	SKILL.md	MUST_NOT	NUNCA ejecutes migraciones	tal-5174-migraciones-agent-managed
+INV-LS-091	workflows/05-bug-handling.md	MUST_NOT	investigation/intermittent	tal-5174-labels-vivos
+INV-LS-092	workflows/05-bug-handling.md	MUST_NOT	external-blocker	tal-5174-labels-vivos
+INV-LS-093	workflows/01-crear-project.md	MUST_NOT	projectArchive\(	tal-5432-projectarchive-deprecada
+INV-LS-094	workflows/01-crear-project.md	MUST_NOT	Talent Land MX 2026	tal-5432-initiatives-vivas
+INV-LS-095	SKILL.md	MUST_NOT	WorkflowStateType	tal-5432-sin-enum-inventado
+INV-LS-096	scripts/linear-client.ts	MUST	MAX_RETRY_AFTER_MS	tal5432-techo-retry-after
+INV-LS-097	scripts/linear-client.ts	MUST	status === 429	tal5432-429-desnudo-transitorio
+INV-LS-098	SKILL.md	MUST_NOT	CircuitBreaker` con `retryWithBackoff` SOLO	tal5432-retrywithbackoff-claim-falsa
+INV-LS-099	references/04-rate-limits.md	MUST_NOT	client\.client\.rawRequest\(	tal5432-rawrequest-inexistente-en-batch
+INV-LS-100	scripts/linear-client.ts	MUST	retryAfterMs: resolveRetryAfterMs\(headers, undefined\)	tal5432-unknown-propaga-retryafterms
+INV-LS-101	scripts/check-taxonomy-parity.sh	MUST	jq -s -e	configuracion-documento-unico
+INV-LS-102	tests/run-tests.sh	MUST	TOTAL=13	negativos-en-tres-ficheros-de-taxonomia

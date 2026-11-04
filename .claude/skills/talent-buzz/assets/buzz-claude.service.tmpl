@@ -1,0 +1,28 @@
+[Unit]
+Description=Buzz ACP harness - Fenix (Claude orquestador residente)
+After=network-online.target docker.service
+
+[Service]
+User=@USER@
+Group=@USER@
+EnvironmentFile=@ENVFILE@
+Environment=PATH=@HOME@/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=HOME=@HOME@
+WorkingDirectory=@WORKDIR@
+ExecStart=@BIN_DIR@/buzz-acp
+Restart=always
+RestartSec=10
+# Hardening: el maximo compatible con usar las credenciales de Claude Code del
+# usuario (~/.claude); ProtectHome NO puede activarse por eso. OJO: CLAUDE.md y
+# settings.json del WorkingDirectory son POLITICA del agente, NO aislamiento —
+# un proceso comprometido puede leer el home igualmente. El aislamiento real
+# exige cuenta y HOME dedicados con solo las credenciales necesarias +
+# ProtectHome=yes + ReadWritePaths minimos (follow-up documentado en
+# references/seguridad.md como decision explicita de esta version).
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+MemoryMax=4G
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,50 @@
+
+  En el siglo XX surgieron nuevas familias: el vidrio borosilicatado (Pyrex), resistente a los cambios
+  térmicos; el vidrio templado y laminado, que protege automóviles y edificios; y las fibras ópticas, que
+  transportan datos de un continente a otro en haces de luz. Las pantallas de teléfonos, con vidrios
+  reforzados químicamente, cabe decir que se llevan en el bolsillo de miles de millones de personas.
+
+  Hoy el vidrio también se asocia a la sostenibilidad, porque se recicla indefinidamente sin perder calidad.
+  Un material descubierto en la prehistoria sigue siendo, cinco mil años después, una pieza clave de la
+  ciencia, la arquitectura y la vida diaria.                                                                  
+
+␛[38;5;246m✻␛[39m ␛[38;5;246mCogitated for 19s · done 7:37 AM␛[39m                                                                            
+                                                              
+␛[38;5;246m␛[48;5;237m❯ ␛[38;5;231mResponde solo con la palabra: recibido-humo␛[39m                                                                 
+
+␛[38;5;231m␛[49m●␛[39m recibido-humo                                                                                               
+                      
+␛[38;5;246m✻␛[39m ␛[38;5;246mCogitated for 1s · done 11:38 AM␛[39m                                                                            
+
+␛[38;5;246m␛[48;5;237m❯␛[39m ␛[38;5;231m/model␛[39m ␛[49m                                                                                                     
+␛[38;5;246m  ⎿  ␛[39mKept model as ␛[38;5;153mSonnet 5.5
+
+␛[38;5;244m──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+␛[39m❯ /mod                                                                                                        
+␛[38;5;244m──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+␛[39m  ␛[38;5;153m/␛[1mmod␛[0m␛[38;5;153mel                            Set the AI ␛[1mmod␛[0m␛[38;5;153mel for Claude Code (currently Sonnet 5.5)␛[39m                 
+  ␛[38;5;246m/auto-␛[1m␛[39mmod␛[0m␛[38;5;246me-setup                  Teach auto ␛[1m␛[39mmod␛[0m␛[38;5;246me about your environment, plus optional rule tweaks␛[39m       
+  ␛[38;5;246m/code-review␛[39m                      ␛[38;5;246mReview␛[39m ␛[38;5;246mthe␛[39m ␛[38;5;246mcurrent␛[39m ␛[38;5;246mdiff,␛[39m ␛[38;5;246mor␛[39m ␛[38;5;246ma␛[39m ␛[38;5;246mPR␛[39m ␛[38;5;246mnumber/branch/path␛[39m ␛[38;5;246mtarget,␛[39m ␛[38;5;246mfor
+␛[39m                                    ␛[38;5;246mcorrectness␛[39m ␛[38;5;246mbugs␛[39m ␛[38;5;246m(plus␛[39m ␛[38;5;246mreuse/simplification/efficiency␛[39m ␛[38;5;246mcleanups␛[39m ␛[38;5;246mwhere␛[39m ␛[38;5;246mt…
+␛[39m  ␛[38;5;246m/gtm-manager␛[39m                      ␛[38;5;246mManage␛[39m ␛[38;5;246mGoogle␛[39m ␛[38;5;246mTag␛[39m ␛[38;5;246mManager␛[39m ␛[38;5;246mcontainers,␛[39m ␛[38;5;246mtags,␛[39m ␛[38;5;246mtriggers,␛[39m ␛[38;5;246mand␛[39m ␛[38;5;246mvariables␛[39m ␛[38;5;246mvia
+␛[39m                                    ␛[38;5;246mthe␛[39m ␛[38;5;246mGTM␛[39m ␛[38;5;246mAPI␛[39m ␛[38;5;246mv2.␛[39m ␛[38;5;246mUse␛[39m ␛[38;5;246mthis␛[39m ␛[38;5;246mskill␛[39m ␛[38;5;246mwhenever␛[39m ␛[38;5;246mthe␛[39m ␛[38;5;246muser␛[39m ␛[38;5;246mwants␛[39m ␛[38;5;246mto:␛[39m ␛[38;5;246madd␛[39m ␛[38;5;246mtracking…
+␛[39m  ␛[38;5;246m/talent-channel-operation␛[39m         ␛[38;5;246mCoordinador␛[39m ␛[38;5;246mmulti-canal␛[39m ␛[38;5;246mde␛[39m ␛[38;5;246mla␛[39m ␛[38;5;246m1ª␛[39m ␛[38;5;246mestación␛[39m ␛[38;5;246mde␛[39m ␛[38;5;246mla␛[39m ␛[38;5;246mfábrica␛[39m ␛[38;5;246m(ADR-0043)␛[39m ␛[38;5;246mque
+␛[39m                                    ␛[38;5;246mlleva␛[39m ␛[38;5;246mencargos␛[39m ␛[38;5;246mde␛[39m ␛[38;5;246mLinear␛[39m ␛[38;5;246ma␛[39m ␛[38;5;246mPR␛[39m ␛[38;5;246mDRAFT␛[39m ␛[38;5;246m+␛[39m ␛[38;5;246mHANDOFF␛[39m ␛[38;5;246musando␛[39m ␛[38;5;246mcanales␛[39m ␛[38;5;246mtmux␛[39m ␛[38;5;246men␛[39m ␛[38;5;246mIn…
+␛[39m  ␛[38;5;246m/talent-coordination␛[39m              ␛[38;5;246mUse␛[39m ␛[38;5;246mthis␛[39m ␛[38;5;246mskill␛[39m ␛[38;5;246mwhen␛[39m ␛[38;5;246mthe␛[39m ␛[38;5;246muser␛[39m ␛[38;5;246mwants␛[39m ␛[38;5;246ma␛[39m ␛[38;5;246mterminal␛[39m ␛[38;5;246mto␛[39m ␛[38;5;246mact␛[39m ␛[38;5;246mas␛[39m ␛[38;5;246mthe␛[39m ␛[38;5;246mCOORDINATION
+␛[39m                                    ␛[38;5;246mcommand␛[39m ␛[38;5;246mpost␛[39m ␛[38;5;246m(puesto␛[39m ␛[38;5;246mde␛[39m ␛[38;5;246mmando)␛[39m ␛[38;5;246mfor␛[39m ␛[38;5;246ma␛[39m ␛[38;5;246mLinear-managed␛[39m ␛[38;5;246mproject␛[39m ␛[38;5;246mwith␛[39m ␛[38;5;246mN␛[39m ␛[38;5;246mpara…
+␛[39m  ␛[38;5;246m/talent-llm-local␛[39m                 ␛[38;5;246mMontar␛[39m ␛[38;5;246mun␛[39m ␛[38;5;246mservidor␛[39m ␛[38;5;246mde␛[39m ␛[38;5;246mIA␛[39m ␛[38;5;246mlocal␛[39m ␛[38;5;246midentico␛[39m ␛[38;5;246mal␛[39m ␛[38;5;246mde␛[39m ␛[38;5;246mreferencia:
+␛[39m                                    ␛[38;5;246mQwen3.6-35B-A3B␛[39m ␛[38;5;246m(NVFP4)␛[39m ␛[38;5;246msobre␛[39m ␛[38;5;246mvLLM␛[39m ␛[38;5;246mcon␛[39m ␛[38;5;246mtensor␛[39m ␛[38;5;246mparallel␛[39m ␛[38;5;246men␛[39m ␛[38;5;246m2␛[39m ␛[38;5;246mGPU␛[39m ␛[38;5;246mBlackwe…
+␛[39m  ␛[38;5;246m/plugin-authoring␛[39m                 ␛[38;5;246mMake␛[39m ␛[38;5;246ma␛[39m ␛[1mmod␛[0m␛[38;5;246m:␛[39m ␛[38;5;246ma␛[39m ␛[38;5;246mlive␛[39m ␛[38;5;246mpane,␛[39m ␛[38;5;246mband,␛[39m ␛[38;5;246mstatus␛[39m ␛[38;5;246mline,␛[39m ␛[38;5;246mtoast␛[39m ␛[38;5;246mor␛[39m ␛[38;5;246mhook␛[39m ␛[38;5;246minside␛[39m ␛[38;5;246mClaude
+␛[39m                                    ␛[38;5;246mCode␛[39m ␛[38;5;246m(terminal␛[39m ␛[38;5;246mor␛[39m ␛[38;5;246mdesktop␛[39m ␛[38;5;246mCode␛[39m ␛[38;5;246mtab),␛[39m ␛[38;5;246mwritten␛[39m ␛[38;5;246mas␛[39m ␛[38;5;246ma␛[39m ␛[38;5;246mplugin␛[39m ␛[38;5;246mof␛[39m ␛[38;5;246mfunction␛[39m ␛[38;5;246mho…
+␛[39m  ␛[38;5;246m/ga4-skill␛[39m                        ␛[38;5;246mSkill␛[39m ␛[38;5;246mcompleto␛[39m ␛[38;5;246mpara␛[39m ␛[38;5;246mGoogle␛[39m ␛[38;5;246mAnalytics␛[39m ␛[38;5;246m4␛[39m ␛[38;5;246m—␛[39m ␛[38;5;246mlas␛[39m ␛[38;5;246mcuatro␛[39m ␛[38;5;246msuperficies␛[39m ␛[38;5;246mde␛[39m ␛[38;5;246mAPI:
+␛[39m                                    ␛[38;5;246mData␛[39m ␛[38;5;246mAPI␛[39m ␛[38;5;246mv1beta␛[39m ␛[38;5;246m(reporting),␛[39m ␛[38;5;246mAdmin␛[39m ␛[38;5;246mAPI␛[39m ␛[38;5;246mv1alpha/v1beta␛[39m ␛[38;5;246m(configuracion␛[39m ␛[38;5;246mde…
+␛[39m  ␛[38;5;246m/google-ads-api␛[39m                   ␛[38;5;246mUse␛[39m ␛[38;5;246mthis␛[39m ␛[38;5;246mskill␛[39m ␛[38;5;246mwhenever␛[39m ␛[38;5;246mthe␛[39m ␛[38;5;246muser␛[39m ␛[38;5;246mneeds␛[39m ␛[38;5;246mto␛[39m ␛[38;5;246mwork␛[39m ␛[38;5;246mwith␛[39m ␛[38;5;246mGoogle␛[39m ␛[38;5;246mAds␛[39m ␛[38;5;246m—␛[39m ␛[38;5;246mboth
+␛[39m                                    ␛[38;5;246mprogrammatically␛[39m ␛[38;5;246mAND␛[39m ␛[38;5;246mfor␛[39m ␛[38;5;246mad␛[39m ␛[38;5;246mcreative␛[39m ␛[38;5;246mstrategy.␛[39m ␛[38;5;246mThis␛[39m ␛[38;5;246mincludes:␛[39m ␛[38;5;246mwriting␛[39m ␛[38;5;246mP…
+␛[39m  ␛[38;5;246m/kotlin-android␛[39m                   ␛[38;5;246mUse␛[39m ␛[38;5;246mthis␛[39m ␛[38;5;246mskill␛[39m ␛[38;5;246mfor␛[39m ␛[38;5;246mANY␛[39m ␛[38;5;246mAndroid-specific␛[39m ␛[38;5;246mUI,␛[39m ␛[38;5;246mpresentation␛[39m ␛[38;5;246mlayer,␛[39m ␛[38;5;246mor
+␛[39m                                    ␛[38;5;246mJetpack␛[39m ␛[38;5;246mCompose␛[39m ␛[38;5;246mwork␛[39m ␛[38;5;246minside␛[39m ␛[38;5;246ma␛[39m ␛[38;5;246mKMP␛[39m ␛[38;5;246mcross-platform␛[39m ␛[38;5;246mmonorepo.␛[39m ␛[38;5;246mTriggers␛[39m ␛[38;5;246minc…
+␛[39m  ␛[38;5;246m/nowpayments-skill␛[39m                ␛[38;5;246mUse␛[39m ␛[38;5;246mthis␛[39m ␛[38;5;246mskill␛[39m ␛[38;5;246mwhenever␛[39m ␛[38;5;246mthe␛[39m ␛[38;5;246muser␛[39m ␛[38;5;246mneeds␛[39m ␛[38;5;246mto␛[39m ␛[38;5;246mwork␛[39m ␛[38;5;246mwith␛[39m ␛[38;5;246mNOWPayments␛[39m ␛[38;5;246m—␛[39m ␛[38;5;246mthe
+␛[39m                                    ␛[38;5;246mnon-custodial␛[39m ␛[38;5;246mcryptocurrency␛[39m ␛[38;5;246mpayment␛[39m ␛[38;5;246mgateway␛[39m ␛[38;5;246msupporting␛[39m ␛[38;5;246m350+␛[39m ␛[38;5;246mcoins.␛[39m ␛[38;5;246mThi…
+␛[39m  ␛[38;5;246m/stripe-skill␛[39m                     ␛[38;5;246mUse␛[39m ␛[38;5;246mthis␛[39m ␛[38;5;246mskill␛[39m ␛[38;5;246mwhenever␛[39m ␛[38;5;246mthe␛[39m ␛[38;5;246muser␛[39m ␛[38;5;246mneeds␛[39m ␛[38;5;246mto␛[39m ␛[38;5;246mwork␛[39m ␛[38;5;246mwith␛[39m ␛[38;5;246mStripe␛[39m ␛[38;5;246m—␛[39m ␛[38;5;246mboth
+␛[39m                                    ␛[38;5;246mprogrammatically␛[39m ␛[38;5;246mAND␛[39m ␛[38;5;246mfor␛[39m ␛[38;5;246mpayment/billing␛[39m ␛[38;5;246marchitecture␛[39m ␛[38;5;246mdecisions.␛[39m ␛[38;5;246mThis␛[39m ␛[38;5;246mi…
+
+

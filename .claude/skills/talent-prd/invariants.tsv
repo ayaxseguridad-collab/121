@@ -1,0 +1,19 @@
+INV-PR-001	SKILL.md	MUST	pipeline de 7 fases	M1-diseno-sellado-7-fases
+INV-PR-002	references/01-pipeline-7-fases.md	MUST	^## 7\. Review adversarial y desgranado$	M1-fase-7-no-se-recorta
+INV-PR-003	SKILL.md	MUST	greenfield	M2-tres-modos-de-entrada
+INV-PR-004	references/02-modos-de-entrada.md	MUST	brownfield-reconversion	M2-tres-modos-de-entrada
+INV-PR-005	references/02-modos-de-entrada.md	MUST	PRD inicial existente	M2-tres-modos-de-entrada
+INV-PR-006	assets/plantilla-prd-lite.md	MUST	appetite=lite	M3-tres-niveles-por-appetite
+INV-PR-007	assets/plantilla-prd-estandar.md	MUST	appetite=estandar	M3-tres-niveles-por-appetite
+INV-PR-008	assets/plantilla-prd-completo.md	MUST	^## 27\. Glosario$	M3-superset-27-secciones
+INV-PR-009	scripts/lib.sh	MUST	^C.Glosario$	M3-superset-tabla-canonica-en-lib
+INV-PR-010	assets/plantilla-prd-lite.md	MUST	supersedes=	M4-versionado-draft-approved
+INV-PR-011	SKILL.md	MUST	UNA pregunta por turno	M5-una-pregunta-por-turno
+INV-PR-012	SKILL.md	MUST	mechanical	M6-clasificacion-decisiones-audit-trail
+INV-PR-013	assets/plantilla-backlog.md	MUST	Surfaced by	M7-trazabilidad-desgranado
+INV-PR-014	references/04-review-adversarial-y-desgranado.md	MUST	0-10	M8-review-5-dimensiones-0-10
+INV-PR-015	references/04-review-adversarial-y-desgranado.md	MUST	tres rondas	M8-review-max-3-rondas
+INV-PR-016	SKILL.md	MUST	NO VERIFICADA	D6-lo-no-rodado-no-se-borra-en-silencio
+INV-PR-017	scripts/verificar-prd.sh	MUST_NOT	talent-factory	D9-agnostico-publicable
+INV-PR-018	scripts/auditar-gaps.sh	MUST_NOT	talent-factory	D9-agnostico-publicable
+INV-PR-019	scripts/verificar-prd.sh	MUST_NOT	\b(curl|wget|nc|ssh|scp|rsync)\b	D9-cero-red

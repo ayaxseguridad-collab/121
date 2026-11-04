@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# githooks/pre-push — Enforcement de push versionado del motor talent-factory (TAL-2288).
+# Versionado + activado vía `git config core.hooksPath githooks` (onboarding: scripts/setup-githooks.sh).
+# El motor se empuja DIRECTO a main y esa ruta SOLO la autoriza el sentinel de `scripts/motor-go.sh`
+# (par SHA + refs/heads/main); las rutas de sentinel de rama (draft/CR) NO autorizan main. Ver TAL-2288 abajo.
+# Cubre TODOS los clientes de git (interactivos o git directo), a diferencia de un hook ligado a un cliente concreto.
+#
+# Bloquea el push de cualquier rama cuyo commit empujado NO tenga un sentinel válido:
+#   - `.claude/.cr-review-ok` (flujo no-draft — lo genera `scripts/cr-review.sh`), o
+#   - `.claude/.draft-handoff` (ENTREGA DRAFT Fábrica v2, ADR-0043 — lo genera
+#     `scripts/draft-handoff.sh` tras gates locales verdes; exención SOLO de este gate CR,
+#     el Gate 1 de auditoría .audit-go sigue aplicando). One-shot: se consume al final,
+#     SOLO si TODAS las refs del push validaron (un fallo parcial no lo quema).
+# Valida el OID que Git REALMENTE empuja (stdin), no HEAD — así cubre
+# `git push origin otra-rama`, `git push origin <sha>:branch`, `git push --all`.
+#
+# TAL-2288 (motor): `refs/heads/main` tiene ruta PROPIA — solo el sentinel de
+# `scripts/motor-go.sh` (atado al par SHA + refs/heads/main) autoriza el push directo a main
+# del motor; los sentinels de rama (draft/CR) jamás lo autorizan, y el delete de main queda
+# imposible por construcción (OID de ceros nunca matchea). El sentinel draft ata OID + rama
+# (línea 2). Ambos one-shot.
+#
+# Salida deliberada (acto consciente, no olvido): `git push --no-verify` salta este hook.
+#
+# stdin (una línea por ref):  <local_ref> <local_oid> <remote_ref> <remote_oid>
+set -euo pipefail
+
+SENTINEL=".claude/.cr-review-ok"
+DRAFT_SENTINEL=".claude/.draft-handoff"
+TTL_DEFERRED=7200   # 'deferred' caduca a las 2 h (un defer por red caída no se reutiliza días después)
+
+fail() { echo "[cr-review pre-push] $1" >&2; exit 1; }
+
+# Lee el sentinel una vez (si existe).
+sent_sha=""; sent_state=""; sent_ts=""
+if [ -f "$SENTINEL" ]; then
+  sent_sha="$(sed -n '1p' "$SENTINEL" 2>/dev/null || true)"
+  sent_state="$(sed -n '3p' "$SENTINEL" 2>/dev/null || true)"
+  sent_ts="$(sed -n '5p' "$SENTINEL" 2>/dev/null || true)"
+fi
+
+# ¿El sentinel es válido para este OID concreto?
+sentinel_valid_for() { # oid
+  [ -f "$SENTINEL" ] || return 1
+  [ -n "$sent_sha" ] && [ "$sent_sha" = "$1" ] || return 1
+  case "$sent_state" in
+    ok) return 0 ;;
+    deferred)
+      local now sent_epoch
+      now="$(date -u +%s)"
+      # macOS (date -j -f) y Linux (date -d).
+      sent_epoch="$(date -u -j -f '%Y-%m-%dT%H:%M:%SZ' "$sent_ts" +%s 2>/dev/null \
+                   || date -u -d "$sent_ts" +%s 2>/dev/null || echo 0)"
+      [ "${sent_epoch:-0}" -gt 0 ] 2>/dev/null || return 1
+      [ "$((now - sent_epoch))" -le "$TTL_DEFERRED" ] || return 1
+      return 0 ;;
+    *) return 1 ;;   # estado corrupto/desconocido → inválido
+  esac
+}
+
+# Sentinel de ENTREGA DRAFT (Fábrica v2): válido si su SHA (línea 1) == OID empujado.
+# Sin TTL — la validez la da el par exacto (OID + rama, línea 2); commit o ref distintos
+# exigen re-emitirlo (TAL-2288: binding OID+ref — cierre de la clase "válido solo por OID").
+draft_sha=""; draft_branch=""
+if [ -f "$DRAFT_SENTINEL" ]; then
+  draft_sha="$(sed -n '1p' "$DRAFT_SENTINEL" 2>/dev/null || true)"
+  draft_branch="$(sed -n '2p' "$DRAFT_SENTINEL" 2>/dev/null || true)"
+fi
+
+draft_valid_for() { # oid remote_ref
+  [ -f "$DRAFT_SENTINEL" ] || return 1
+  [ -n "$draft_sha" ] && [ "$draft_sha" = "$1" ] || return 1
+  [ -n "$draft_branch" ] && [ "refs/heads/$draft_branch" = "$2" ] || return 1
+  return 0
+}
+
+# ── Ruta EXPLÍCITA de push directo a main del MOTOR (TAL-2288) ──────────────────────────────
+# El motor se opera con commits directos a main; esa autorización la emite ÚNICAMENTE
+# `scripts/motor-go.sh` (gates: bash -n + shellcheck + smoke sobre el shell modificado) como
+# sentinel atado al PAR (SHA, refs/heads/main). Los sentinels de rama (draft/CR) NO autorizan
+# main. One-shot: se consume tras validar el push completo.
+MOTOR_SENTINEL=".claude/.motor-go"
+motor_sha=""; motor_ref=""
+if [ -f "$MOTOR_SENTINEL" ]; then
+  motor_sha="$(sed -n '1p' "$MOTOR_SENTINEL" 2>/dev/null || true)"
+  motor_ref="$(sed -n '2p' "$MOTOR_SENTINEL" 2>/dev/null || true)"
+fi
+motor_valid_for() { # oid remote_ref
+  [ -f "$MOTOR_SENTINEL" ] || return 1
+  [ -n "$motor_sha" ] && [ "$motor_sha" = "$1" ] || return 1
+  [ "$motor_ref" = "$2" ] || return 1
+  return 0
+}
+
+blocked=0
+draft_used=0
+motor_used=0
+while read -r local_ref local_oid remote_ref _; do
+  [ -n "${local_ref:-}" ] || continue
+  # main PRIMERO — antes del bypass de deletes/tags y de los sentinels de rama (TAL-2288):
+  # push a main SOLO con sentinel del motor (SHA, refs/heads/main); delete de main JAMÁS
+  # (un delete lleva OID de ceros y nunca matchea el sentinel).
+  case "$remote_ref" in
+    refs/heads/main)
+      if motor_valid_for "$local_oid" "$remote_ref"; then
+        motor_used=1
+        echo "[cr-review pre-push] $remote_ref @ ${local_oid:0:12} permitido: sentinel del MOTOR (motor-go.sh, OID+ref)." >&2
+        continue
+      fi
+      fail "push/delete de refs/heads/main BLOQUEADO — la única autorización es 'bash scripts/motor-go.sh' sobre el HEAD exacto (emite .claude/.motor-go atado a (SHA, refs/heads/main); one-shot). Los sentinels draft/CR NO autorizan main. Salida consciente de emergencia: git push --no-verify (queda en el reflog)." ;;
+  esac
+  # delete (local_oid sólo ceros — cubre SHA-1 y SHA-256) → permitir.
+  case "$local_oid" in *[!0]*) ;; *) continue ;; esac
+  case "$remote_ref" in
+    refs/tags/*)  continue ;;                                   # tags → permitir
+    refs/heads/*) : ;;                                          # branches → validar
+    *) fail "ref desconocida '$remote_ref' — sólo se permiten refs/heads/*, refs/tags/* o deletes. Push bloqueado." ;;
+  esac
+  if draft_valid_for "$local_oid" "$remote_ref"; then
+    draft_used=1
+    echo "[cr-review pre-push] $remote_ref @ ${local_oid:0:12} permitido: entrega DRAFT (sentinel draft-handoff OID+ref; el gate CR lo corre el Mergeador)." >&2
+  elif ! sentinel_valid_for "$local_oid"; then
+    echo "[cr-review pre-push] $remote_ref @ ${local_oid:0:12} BLOQUEADO: sin sentinel CR-CLI ni de entrega draft válido para ese commit+rama." >&2
+    blocked=1
+  fi
+done
+
+[ "$blocked" -eq 0 ] || fail "Flujo no-draft: 'bash scripts/cr-review.sh' (modelo CR 2.0, TAL-1518). Entrega draft Fábrica v2: 'bash scripts/draft-handoff.sh' (ADR-0043). Push a main del motor: 'bash scripts/motor-go.sh'. Salida consciente: 'git push --no-verify'."
+
+# Consumo one-shot de sentinels — SOLO después de validar TODAS las refs del stdin
+# (si una ref hubiera fallado, no se llega aquí y el sentinel sobrevive para el reintento).
+if [ "$draft_used" -eq 1 ]; then
+  rm -f "$DRAFT_SENTINEL"
+  echo "[cr-review pre-push] sentinel de entrega draft consumido (one-shot). Tras el PR draft + HANDOFF: 'bash scripts/verify-handoff.sh <pr>'." >&2
+fi
+if [ "$motor_used" -eq 1 ]; then
+  rm -f "$MOTOR_SENTINEL"
+  echo "[cr-review pre-push] sentinel del motor consumido (one-shot). Próximo push a main exige re-correr motor-go.sh." >&2
+fi
+exit 0

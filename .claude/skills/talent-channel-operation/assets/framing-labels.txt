@@ -1,0 +1,3 @@
+# Etiquetas de relevo (el orquestador antepone la etiqueta + el literal verbatim; nunca recorta).
+DEV_TO_AUDIT="esto dice el equipo de desarrollo:"
+AUDIT_TO_DEV="esto dice el equipo de auditoría:"

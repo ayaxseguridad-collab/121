@@ -1,0 +1,13 @@
+ ▐▛███▛█   Claude Code v2.1.302
+▝▜██████▀  Opus 5.5 · Claude API  
+ ▝▝   ▝▝   /…/Repo-Neutro
+
+
+❯ /model                                                                                                      
+  ⎿  Set model to Opus 5.5 and saved as your default for new sessions
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ /effort xhigh
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  [Opus 5.5] ctx: N/A                                                                     ◐ medium · /effort
+  ⏵⏵ bypass permissions on (shift+tab to cycle)

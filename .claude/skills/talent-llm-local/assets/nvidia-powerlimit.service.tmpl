@@ -1,0 +1,18 @@
+[Unit]
+Description=NVIDIA: modo persistencia + limite @@POWER_LIMIT_W@@W + sin overclock (servidor de inferencia)
+After=nvidia-persistenced.service
+Wants=nvidia-persistenced.service
+Before=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=LIMIT_W=@@POWER_LIMIT_W@@
+ExecStart=@@LL_PREFIX@@/nvidia-inference-tune.sh
+
+[Install]
+WantedBy=multi-user.target
+
+# El limite de potencia y los offsets de overclock son VOLATILES: se pierden en
+# cada reinicio. Por eso van en su propia unidad y no en un ajuste manual que
+# alguien aplico una vez y dio por hecho.

@@ -1,0 +1,4 @@
+# Los .patch almacenan diffs: sus lineas de contexto en blanco son " " por
+# formato. Sin esto, git diff --check los marca como trailing whitespace y
+# ensucia la evidencia de cada revision.
+assets/patches/*.patch -whitespace

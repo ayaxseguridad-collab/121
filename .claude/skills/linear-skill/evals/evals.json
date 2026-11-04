@@ -1,0 +1,37 @@
+{
+  "skill": "linear-skill",
+  "version": 1,
+  "note": "Evals con baseline (skill-creator): cada escenario se corre SIN el skill (baseline), CON la versión anterior (v1.3, A/B ciego) y CON la versión actual (v1.4). Cada check es binario. Los agentes evaluados no tienen red ni credenciales: responden solo con su conocimiento y, en las variantes con skill, leyendo los ficheros del skill. Resultados en evals/results-<fecha>.md y en la issue del tracker.",
+  "scenarios": [
+    {
+      "id": "anadir-label-sin-pisar",
+      "prompt": "En el workspace Talent Engine (team TAL) necesito añadir el label `kind:test` a la issue TAL-100 sin quitar los labels que ya tiene. Dame la mutación GraphQL exacta (o mutaciones), cómo obtengo el id del label y qué riesgos hay. Sin usar MCP: API GraphQL directa con API key personal.",
+      "rubric": [
+        { "check": "no_pisa_labels", "pass_if": "Usa `issueAddLabel(id, labelId)` o `IssueUpdateInput.addedLabelIds`, y advierte explícitamente que `labelIds` en `issueUpdate` REEMPLAZA el array completo." },
+        { "check": "label_por_team", "pass_if": "Resuelve el id del label con una query `issueLabels`/`team{labels}` y advierte que `kind:test` (o labels de team en general) puede existir por team, eligiendo el UUID del team de la issue." },
+        { "check": "errors_en_200", "pass_if": "Indica que hay que comprobar `errors[]` en la respuesta aunque el HTTP sea 200." },
+        { "check": "auth_sin_bearer_y_sin_argv", "pass_if": "Header `Authorization: <api-key>` sin `Bearer` para API key personal y la key no va en argv (config 0600, env o fichero)." }
+      ]
+    },
+    {
+      "id": "paginar-600-issues",
+      "prompt": "Necesito exportar las ~600 issues del team TAL (id 6a99ed4d-c2d3-4028-be75-4ff014b49f38) con identifier, title y nombre de estado, ordenadas por última actualización, usando la API GraphQL directa con API key personal. Dame las queries y el bucle de paginación, y explica los límites de la API que aplican.",
+      "rubric": [
+        { "check": "cursores_relay", "pass_if": "Pagina con `first` + `after` y `pageInfo { hasNextPage endCursor }`." },
+        { "check": "tope_first_250", "pass_if": "Declara que `first` no puede superar 250 (o usa ≤250 explicando el límite) y que el default es 50." },
+        { "check": "order_by_updated", "pass_if": "Usa `orderBy: updatedAt` (el default es `createdAt`)." },
+        { "check": "limites_y_errores", "pass_if": "Menciona el cap de complejidad de 10.000 puntos por query y/o las cabeceras `X-RateLimit-*`/`X-Complexity`, y distingue rate limit (`RATELIMITED`, reintentar) de error determinista (complejidad/argumento inválido, no reintentar)." }
+      ]
+    },
+    {
+      "id": "webhook-issuesla",
+      "prompt": "Quiero un webhook de Linear que nos avise cuando un SLA de una issue se incumpla, y el handler mínimo en Next.js App Router (TypeScript) que verifique la firma. Dime cómo crear el webhook por API y qué acciones filtrar.",
+      "rubric": [
+        { "check": "acciones_issuesla", "pass_if": "Filtra `type === \"IssueSLA\"` con las acciones reales `set`, `highRisk`, `breached` (no `created`/`updated`/`lapsed`)." },
+        { "check": "firma_hmac", "pass_if": "Verifica `Linear-Signature` como HMAC-SHA256 hex del raw body con el secret, comparación timing-safe, y usa el raw body (no el JSON re-serializado)." },
+        { "check": "anti_replay_body", "pass_if": "Comprueba `webhookTimestamp` del body firmado (ventana ~60 s), no solo el header `Linear-Timestamp`." },
+        { "check": "fail_closed_y_dedupe", "pass_if": "Responde 5xx (no 4xx) si falta el secret de configuración y deduplica por `Linear-Delivery` de forma durable (o advierte del reintento 1 min/1 h/6 h)." }
+      ]
+    }
+  ]
+}

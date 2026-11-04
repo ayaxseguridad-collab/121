@@ -1,0 +1,498 @@
+diff --git a/mobile/android/app/src/main/AndroidManifest.xml b/mobile/android/app/src/main/AndroidManifest.xml
+index 5e607ad..5bb6081 100644
+--- a/mobile/android/app/src/main/AndroidManifest.xml
++++ b/mobile/android/app/src/main/AndroidManifest.xml
+@@ -16,6 +16,7 @@
+     <application
+         android:label="@string/app_name"
+         android:name="${applicationName}"
++        android:networkSecurityConfig="@xml/network_security_config"
+         android:icon="@mipmap/ic_launcher">
+         <activity
+             android:name=".MainActivity"
+diff --git a/mobile/android/app/src/main/res/xml/network_security_config.xml b/mobile/android/app/src/main/res/xml/network_security_config.xml
+new file mode 100644
+index 0000000..93466d7
+--- /dev/null
++++ b/mobile/android/app/src/main/res/xml/network_security_config.xml
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Platform-level cleartext authority. Cleartext is OFF by default; the
++     only authorized <domain> entries are injected at build time from the
++     same single source as the Dart constant kAuthorizedCleartextHost
++     (lib/shared/relay/relay_url_policy.dart). A build that ships the
++     unsubstituted placeholder authorizes no cleartext host at all. -->
++<network-security-config>
++    <base-config cleartextTrafficPermitted="false" />
++    <domain-config cleartextTrafficPermitted="true">
++        <domain includeSubdomains="false">TB_CLEARTEXT_HOST_PLACEHOLDER</domain>
++    </domain-config>
++</network-security-config>
+diff --git a/mobile/lib/features/pairing/pairing_provider.dart b/mobile/lib/features/pairing/pairing_provider.dart
+index 6a6c57a..d89a5de 100644
+--- a/mobile/lib/features/pairing/pairing_provider.dart
++++ b/mobile/lib/features/pairing/pairing_provider.dart
+@@ -605,7 +605,9 @@ class PairingNotifier extends Notifier<PairingState> {
+       throw const FormatException('Pairing payload missing nsec');
+     }
+     final uri = Uri.parse(relayUrl);
+-    final scheme = uri.scheme == 'https' ? 'wss' : 'ws';
++    // Explicit normalization {http->ws, https->wss, ws->ws, wss->wss}: the
++    // old `https ? wss : ws` ternary silently downgraded wss to ws.
++    final scheme = RelayUrlPolicy.toWebSocketScheme(uri.scheme);
+     final wsUrl = uri.replace(scheme: scheme).toString();
+ 
+     final socket = RelaySocket(
+@@ -652,45 +654,10 @@ class PairingNotifier extends Notifier<PairingState> {
+   }
+ 
+   void _validateRelayUrl(String url) {
+-    final uri = Uri.parse(url);
+-
+-    if (!kDebugMode && uri.scheme != 'https') {
+-      throw const FormatException('Relay URL must use HTTPS');
+-    }
+-    if (uri.scheme != 'http' && uri.scheme != 'https') {
+-      throw FormatException('Invalid URL scheme: ${uri.scheme}');
+-    }
+-
+-    final host = uri.host.toLowerCase();
+-    if (host == 'localhost' || host == '127.0.0.1' || host == '::1') {
+-      if (!kDebugMode) {
+-        throw const FormatException('Relay URL cannot target localhost');
+-      }
+-      return;
+-    }
+-
+-    final ip = Uri.tryParse('http://$host')?.host ?? host;
+-    if (_isPrivateHost(ip)) {
+-      throw const FormatException(
+-        'Relay URL cannot target private network addresses',
+-      );
+-    }
+-  }
+-
+-  static bool _isPrivateHost(String host) {
+-    final parts = host.split('.');
+-    if (parts.length != 4) return false;
+-    final octets = parts.map(int.tryParse).toList();
+-    if (octets.any((o) => o == null)) return false;
+-
+-    final a = octets[0]!;
+-    final b = octets[1]!;
+-
+-    if (a == 10) return true;
+-    if (a == 172 && b >= 16 && b <= 31) return true;
+-    if (a == 192 && b == 168) return true;
+-    if (a == 169 && b == 254) return true;
+-    return false;
++    // Single cleartext authority (RelayUrlPolicy): ws/http only towards the
++    // MagicDNS host injected at build time or a 100.64.0.0/10 tailnet IP;
++    // wss/https for anything else. Localhost stays a debug-only affordance.
++    RelayUrlPolicy.validate(url, allowLocalhost: kDebugMode);
+   }
+ }
+ 
+diff --git a/mobile/lib/shared/relay/relay.dart b/mobile/lib/shared/relay/relay.dart
+index d168b9a..e7e8a86 100644
+--- a/mobile/lib/shared/relay/relay.dart
++++ b/mobile/lib/shared/relay/relay.dart
+@@ -8,4 +8,5 @@ export 'relay_client.dart';
+ export 'relay_provider.dart';
+ export 'relay_session.dart';
+ export 'relay_socket.dart';
++export 'relay_url_policy.dart';
+ export 'signed_event_relay.dart';
+diff --git a/mobile/lib/shared/relay/relay_url_policy.dart b/mobile/lib/shared/relay/relay_url_policy.dart
+new file mode 100644
+index 0000000..4271dc4
+--- /dev/null
++++ b/mobile/lib/shared/relay/relay_url_policy.dart
+@@ -0,0 +1,130 @@
++/// Single authority for relay URL validation and WebSocket scheme
++/// normalization.
++///
++/// Cleartext schemes (`ws`/`http`) are only accepted towards:
++///  - [kAuthorizedCleartextHost], the exact MagicDNS host injected at build
++///    time (the same single source that fills
++///    `android/app/src/main/res/xml/network_security_config.xml`), and
++///  - IP literals inside the CGNAT/tailnet range 100.64.0.0/10.
++///
++/// Every other host must use `wss`/`https`. Android enforces the same
++/// boundary at the platform layer through the network security config, so
++/// this policy and the OS agree on which endpoints may go unencrypted.
++library;
++
++/// Exact host allowed to use cleartext schemes, injected by the build
++/// tooling. An unsubstituted placeholder (it contains `_`, impossible in a
++/// MagicDNS hostname) authorizes nothing: fail closed.
++const String kAuthorizedCleartextHost = 'TB_CLEARTEXT_HOST_PLACEHOLDER';
++
++abstract final class RelayUrlPolicy {
++  static const Set<String> _cleartextSchemes = {'ws', 'http'};
++  static const Set<String> _encryptedSchemes = {'wss', 'https'};
++
++  /// Explicit scheme normalization for the WebSocket handshake:
++  /// {http -> ws, https -> wss, ws -> ws, wss -> wss}. Anything else is a
++  /// [FormatException]. `wss` MUST map to `wss` — mapping it to `ws` would
++  /// silently downgrade an encrypted pairing to cleartext.
++  static String toWebSocketScheme(String scheme) {
++    switch (scheme) {
++      case 'http' || 'ws':
++        return 'ws';
++      case 'https' || 'wss':
++        return 'wss';
++      default:
++        throw FormatException('Invalid URL scheme: $scheme');
++    }
++  }
++
++  /// Whether [host] is an IPv4 literal inside 100.64.0.0/10 (CGNAT, used by
++  /// tailnets). Traffic to these addresses never leaves the WireGuard mesh.
++  static bool isTailnetIp(String host) {
++    final octets = _ipv4Octets(host);
++    return octets != null &&
++        octets[0] == 100 &&
++        octets[1] >= 64 &&
++        octets[1] <= 127;
++  }
++
++  /// Whether [host] is an IPv4 literal inside the RFC1918 private ranges or
++  /// 169.254/16 link-local — the upstream SSRF guard this policy preserves
++  /// (security round, finding 5): a pairing payload must not be able to point
++  /// the app at internal infrastructure, with ANY scheme. The tailnet range
++  /// 100.64.0.0/10 is deliberately NOT here: it is this deployment's own
++  /// network and has its own cleartext rules.
++  static bool isPrivateIp(String host) {
++    final octets = _ipv4Octets(host);
++    if (octets == null) return false;
++    final a = octets[0];
++    final b = octets[1];
++    if (a == 10) return true;
++    if (a == 172 && b >= 16 && b <= 31) return true;
++    if (a == 192 && b == 168) return true;
++    if (a == 169 && b == 254) return true;
++    return false;
++  }
++
++  static List<int>? _ipv4Octets(String host) {
++    final parts = host.split('.');
++    if (parts.length != 4) return null;
++    final octets = <int>[];
++    for (final part in parts) {
++      final value = int.tryParse(part);
++      if (value == null || value < 0 || value > 255) return null;
++      octets.add(value);
++    }
++    return octets;
++  }
++
++  /// Validate a relay URL against the cleartext authority.
++  ///
++  /// Throws [FormatException] when the URL is not acceptable. Localhost is
++  /// only allowed when [allowLocalhost] is true (debug builds).
++  static void validate(
++    String url, {
++    String authorizedCleartextHost = kAuthorizedCleartextHost,
++    bool allowLocalhost = false,
++  }) {
++    final uri = Uri.parse(url);
++    final scheme = uri.scheme;
++    if (!_cleartextSchemes.contains(scheme) &&
++        !_encryptedSchemes.contains(scheme)) {
++      throw FormatException('Invalid URL scheme: $scheme');
++    }
++
++    final host = uri.host.toLowerCase();
++    if (host.isEmpty) {
++      throw const FormatException('Relay URL has no host');
++    }
++    if (host == 'localhost' || host == '127.0.0.1' || host == '::1') {
++      if (!allowLocalhost) {
++        throw const FormatException('Relay URL cannot target localhost');
++      }
++      return;
++    }
++
++    // SSRF guard restored (security round, finding 5): private/link-local
++    // addresses are rejected for EVERY scheme — wss to internal
++    // infrastructure is as much an SSRF primitive as ws.
++    if (isPrivateIp(host)) {
++      throw const FormatException(
++        'Relay URL cannot target private network addresses',
++      );
++    }
++
++    if (_encryptedSchemes.contains(scheme)) return;
++
++    // Cleartext: only the injected MagicDNS host or a tailnet IP. A hostname
++    // containing `_` can never be a real authorized host, so an
++    // unsubstituted placeholder matches nothing.
++    final authorized = authorizedCleartextHost.toLowerCase();
++    final authorizedIsUsable =
++        authorized.isNotEmpty && !authorized.contains('_');
++    if (authorizedIsUsable && host == authorized) return;
++    if (isTailnetIp(host)) return;
++
++    throw const FormatException(
++      'Cleartext relay URL not allowed for this host (use wss)',
++    );
++  }
++}
+diff --git a/mobile/test/features/pairing/pairing_provider_test.dart b/mobile/test/features/pairing/pairing_provider_test.dart
+index 6f49f71..7379812 100644
+--- a/mobile/test/features/pairing/pairing_provider_test.dart
++++ b/mobile/test/features/pairing/pairing_provider_test.dart
+@@ -20,8 +20,9 @@ import 'package:buzz/shared/auth/auth.dart';
+ ///   - Parsing every documented payload format (raw base64, `buzz://`
+ ///     prefix, whitespace).
+ ///   - Failure modes that return BEFORE any network call: invalid base64,
+-///     wrong shape (non-object, missing fields, missing nsec), and SSRF
+-///     guards (private IPs, non-http schemes).
++///     wrong shape (non-object, missing fields, missing nsec), and the
++///     cleartext authority (RelayUrlPolicy): ws/http only towards the
++///     build-injected MagicDNS host or a 100.64.0.0/10 tailnet IP.
+ ///   - `reset()` returning to idle from an error state.
+ void main() {
+   group('PairingNotifier', () {
+@@ -130,21 +131,32 @@ void main() {
+       expect(state.status, PairingStatus.error);
+     });
+ 
+-    test('rejects private IP relay URLs (SSRF)', () async {
++    test('rejects cleartext relay URLs to unauthorized hosts', () async {
+       container = createContainer();
+ 
+-      for (final ip in [
+-        '10.0.0.1',
+-        '172.16.0.1',
+-        '192.168.1.1',
+-        '169.254.169.254',
+-      ]) {
+-        final code = _encodePairingCode(relayUrl: 'http://$ip:3000');
+-        await container.read(pairingProvider.notifier).pair(code);
+-        final state = container.read(pairingProvider);
+-        expect(state.status, PairingStatus.error, reason: 'should reject $ip');
+-        expect(state.errorMessage, contains('private network'));
+-        container.read(pairingProvider.notifier).reset();
++      // Private ranges hit the restored SSRF guard (any scheme); public
++      // hosts and non-tailnet IPs hit the cleartext authority (ws/http).
++      const expectedByTarget = {
++        '10.0.0.1:3000': 'private network',
++        '172.16.0.1:3000': 'private network',
++        '192.168.1.1:3000': 'private network',
++        '169.254.169.254:3000': 'private network',
++        'evil.example.com': 'Cleartext',
++        '8.8.8.8:3000': 'Cleartext',
++      };
++      for (final entry in expectedByTarget.entries) {
++        for (final scheme in ['http', 'ws']) {
++          final code = _encodePairingCode(relayUrl: '$scheme://${entry.key}');
++          await container.read(pairingProvider.notifier).pair(code);
++          final state = container.read(pairingProvider);
++          expect(
++            state.status,
++            PairingStatus.error,
++            reason: 'should reject $scheme://${entry.key}',
++          );
++          expect(state.errorMessage, contains(entry.value));
++          container.read(pairingProvider.notifier).reset();
++        }
+       }
+     });
+ 
+@@ -183,9 +195,11 @@ void main() {
+   });
+ }
+ 
+-/// Encode a credentials payload the same way the desktop app would.
++/// Encode a credentials payload the same way the desktop app would. The
++/// default relay URL is https so it passes the cleartext authority and the
++/// tests reach the check under test.
+ String _encodePairingCode({
+-  String relayUrl = 'http://test:3000',
++  String relayUrl = 'https://test:3000',
+   String? pubkey,
+   String? nsec,
+ }) {
+diff --git a/mobile/test/shared/relay/relay_url_policy_test.dart b/mobile/test/shared/relay/relay_url_policy_test.dart
+new file mode 100644
+index 0000000..30786c2
+--- /dev/null
++++ b/mobile/test/shared/relay/relay_url_policy_test.dart
+@@ -0,0 +1,175 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:buzz/shared/relay/relay_url_policy.dart';
++
++/// Scheme x host matrix for the single cleartext authority.
++void main() {
++  group('RelayUrlPolicy.toWebSocketScheme', () {
++    test('normalizes every accepted scheme explicitly', () {
++      expect(RelayUrlPolicy.toWebSocketScheme('http'), 'ws');
++      expect(RelayUrlPolicy.toWebSocketScheme('https'), 'wss');
++      expect(RelayUrlPolicy.toWebSocketScheme('ws'), 'ws');
++      expect(RelayUrlPolicy.toWebSocketScheme('wss'), 'wss');
++    });
++
++    test('never downgrades wss to ws', () {
++      // Regression guard for the old `https ? wss : ws` ternary, which
++      // mapped an explicit wss:// pairing URL to cleartext ws://.
++      expect(RelayUrlPolicy.toWebSocketScheme('wss'), isNot('ws'));
++    });
++
++    test('rejects unknown schemes', () {
++      for (final scheme in ['ftp', 'file', 'javascript', '']) {
++        expect(
++          () => RelayUrlPolicy.toWebSocketScheme(scheme),
++          throwsFormatException,
++          reason: 'scheme $scheme must be rejected',
++        );
++      }
++    });
++  });
++
++  group('RelayUrlPolicy.isTailnetIp', () {
++    test('accepts the 100.64.0.0/10 range boundaries', () {
++      expect(RelayUrlPolicy.isTailnetIp('100.64.0.0'), isTrue);
++      expect(RelayUrlPolicy.isTailnetIp('100.100.1.2'), isTrue);
++      expect(RelayUrlPolicy.isTailnetIp('100.127.255.255'), isTrue);
++    });
++
++    test('rejects everything outside the range', () {
++      expect(RelayUrlPolicy.isTailnetIp('100.63.255.255'), isFalse);
++      expect(RelayUrlPolicy.isTailnetIp('100.128.0.0'), isFalse);
++      expect(RelayUrlPolicy.isTailnetIp('10.0.0.1'), isFalse);
++      expect(RelayUrlPolicy.isTailnetIp('192.168.1.1'), isFalse);
++      expect(RelayUrlPolicy.isTailnetIp('example.com'), isFalse);
++      expect(RelayUrlPolicy.isTailnetIp('100.64.0'), isFalse);
++      expect(RelayUrlPolicy.isTailnetIp('100.64.0.256'), isFalse);
++    });
++  });
++
++  group('RelayUrlPolicy.validate', () {
++    const authorized = 'relay.tail1234.ts.net';
++
++    void ok(String url) =>
++        RelayUrlPolicy.validate(url, authorizedCleartextHost: authorized);
++
++    void rejected(String url, {String? reason}) => expect(
++      () => RelayUrlPolicy.validate(url, authorizedCleartextHost: authorized),
++      throwsFormatException,
++      reason: reason ?? url,
++    );
++
++    test('cleartext to the authorized MagicDNS host is accepted', () {
++      ok('ws://$authorized');
++      ok('http://$authorized:80');
++      // Hostname comparison is case-insensitive.
++      ok('ws://RELAY.TAIL1234.TS.NET');
++    });
++
++    test('cleartext to a tailnet IP is accepted', () {
++      ok('ws://100.100.1.2');
++      ok('http://100.64.0.1:80');
++    });
++
++    test('cleartext to a NON-authorized MagicDNS host is rejected', () {
++      rejected('ws://otro.tail1234.ts.net');
++    });
++
++    test('cleartext to a public host is rejected', () {
++      rejected('ws://example.com');
++      rejected('http://example.com');
++    });
++
++    test('cleartext to RFC1918 / link-local addresses is rejected', () {
++      for (final ip in [
++        '10.0.0.1',
++        '172.16.0.1',
++        '192.168.1.1',
++        '169.254.169.254',
++      ]) {
++        rejected('ws://$ip:3000', reason: 'must reject ws to $ip');
++        rejected('http://$ip:3000', reason: 'must reject http to $ip');
++      }
++    });
++
++    test('encrypted schemes are accepted for public hosts', () {
++      ok('wss://example.com');
++      ok('https://example.com');
++      ok('wss://$authorized');
++      ok('wss://100.100.1.2');
++    });
++
++    test('private/link-local addresses are rejected for EVERY scheme', () {
++      // SSRF guard restored (security round, finding 5): before the fix
++      // `wss://10.0.0.1` was accepted — encrypted schemes returned OK for
++      // any host. Red/green anchor of the fix.
++      for (final ip in [
++        '10.0.0.1',
++        '172.16.0.1',
++        '192.168.1.1',
++        '169.254.169.254',
++      ]) {
++        for (final scheme in ['ws', 'http', 'wss', 'https']) {
++          rejected('$scheme://$ip:3000', reason: 'must reject $scheme to $ip');
++        }
++      }
++    });
++
++    test('unknown schemes are rejected', () {
++      rejected('file:///etc/passwd');
++      rejected('ftp://example.com');
++    });
++
++    test('localhost is only allowed when allowLocalhost is set', () {
++      for (final host in ['localhost', '127.0.0.1']) {
++        expect(
++          () => RelayUrlPolicy.validate(
++            'ws://$host:3000',
++            authorizedCleartextHost: authorized,
++          ),
++          throwsFormatException,
++          reason: 'release must reject $host',
++        );
++        RelayUrlPolicy.validate(
++          'ws://$host:3000',
++          authorizedCleartextHost: authorized,
++          allowLocalhost: true,
++        );
++      }
++    });
++
++    test('an unsubstituted placeholder authorizes nothing (fail closed)', () {
++      // Even a URL whose host literally equals the placeholder must be
++      // rejected: the placeholder contains `_` and is never usable.
++      expect(
++        () => RelayUrlPolicy.validate(
++          'ws://tb_cleartext_host_placeholder',
++          authorizedCleartextHost: kAuthorizedCleartextHost,
++        ),
++        throwsFormatException,
++      );
++      expect(
++        () => RelayUrlPolicy.validate(
++          'ws://example.com',
++          authorizedCleartextHost: kAuthorizedCleartextHost,
++        ),
++        throwsFormatException,
++      );
++    });
++
++    test('an empty authorized host authorizes no hostname', () {
++      expect(
++        () => RelayUrlPolicy.validate(
++          'ws://example.com',
++          authorizedCleartextHost: '',
++        ),
++        throwsFormatException,
++      );
++      // The tailnet range keeps working without an authorized hostname.
++      RelayUrlPolicy.validate('ws://100.100.1.2', authorizedCleartextHost: '');
++    });
++
++    test('URLs without a host are rejected', () {
++      rejected('ws://');
++    });
++  });
++}

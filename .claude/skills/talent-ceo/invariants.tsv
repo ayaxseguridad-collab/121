@@ -1,0 +1,66 @@
+INV-CEO-001	SKILL.md	MUST	skill-creator/assets/package\.manifest	puntero al manifiesto (patrón INV-PM-013)
+INV-CEO-002	SKILL.md	MUST	sin perfil válido.*rc 2	fail-closed explícito: «rc 2» a secas casaría cualquier rc, incluso negado
+INV-CEO-003	SKILL.md	MUST_NOT	torre-c[0-9]|torre-m[0-9]|vibe-runner[-]|100\.[0-9]+\.	anti-nombres reales fuera del anexo
+INV-CEO-004	references/01-rol-mando-y-fronteras.md	MUST	poderes delegados	el mando es delegado, no propio
+INV-CEO-005	references/01-rol-mando-y-fronteras.md	MUST	relays a las estaciones.*solo el CEO	una sola fuente de verdad para lo que se pide a una estación
+INV-CEO-006	references/02-bus-y-sellos.md	MUST	estampa exacta del marcador	el nombre desnudo daría «repetido» falso desde una nota
+INV-CEO-007	references/02-bus-y-sellos.md	MUST	cursor propio.*lector	sin cursor por lector, uno consume el bus para otro
+INV-CEO-008	references/03-ciclo-por-cron-y-tablas.md	MUST	dos tablas.*7,5	el desfase es la razón de que sean dos y no una
+INV-CEO-009	references/03-ciclo-por-cron-y-tablas.md	MUST_NOT	torre-c[0-9]|torre-m[0-9]|vibe-runner[-]|100\.[0-9]+\.	anti-nombres reales fuera del anexo
+INV-CEO-010	references/04-pozos-en-operacion.md	MUST	[Nn]adie conmuta por su cuenta	un pozo no declarado en el perfil es operar sin trazabilidad
+INV-CEO-011	references/05-leyes-del-mando.md	MUST	PID.*padre.*cgroup	identidad del proceso, no su línea de comandos
+INV-CEO-012	references/06-paso-0-y-bancos.md	MUST	paso-0.*canónico	reanudar sobre supuestos rehace o pisa trabajo vivo
+INV-CEO-013	references/01-rol-mando-y-fronteras.md	MUST	contenedor es un identificador opaco	deducir el tipo del nombre falla en silencio
+INV-CEO-014	references/01-rol-mando-y-fronteras.md	MUST	PM se obtiene exclusivamente de la fila .pm.	un PM inferido es un mando inventado
+INV-CEO-015	scripts/lib-perfil.sh	MUST	TA_PERFIL > \$SECRET_DIR/perfil\.tsv > motor	la cadena COMPLETA; la prueba conductual son los tests de precedencia
+INV-CEO-016	scripts/bus-sellar.sh	MUST	flock -x	exclusión real; la prueba es el test de dos escritores concurrentes
+INV-CEO-017	scripts/bus-sellar.sh	MUST	perfil coloca el rol	la identidad se VERIFICA contra el perfil; validar el charset no es autorizar
+INV-CEO-018	references/02-bus-y-sellos.md	MUST	La ambigüedad en la MISMA máquina se cierra, no se declara	un agujero declarado sigue siendo un agujero
+INV-CEO-019	scripts/bus-sellar.sh	MUST	UNA LÍNEA POR SELLO	el separador de registro se RECHAZA en los campos libres, no se escapa
+INV-CEO-020	scripts/bus-sellar.sh	MUST	Se compara el CAMPO, no la subcadena	una nota que cita un marcador no puede bloquear su sello
+INV-CEO-021	scripts/relay-ceo.sh	MUST	FALLO DE TRANSPORTE	la via caida no se disfraza de veredicto sobre el perfil
+INV-CEO-022	references/07-doctor-y-acreditacion.md	MUST	cuenta como fallo	TAL-8043-un-NOVERIF-es-fallo-no-comprobar-no-es-estar-bien
+INV-CEO-023	references/07-doctor-y-acreditacion.md	MUST	ESCALA-.ROL.-.ref.	TAL-8043-escalado-obligatorio-al-bus-marcador-ESCALA
+INV-CEO-024	references/07-doctor-y-acreditacion.md	MUST	(está|esta) prohibido en actores persistentes	TAL-8043-clear-prohibido-en-actores-persistentes
+INV-CEO-025	references/07-doctor-y-acreditacion.md	MUST	NO ACREDITADO.{0,2} hasta re-acreditar	TAL-8043-tras-clear-reinicio-o-sesion-nueva-no-acreditado
+INV-CEO-026	references/07-doctor-y-acreditacion.md	MUST	Recolectores (mecánicos|mecanicos) antes que una respuesta generativa larga	TAL-8043-guia-recolectores-mecanicos-antes-que-respuesta-generativa
+INV-CEO-027	references/07-doctor-y-acreditacion.md	MUST_NOT	torre-c[0-9]|torre-m[0-9]|vibe-runner[-]|100\.[0-9]+\.	TAL-8043-anti-nombres-reales-fuera-del-anexo
+INV-CEO-028	scripts/doctor.sh	MUST	NO es .{1,4}(está|esta) bien	TAL-8043-el-doctor-falla-cerrado-sin-poder-comprobar
+INV-CEO-029	scripts/doctor.sh	MUST_NOT	pgrep -f|pkill|kill -9|--skip	TAL-8043-sin-pgrep-f-ni-skip-el-proceso-se-busca-por-ejecutable
+INV-CEO-030	scripts/reacreditar.sh	MUST	CABECERA del registro	TAL-8043-solo-la-cabecera-del-registro-acredita-no-una-nota
+INV-CEO-031	references/02-bus-y-sellos.md	MUST	escrito en un pane NO es un sello	TAL-8043-sellar-es-ejecutar-bus-sellar-no-escribir-SELLO
+INV-CEO-032	references/06-paso-0-y-bancos.md	MUST	queda NO ACREDITADO	TAL-8043-el-paso-0-no-acredita-al-actor
+INV-CEO-033	references/04-pozos-en-operacion.md	MUST	ejemplo\.perfil\.tsv\.example	TAL-8043-el-ejemplo-no-se-llama-perfil-tsv
+INV-CEO-034	SKILL.md	MUST	07-doctor-y-acreditacion	TAL-8043-la-tabla-de-refs-abre-la-07
+INV-CEO-035	references/07-doctor-y-acreditacion.md	MUST	AVISO posible-pregunta-sin-escalar	ronda1-pregunta-libre-informativa
+INV-CEO-036	scripts/doctor.sh	MUST	leer_conf	ronda1-configuracion-como-datos
+INV-CEO-037	scripts/reacreditar.sh	MUST	inicio_f	ronda1-cebado-persistido
+INV-CEO-038	scripts/leer-acreditacion.sh	MUST	INVALIDO	ronda1-contenido-desconocido-no-acredita
+INV-CEO-039	references/07-doctor-y-acreditacion.md	MUST	única pareja de comillas	ronda2-un-solo-valor-literal
+INV-CEO-040	references/07-doctor-y-acreditacion.md	MUST	calendario válido y fecha no futura	ronda2-sellos-canonicos-sin-edad-negativa
+INV-CEO-041	scripts/leer-auditor.sh	MUST	_tco_pane_agent_exes	ronda2-criterio-de-identidad-real-compartido
+INV-CEO-042	scripts/doctor.sh	MUST	leer_identidad	ronda3-valor-identidad-conservado
+INV-CEO-043	references/07-doctor-y-acreditacion.md	MUST	sin barras invertidas	ronda3-rechazo-conservador-agents
+INV-CEO-044	tests/supervision-ronda3.sh	MUST	implica guard	ronda3-contraste-un-solo-sentido
+INV-CEO-045	tests/supervision-ronda3.sh	MUST	pendiente-doble	ronda3-conserva-rechazo-marcadores-entrecomillados
+INV-CEO-046	references/07-doctor-y-acreditacion.md	MUST	exactamente la palabra .export. seguida de un espacio	compatibilidad-prefijo-export-solo-agents
+INV-CEO-047	tests/test-supervision.sh	MUST	supervision-manifiesto\.sh	regresiones permanentes de manifiesto y generador real encadenadas
+INV-CEO-048	tests/supervision-manifiesto.sh	MUST	instalacion/tests/fixtures/minima\.resp	lectores contrastados con el generador real sobre respuestas distribuidas
+INV-CEO-049	tests/run-tests.sh	MUST	TOTAL_ESPERADO=268	conteo-union-con-propietarios-reales
+INV-CEO-050	tests/run-tests.sh	MUST	launcher-identity-regressions.py	lector-real-acredita-alias-y-ruta-absoluta-falla-cerrado-si-ambos-faltan-rechaza-builtin-y-funcion-con-cwd-homonimo-en-ambas-ramas
+INV-CEO-051	scripts/doctor.sh	MUST	check_modelo_actor	modelo-vigente-del-usuario-de-la-torre
+INV-CEO-052	scripts/cron-modelos.sh	MUST	17 3 \* \* 0	comprobacion-y-aplicacion-semanal
+INV-CEO-053	scripts/doctor.sh	MUST	check_modelo_auditor	sonnet-vigente-del-auditor-claude
+INV-CEO-054	tests/test-supervision.sh	MUST	TOTAL_ESPERADO=605	reconciliacion-union
+INV-CEO-055	scripts/doctor.sh	MUST	registro del mando ausente o inválido	canales-sin-registro-del-operador
+INV-CEO-056	tests/supervision-modelo-mando.sh	MUST	sudo no lee registros	registro-del-mando-y-operador-sin-cuenta
+INV-CEO-057	references/07-doctor-y-acreditacion.md	MUST	registro propio del mando	autoridad-del-modelo-del-canal
+INV-CEO-058	scripts/lib-bus.sh	MUST	TA_BUS_STATE_DIR	Directorio-explicito-prioritario-para-el-bus
+INV-CEO-059	scripts/leer-acreditacion.sh	MUST	TA_BUS_STATE_DIR	Lector-usa-el-mismo-estado-explicito
+INV-CEO-060	scripts/doctor.sh	MUST	TA_BUS_STATE_DIR	Doctor-contrasta-estado-persistente-por-usuario
+INV-CEO-061	scripts/doctor.sh	MUST	estado_bus	Estado-persistente-ajeno-adjudicado-en-perfil
+INV-CEO-062	scripts/leer-acreditacion.sh	MUST	0022	padre-propio-o-root-sin-escritura-compartida
+INV-CEO-063	tests/run-tests.sh	MUST	test-acreditacion-propietarios.py	lector-con-stat-real
+INV-CEO-064	scripts/leer-acreditacion.sh	MUST	O_NOFOLLOW	componentes-abiertos-sin-seguir-enlaces
+INV-CEO-065	scripts/leer-acreditacion.sh	MUST	os.read\(fd	lectura-del-descriptor-comprobado
+INV-CEO-066	tests/test-acreditacion-propietarios.py	MUST	carrera-sustitucion	regresion-de-sustitucion-entre-comprobacion-y-lectura

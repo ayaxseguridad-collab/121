@@ -1,0 +1,9 @@
+tipo	id	maquina	contenedor	sesion	atributos
+maquina	maquina-1	-	-	-	acceso=local;host=gt-Default-string;pool=150GiB
+ceo	CEO	maquina-1	-	ceo	usuario=gt;estado_bus=/home/gt/.local/state/talent-ceo
+torre	C1	maquina-1	-	torre-c1	usuario=migracion-crm-c1;estado_bus=/home/migracion-crm-c1/.local/state/talent-ceo
+estacion	M1	maquina-1	-	m1	usuario=migracion-crm-m1;estado_bus=/home/migracion-crm-m1/.local/state/talent-ceo
+canal	11	maquina-1	vibe-channel-11	v	usuario=migracion-crm-incus;cpu=4;mem=8GiB;auditor=claude-root
+runner	runner-migracion-crm	maquina-1	runner-migracion-crm	runner-migracion-crm	usuario=migracion-crm-incus;usuario_contenedor=runner;repo=/home/runner/repo
+bus	BUS	maquina-1	-	-	path=/home/gt/migracion-crm/bus;lectores=CEO,C1,M1
+cron	CRON	-	-	-	dueno=CEO;minutos=07,22,37,52
