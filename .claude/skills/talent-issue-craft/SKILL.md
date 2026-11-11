@@ -68,13 +68,13 @@ Sin dependencias más allá de un runtime de TypeScript (p. ej. `tsx`); el helpe
 cd <ruta-de-instalacion-del-skill>/talent-issue-craft   # la raíz del skill
 
 # Matriz de tipos (local, sin credenciales)
-npx tsx scripts/issue_craft_helper.ts --action list-types
+bash <raíz-del-repo>/scripts/tsx.sh scripts/issue_craft_helper.ts --action list-types
 
 # Pre-check de autoría sobre un borrador (body-only; nunca acredita el gate)
-npx tsx scripts/issue_craft_helper.ts --action audit-issue --file mi-borrador.md
+bash <raíz-del-repo>/scripts/tsx.sh scripts/issue_craft_helper.ts --action audit-issue --file mi-borrador.md
 
 # Gate operativo (evidencia remota completa; exige LINEAR_API_KEY en env o .env.local)
-npx tsx scripts/issue_craft_helper.ts --action audit-issue --issue ABC-123 --min-score 70
+bash <raíz-del-repo>/scripts/tsx.sh scripts/issue_craft_helper.ts --action audit-issue --issue ABC-123 --min-score 70
 ```
 
 ```typescript
@@ -223,10 +223,8 @@ Las rúbricas de `02-verificaciones.md` (plan §7, código §8) son la vara de l
 
 ## Paquete de fábrica
 
-Este skill es miembro del **paquete de skills de fábrica** (16): linear-skill · skill-creator · talent-buzz ·
-talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-coordination ·
-talent-issue-craft · talent-llm-local · talent-memoria · talent-merger · talent-orchestrator · talent-pm · talent-prd · talent-repo-onboarding. El paquete viaja JUNTO y
+Este skill es miembro del **paquete de skills de fábrica** (13): coderabbit-talent · linear-skill · talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-docs-skill · talent-issue-craft · talent-medidor · talent-merger · talent-orchestrator · talent-pm · talent-sentry-guard. El paquete viaja JUNTO y
 **motor-primero**: canónico en el repo motor `talent-factory` (`skills/`), propagado como núcleo
-a los repos de producto con `skill-creator/scripts/sync-package.sh` (overlays por repo intactos)
-y validado con `skill-creator/scripts/validate-package.sh` + `<skill>/invariants.tsv`.
-Manifiesto: `skill-creator/assets/package.manifest` · doctrina y ratchet (D6): `skill-creator/references/09-paquete-de-fabrica.md`.
+a los repos de producto con `scripts/paquete/sync-package.sh` (overlays por repo intactos)
+y validado con `scripts/paquete/validate-package.sh` + `<skill>/invariants.tsv`.
+Manifiesto: `scripts/paquete/package.manifest` · doctrina y ratchet (D6): `scripts/paquete/PAQUETE.md`.

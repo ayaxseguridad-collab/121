@@ -1,0 +1,100 @@
+# .coderabbit.yaml — punto de partida para un repo Node.js/TypeScript nuevo
+# (Next.js en el front + Express en el back). Ajustar path_instructions y
+# path_filters a la estructura real de carpetas del monorepo/repo.
+language: "en-US"
+
+early_access: false
+
+tone_instructions: >-
+  Sé directo y accionable. Prioriza bugs funcionales, seguridad (OWASP,
+  secrets, authz) y regresiones sobre estilo o naming. No repitas lo que ya
+  cubren ESLint/Prettier/tsc.
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+
+  path_filters:
+    - "!**/*.lock"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/coverage/**"
+    - "!**/*.snap"
+    - "!**/generated/**"
+
+  path_instructions:
+    - path: "apps/web/**/*.{ts,tsx}"
+      instructions: >-
+        Código Next.js (App Router). Server Components por defecto; marcar
+        "use client" solo cuando haya estado/eventos/hooks de React. Server
+        Actions solo dentro de Server Components. Vigilar fugas de secretos
+        de servidor hacia el bundle de cliente (variables sin prefijo
+        NEXT_PUBLIC_ usadas en componentes cliente).
+    - path: "apps/api/**/*.ts"
+      instructions: >-
+        Código Express. Cada ruta nueva debe validar el body/params de
+        entrada (zod u otro validador) antes de tocar la base de datos.
+        Middlewares de auth deben ir antes de cualquier handler que toque
+        datos de usuario. Vigilar manejo de errores async sin try/catch o
+        sin un error-handling middleware que los capture.
+    - path: "**/*.sql"
+      instructions: >-
+        Toda tabla nueva requiere RLS habilitada y políticas explícitas si
+        el backend es Postgres/Supabase. Señalar cualquier CREATE TABLE sin
+        ENABLE ROW LEVEL SECURITY.
+    - path: "**/*.test.{ts,tsx}"
+      instructions: >-
+        Los tests deben cubrir el caso de error, no solo el happy path.
+        Evitar asserts triviales (toBeTruthy sin más) cuando el valor
+        esperado es conocido.
+
+  tools:
+    ast-grep:
+      essential_rules: true
+    eslint:
+      enabled: true
+    biome:
+      enabled: true
+    markdownlint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    osv-scanner:
+      enabled: true
+    semgrep:
+      enabled: true
+    checkov:
+      enabled: true
+    hadolint:
+      enabled: true
+    actionlint:
+      enabled: true
+    yamllint:
+      enabled: true
+
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+    title:
+      mode: "warning"
+      requirements: "Conventional Commits (feat/fix/refactor/docs/chore/test/ci)."
+    description:
+      mode: "warning"
+    issue_assessment:
+      mode: "off"
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: "auto"

@@ -28,13 +28,20 @@ reconstruir y en **multi-fábrica** es la base de clonado de esa fábrica.
 2. apt base (git, build-essential, tmux, openssh, jq, **unzip** — requisito del CLI de CodeRabbit, ver 5b —, **bubblewrap**, **docker.io**, docker-compose-v2) + **gh** (repo oficial) + **Tailscale** (userspace + override no-fatal desde asset; queda **sin login**).
 3. Usuario `$CUSER`: password desde `$SECRET_DIR/cuser-pass` (recuperable), **sudo NOPASSWD** (sandbox) + grupo docker. Crea `~/.claude` y `~/.codex` y **los chownea a `$CUSER`** (críticos: si quedaran de `root`, Codex no puede crear su sqlite `~/.codex/state_5.sqlite`).
 4. **Clonar el repo con git-bootstrap-token EFÍMERO**: `GIT_ASKPASS` lee un fichero transitorio; clona `https://x-access-token@…`; deja `origin` **sin token** (`remote set-url` a la URL limpia). **Limpieza garantizada del secreto** con doble `trap` (host-side al `EXIT` del script + dentro del shell del contenedor): `~/.gbt`/`~/.gitaskpass` se borran (`shred`) aunque el clone falle a mitad. Verifica que `origin` no lleva token.
-5. **Node** = versión del repo (`.nvmrc`/`engines`) o LTS; luego los CLIs **npm globales instalados como
+5. **Node** = versión del repo (`.nvmrc`/`engines`) o LTS, **con suelo de parche** (issue 9558): la mayor
+   sale del repo, pero el parche que deja nodesource se COMPRUEBA tras instalar. Los suelos viven en UN
+   solo sitio, `assets/node-suelos.tsv` (24 → 24.22.1 · 22 → 22.23.4 · 26 → 26.12.1; fuente y fecha en su
+   cabecera: aviso de Node del 21-oct-2026). Por debajo del suelo, o con una mayor que no figure en el
+   fichero, el golden **FALLA** (rc ≠ 0, mensaje claro): nunca avisa y sigue. Para subir un suelo con un
+   aviso nuevo se edita su fila. La prueba (`tests/node-suelo.sh`) usa un doble de `node -v`; el caso de
+   la 24 vulnerable queda como check permanente. En el mismo paso se deja `ca-certificates` al día
+   (`--only-upgrade` tras instalar nodejs; ya se instala en [2/9]). Luego los CLIs **npm globales instalados como
    ROOT** (`@anthropic-ai/claude-code`, `@openai/codex`, `@railway/cli`, `convex`, `supabase`): el
    **prefix npm es root-managed** a propósito — el usuario del carril NO tiene permiso sobre él, así
    que un self-update lanzado desde el pane fallaría con EACCES y MATARÍA el proceso (el pane caería a
    un shell). Por eso además va `DISABLE_AUTOUPDATER=1` (Claude) + `check_for_update_on_startup=false`
    (Codex): la versión queda **fija a la de instalación** (equivalente a un pin de arranque) y la
-   actualización es **explícita** (regla 14: última estable por rebuild, no se pinea en el manifiesto).
+   actualización es **explícita** (la última estable con ≥ 72 h, resuelta por `resolver-herramientas.sh` y registrada en `/etc/talent-channels/herramientas.lock`).
    El binario de CodeRabbit (`[5b]`) va por artefacto versionado con sha256 verificado (detalle abajo).
    **[TAL-3318] Node a nivel SISTEMA (no PATH de perfil)**: los gates del motor, los runners y
    cualquier `incus exec` corren en shells **NO interactivas** donde `.bashrc`/nvm/exports de perfil
@@ -147,4 +154,4 @@ documenta:
 Si el lead decide adoptar cualquiera de las dos, debe salir como issue separada, de mayor esfuerzo,
 con validación empírica en máquina real — no como parte de un refresh de vigencia.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.

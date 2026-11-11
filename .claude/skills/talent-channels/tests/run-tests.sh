@@ -269,9 +269,70 @@ kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null || true
 echo "== 12. Bash syntax de los scripts nuevos/tocados =="
 for f in auth-move-lib.sh auth-move.sh refresh-codex-auth.sh refresh-claude-auth.sh 02-golden.sh \
          00-config.sh provision.sh 03-clone.sh verify.sh validate-manifest.sh lib.sh \
-         channel-profiles.sh 00-intake.sh apply-renderer.sh; do
+         channel-profiles.sh 00-intake.sh apply-renderer.sh node-al-dia.sh; do
   chk "bash -n $f" "bash -n '$SCRIPTS/$f'"
 done
+
+# ==========================================================================
+echo "== 12b. relanzamiento de Codex y lanzador del panel: el auditor DECLARADO, nunca codex-root fijado a mano (issue 10264) =="
+# Se evalúan SOLO la función real que lee agents.conf y la línea real que decide el lanzador en refresh-codex-auth.sh y en
+# install-launchers.sh (no se ejecutan los scripts): HOST_HOME apunta a un HOME de prueba con o sin agents.conf.
+AUDX="$(sed -n '/^tc_auditor_declarado() {/,/^}/p' "$SCRIPTS/lib.sh")"
+# [issue 10264, M-1] LISTA BLANCA: el auditor/lanzador solo puede ser `codex` o `codex-root`; con cualquier otro valor PARA.
+# Cada decisión son DOS líneas reales (la asignación y el `case` de la lista blanca) y los avisos de la lib (tc_err/tc_die).
+PREX="$(grep -E '^(tc_err|tc_die)\(\)' "$SCRIPTS/lib.sh")"
+RELX="$(grep -E '^(RELAUNCH="\$\{TC_CODEX_RELAUNCH:-|case "\$RELAUNCH" in codex\|codex-root\))' "$SCRIPTS/refresh-codex-auth.sh")"
+RIGX="$(grep -E '^(LEFT="\$\{LEFT_CMD:-|case "\$RIGHT" in codex\|codex-root\))' "$SCRIPTS/install-launchers.sh")"
+HH_CON="$WORK/hh-10264-con"; HH_SIN="$WORK/hh-10264-sin"; HH_RARO="$WORK/hh-10264-raro"
+mkdir -p "$HH_CON/.config/talent-channel-operation" "$HH_SIN" "$HH_RARO/.config/talent-channel-operation"
+printf 'TCO_DEV_CLI="claude-root"\nTCO_AUDIT_CLI="codex-root"\n' > "$HH_CON/.config/talent-channel-operation/agents.conf"
+printf 'TCO_AUDIT_CLI="env X=1 codex"\n' > "$HH_RARO/.config/talent-channel-operation/agents.conf"
+# Cada helper devuelve «rc:valor:avisos» (avisos = 1 si stderr lleva «Codex es obligatorio como revisor», 0 si no).
+rel_val() { local out rc=0; out="$(env -u TC_CODEX_RELAUNCH -u TCO_AUDIT_CLI -u TC_AGENTS_CONF "$@" bash -c "$PREX"$'\n'"$AUDX"$'\n'"$RELX"$'\n''printf %s "$RELAUNCH"' 2>"$WORK/rel.err")" || rc=$?; printf '%s:%s:%s' "$rc" "$out" "$(grep -q 'Codex es obligatorio como revisor' "$WORK/rel.err" && echo 1 || echo 0)"; }
+rig_val() { local out rc=0; out="$(env -u RIGHT_CMD -u LEFT_CMD -u TCO_AUDIT_CLI -u TC_AGENTS_CONF "$@" bash -c "$PREX"$'\n'"$AUDX"$'\n'"$RIGX"$'\n''printf %s "$RIGHT"' 2>"$WORK/rig.err")" || rc=$?; printf '%s:%s:%s' "$rc" "$out" "$(grep -q 'Codex es obligatorio como revisor' "$WORK/rig.err" && echo 1 || echo 0)"; }
+dec_val() { local out rc=0; out="$(env -u TC_AGENTS_CONF "$@" bash -c "$PREX"$'\n'"$AUDX"$'\n''tc_auditor_declarado' 2>"$WORK/dec.err")" || rc=$?; printf '%s:%s:%s' "$rc" "$out" "$(grep -q 'Codex es obligatorio como revisor' "$WORK/dec.err" && echo 1 || echo 0)"; }
+# HOME de prueba con un agents.conf que declara el auditor $1.
+hh_decl() { local d="$WORK/hh-10264-d-$1"; mkdir -p "$d/.config/talent-channel-operation"; printf 'TCO_AUDIT_CLI="%s"\n' "$1" > "$d/.config/talent-channel-operation/agents.conf"; printf '%s' "$d"; }
+chk "la función de agents.conf y las dos líneas existen" "[ -n \"\$AUDX\" ] && [ -n \"\$RELX\" ] && [ -n \"\$RIGX\" ]"
+chk "refresh-codex-auth: sin declaración el relaunch es codex (con su sandbox), no codex-root" "[ \"\$(rel_val HOST_HOME='$HH_SIN')\" = 0:codex:0 ]"
+chk "refresh-codex-auth: con TCO_AUDIT_CLI de agents.conf relanza ESE lanzador (codex-root declarado)" "[ \"\$(rel_val HOST_HOME='$HH_CON')\" = 0:codex-root:0 ]"
+chk "refresh-codex-auth: un agents.conf fuera de gramática se ignora (codex)" "[ \"\$(rel_val HOST_HOME='$HH_RARO')\" = 0:codex:0 ]"
+chk "refresh-codex-auth: TCO_AUDIT_CLI exportado codex manda sobre agents.conf" "[ \"\$(rel_val HOST_HOME='$HH_CON' TCO_AUDIT_CLI=codex)\" = 0:codex:0 ]"
+chk "refresh-codex-auth: TCO_AUDIT_CLI exportado gemini PARA (rc 1, Codex es obligatorio), no relanza" "[ \"\$(rel_val HOST_HOME='$HH_CON' TCO_AUDIT_CLI=gemini)\" = 1::1 ]"
+chk "refresh-codex-auth: TC_CODEX_RELAUNCH=codex-root manda sobre agents.conf" "[ \"\$(rel_val HOST_HOME='$HH_CON' TC_CODEX_RELAUNCH=codex-root)\" = 0:codex-root:0 ]"
+chk "refresh-codex-auth: TC_CODEX_RELAUNCH=codex manda aunque agents.conf declare otro auditor" "[ \"\$(rel_val HOST_HOME='$(hh_decl gemini)' TC_CODEX_RELAUNCH=codex)\" = 0:codex:0 ]"
+chk "refresh-codex-auth: TC_CODEX_RELAUNCH=otro-lanzador PARA (rc 1, Codex es obligatorio), no relanza" "[ \"\$(rel_val HOST_HOME='$HH_CON' TC_CODEX_RELAUNCH=otro-lanzador)\" = 1::1 ]"
+for n in gemini my-auditor codexfalso codex-otro codex-root.sh codexfalso-root codex-root-root codexx codex-evil; do
+  chk "refresh-codex-auth: TC_CODEX_RELAUNCH='$n' (válido por gramática, no es Codex) PARA (rc 1) sin relanzar" "[ \"\$(rel_val HOST_HOME='$HH_SIN' TC_CODEX_RELAUNCH='$n')\" = 1::1 ]"
+  chk "refresh-codex-auth: agents.conf declara '$n' (no es Codex): PARA (rc 1) sin relanzar" "[ \"\$(rel_val HOST_HOME='$(hh_decl "$n")')\" = 1::1 ]"
+done
+chk "refresh-codex-auth: una ruta /x/codex en TC_CODEX_RELAUNCH PARA (la gramática no admite «/»; solo codex o codex-root)" "[ \"\$(rel_val HOST_HOME='$HH_SIN' TC_CODEX_RELAUNCH=/x/codex)\" = 1::1 ]"
+chk "install-launchers: sin declaración el panel del auditor es codex, no codex-root fijado a mano" "[ \"\$(rig_val HOST_HOME='$HH_SIN')\" = 0:codex:0 ]"
+chk "install-launchers: con agents.conf el panel del auditor es el declarado" "[ \"\$(rig_val HOST_HOME='$HH_CON')\" = 0:codex-root:0 ]"
+chk "install-launchers: RIGHT_CMD=codex-root manda sobre agents.conf" "[ \"\$(rig_val HOST_HOME='$HH_CON' RIGHT_CMD=codex-root)\" = 0:codex-root:0 ]"
+chk "install-launchers: RIGHT_CMD=otro-lanzador PARA (rc 1, Codex es obligatorio), no genera" "[ \"\$(rig_val HOST_HOME='$HH_CON' RIGHT_CMD=otro-lanzador)\" = 1::1 ]"
+for n in gemini my-auditor codexfalso codex-otro codex-root.sh codexfalso-root codex-root-root codexx codex-evil; do
+  chk "install-launchers: RIGHT_CMD='$n' (válido por gramática, no es Codex) PARA (rc 1)" "[ \"\$(rig_val HOST_HOME='$HH_SIN' RIGHT_CMD='$n')\" = 1::1 ]"
+  chk "install-launchers: agents.conf declara '$n' (no es Codex): PARA (rc 1)" "[ \"\$(rig_val HOST_HOME='$(hh_decl "$n")')\" = 1::1 ]"
+done
+chk "install-launchers: una ruta /x/codex en RIGHT_CMD PARA (solo codex o codex-root)" "[ \"\$(rig_val HOST_HOME='$HH_SIN' RIGHT_CMD=/x/codex)\" = 1::1 ]"
+# tc_auditor_declarado (la función REAL): imprime SOLO codex o codex-root; un nombre válido que no es Codex = nada en stdout, rc 1 y aviso.
+chk "tc_auditor_declarado: codex-root declarado se imprime (rc 0)" "[ \"\$(dec_val HOST_HOME='$HH_CON')\" = 0:codex-root:0 ]"
+chk "tc_auditor_declarado: codex declarado se imprime (rc 0)" "[ \"\$(dec_val HOST_HOME='$(hh_decl codex)')\" = 0:codex:0 ]"
+chk "tc_auditor_declarado: sin agents.conf no imprime nada (rc 0)" "[ \"\$(dec_val HOST_HOME='$HH_SIN')\" = 0::0 ]"
+chk "tc_auditor_declarado: agents.conf fuera de gramática no imprime nada (rc 0)" "[ \"\$(dec_val HOST_HOME='$HH_RARO')\" = 0::0 ]"
+for n in gemini my-auditor codexfalso codex-otro codex-root.sh codexfalso-root codex-root-root codexx codex-evil; do
+  chk "tc_auditor_declarado: '$n' declarado (válido por gramática, no es Codex): nada en stdout, rc 1 y aviso" "[ \"\$(dec_val HOST_HOME='$(hh_decl "$n")')\" = 1::1 ]"
+done
+# El script REAL de install-launchers con un panel que no es Codex PARA sin generar ningún lanzador (HOME de prueba vacío).
+rig_real() { # home-de-prueba [VAR=valor…] → PARA (rc≠0 y sin ~/.local/bin) u OTRO
+  local h="$1" rc=0; shift; mkdir -p "$h"
+  env -i PATH="$PATH" HOME="$h" USER="$(id -un)" "$@" bash "$SCRIPTS/install-launchers.sh" >/dev/null 2>&1 || rc=$?
+  if [ "$rc" != 0 ] && [ ! -e "$h/.local/bin" ]; then printf PARA; else printf OTRO; fi
+}
+chk "install-launchers REAL: RIGHT_CMD=gemini ⇒ rc≠0 y no genera ningún lanzador" "[ \"\$(rig_real '$WORK/hh-10264-real-a' RIGHT_CMD=gemini)\" = PARA ]"
+chk "install-launchers REAL: RIGHT_CMD=my-auditor ⇒ rc≠0 y no genera ningún lanzador" "[ \"\$(rig_real '$WORK/hh-10264-real-b' RIGHT_CMD=my-auditor)\" = PARA ]"
+chk "install-launchers REAL: agents.conf declara gemini ⇒ rc≠0 y no genera ningún lanzador" "[ \"\$(rig_real '$(hh_decl gemini)')\" = PARA ]"
 
 # ==========================================================================
 echo "== 13. validate-manifest.sh — predicados puros del validador de manifiestos (TAL-2296) =="
@@ -310,13 +371,11 @@ echo "== 13. validate-manifest.sh — predicados puros del validador de manifies
   [ "$(vm_get "$MF" A)" = 1 ]                                              || exit 13  # PRIMERA aparición
   rm -f "$MF"; exit 0 )
 chk "validate-manifest: predicados puros (real-grammar TF_REPO_URL + des-citado + dup/malformado/falta/orden)" "[ $? -eq 0 ]"
-# Smoke contra el manifiesto REAL del motor si está presente en este entorno (no-op en canales sin él).
-_REALMF="$HOME/Talent Engine/Talent Factory/manifiestos/academy.conf"
-if [ -r "$_REALMF" ]; then
-  ( export VM_NO_MAIN=1; . "$SCRIPTS/validate-manifest.sh"
-    [ "$(vm_validate "$_REALMF" academy "" "TF_GATE_IDS,TF_LINEAR_TEAM_KEY")" = OK ] )
-  chk "validate-manifest: acepta el academy.conf REAL (TF_REPO_URL + citado + require de gates/linear)" "[ $? -eq 0 ]"
-fi
+# Smoke obligatorio contra el fixture neutro del motor (valores citados y claves requeridas).
+_REALMF="$HERE/../../../tests/fixtures/manifiesto-ejemplo.conf"
+( export VM_NO_MAIN=1; . "$SCRIPTS/validate-manifest.sh"
+  [ "$(vm_validate "$_REALMF" ejemplo "" "TF_GATE_IDS,TF_LINEAR_TEAM_KEY")" = OK ] )
+chk "validate-manifest: acepta manifiesto-ejemplo.conf (TF_REPO_URL + citado + require de gates/linear)" "[ $? -eq 0 ]"
 
 # ==========================================================================
 echo "== 14. Guardas estáticas de las correcciones del code-audit P3a (sin Incus) =="
@@ -1076,6 +1135,38 @@ r20_env() {
 }
 r20_home() { printf '%s/%s/home/%s' "$CROOT" "$1" "$CUSER"; }
 
+# Compact vivo: doble de Incus, aplicador real y perfil editable.
+run_t20compact() (
+  r20_env compact
+  # shellcheck source=/dev/null
+  . "$SCRIPTS/00-config.sh"; . "$SCRIPTS/lib.sh"; . "$SCRIPTS/apply-renderer.sh"
+  unset COMPACT_VIVO_INCLUIR COMPACT_VIVO_GUARDA_B XDG_CONFIG_HOME
+  tc_renderer_settings vibe-channel-91 >/dev/null || return 1
+  tc_compact_settings vibe-channel-91 --check | grep -qx ESTADO=conforme || return 1
+  local H; H="$(r20_home vibe-channel-91)"
+  [ -x "$H/.claude/compact-vivo.sh" ] || return 1
+  jq -e '.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW=="200000"' "$H/.claude/settings.json" >/dev/null || return 1
+  printf 'tipo\tid\tmaquina\tcontenedor\tsesion\tatributos\nmaquina\tHOST\t-\t-\t-\tacceso=local\ncanal\t91\tHOST\tvibe-channel-91\tv\tcompact_ventana=400000;compact_pct=55\n' > "$SECRET_DIR/perfil.tsv"
+  tc_renderer_settings vibe-channel-91 >/dev/null || return 1
+  jq -e '.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW=="400000" and .env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=="55"' "$H/.claude/settings.json" >/dev/null || return 1
+  tc_compact_settings vibe-channel-91 --check | grep -qx ESTADO=conforme || return 1
+  local perfil_base; perfil_base="$(cat "$SECRET_DIR/perfil.tsv")"
+  for fallo in compact_ventana compact_pct datos_sensibles; do
+    if [ "$fallo" = datos_sensibles ]; then
+      printf '%s;datos_sensibles=\n' "$perfil_base" > "$SECRET_DIR/perfil.tsv"
+    else
+      printf '%s\n' "$perfil_base" | sed "s/$fallo=[^;]*/$fallo=/" > "$SECRET_DIR/perfil.tsv"
+    fi
+    tc_compact_settings vibe-channel-91 --check >/dev/null 2>&1 && return 1
+  done
+  printf '%s\n' "$perfil_base" > "$SECRET_DIR/perfil.tsv"
+  jq '.hooks.PreCompact=[]' "$H/.claude/settings.json" > "$H/t" && mv "$H/t" "$H/.claude/settings.json"
+  tc_compact_settings vibe-channel-91 --check >/dev/null 2>&1 && return 1
+  TA_PERFIL="$SECRET_DIR/ausente" tc_renderer_settings vibe-channel-91 >/dev/null 2>&1 && return 1
+  return 0
+)
+run_t20compact; chk 'compact vivo canal: aplicar, perfil editable, check y negativos' '[ $? -eq 0 ]'
+
 # 20a — capas del golden/canal: aplica, es idempotente (2 corridas → 1 export, 1 línea de tmux, mismo sha) y respeta lo previo
 run_t20a() (
   r20_env t20a
@@ -1646,5 +1737,11 @@ python3 "$HERE/verify-etapas.py" --log "$etapas_log"; etapas_rc=$?
 chk 'verificación real por etapas y F2 sin registro' "[ $etapas_rc -eq 0 ]"
 if bash "$HERE/fase-papel-json.sh"; then ok "fase recuperada, papel literal y documento JSON único"; else bad "fase, papel literal o JSON único"; fi
 if bash "$HERE/panel-durable.sh"; then ok "sesión persistida y selección estricta del panel"; else bad "sesión persistida o selección del panel"; fi
+bash "$HERE/test-agregador-runner-clean.sh"; chk 'higiene del runner: cinco casos del motor con residuos aislados' '[ $? -eq 0 ]'
+bash "$HERE/test-runner-provision.sh"; chk 'reparto del runner: dieciséis casos del pin con dependencias reales' '[ $? -eq 0 ]'
+bash "$HERE/node-suelo.sh"; chk 'Node: suelo de parche por mayor (24.22.1 / 22.23.4 / 26.12.1), fail-closed por debajo y para una mayor sin suelo (issue 9558)' '[ $? -eq 0 ]'
+if bash "$HERE/node-al-dia.sh"; then ok "Node al día en el host y los canales: contrato N1-N7 con dobles, guarda de sesiones compartida, identidad de la instancia con el entorno de sudo, tuberías sin salida temprana y diecisiete mutantes en rojo (issue 10160)"; else bad "Node al día en el host y los canales (issue 10160)"; fi
+if bash "$HERE/cortafuegos-supabase.sh"; then ok "cortafuegos opcional de Supabase: contrato C1-C7 con dobles, sin root"; else bad "cortafuegos opcional de Supabase"; fi
+if bash "$HERE/herramientas-72h.sh"; then ok "herramientas: 72 h, audit/OSV por severidad, lock, golden y envoltorio con dobles, y mutantes en rojo (issue 9564)"; else bad "herramientas: 72 h, audit/OSV, lock, golden y envoltorio (issue 9564)"; fi
 echo "================  PASS=$PASS  FAIL=$FAIL  ================"
 [ "$FAIL" -eq 0 ] && [ "$CANARIO_MURIO" -eq 0 ]

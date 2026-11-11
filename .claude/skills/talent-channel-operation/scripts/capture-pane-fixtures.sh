@@ -35,6 +35,10 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
   fi
   printf '%s' "$CLI_VERSION" | grep -qE '^[A-Za-z0-9_.-]+:[A-Za-z0-9_.+-]+$' \
     || { tco_err "cli:versión '$CLI_VERSION' no válida (esperaba <cli>:<version>)"; exit 2; }
+  # Perfil del TUI de esa versión para el recorte de redraw: codex usa las reglas de Codex; claude y cualquier CLI sin perfil
+  # (los de las pruebas) conservan las de siempre.
+  TCO_TUI_CLI="$(tco_tui_cli_de "$CLI_VERSION")" || TCO_TUI_CLI=''
+  export TCO_TUI_CLI
   [ -n "$cap" ] || { tco_err "captura vacía — no se escribe un fixture vacío"; exit 1; }
   # Rechazar la entrada original: normalizar nunca debe ocultar una ruta personal.
   if ! printf '%s\n' "$cap" | tco_fixture_secret_scan; then

@@ -212,7 +212,7 @@ BD corre **DENTRO del runner**, nunca en el host.
 bash talent-factory/scripts/run-gate-sealed.sh <gate-id> \
   --runner <contenedor-runner> --runner-user runner --runner-repo <ruta-repo-en-runner> \
   --repo <clon-limpio-estación> --run-group <G> --sha <head_sha> --pr <n> \
-  --manifest talent-factory/manifiestos/academy.conf --receipts <dir> --repo-slug <owner/repo>
+  --manifest talent-factory/manifiestos/ejemplo.conf --receipts <dir> --repo-slug <owner/repo>
 ```
 
 Invocar `run-local-gates.sh` a mano dentro del runner (sin `--assignment`) produce un

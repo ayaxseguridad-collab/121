@@ -8,8 +8,7 @@ El veredicto de auditoría es **machine-readable** y resistente a inyección. Im
 > nonce sobre plan y diff (§3-§9); el **coordinador** cierra con verificación de trazabilidad
 > (`verify-handoff.sh` + cada finding con evidencia de resolución, regla 13). Aguas arriba, el
 > **Mergeador** re-verifica en su intake. Cada nivel verifica al de abajo y es verificado por
-> el de arriba — el hermano clásico `talent-coordination` aplica la misma "verificación por
-> nivel" con su gate pre-merge + verificación independiente.
+> el de arriba. Los gates de cada transición conservan esta verificación independiente.
 
 ## Table of Contents
 
@@ -285,8 +284,9 @@ cosecha el veredicto del scrollback.
 **Waiter-timeout del auditor (Trusted-Access / "model at capacity")**: un auditor Codex puede
 pararse a MITAD de audit sin emitir veredicto (diálogo de Trusted-Access pendiente, "model at
 capacity") mientras el gate pollea en vano. Umbrales operativos: **gate sin veredicto >20 min** →
-inspeccionar el pane `.1`, **matar el gate y re-lanzarlo** (rebuild del pane si hace falta:
-PROC-02 en `03`); si el auditor SÍ emitió pero el gate ya murió, o el artefacto es grande y lleva
+inspeccionar el pane `.1`, **parar el gate con `kill -USR1 <pid>` y re-lanzarlo** (rebuild del pane si
+hace falta: PROC-02 en `03`; nunca con TERM, que deja la parada del operador de más abajo); si el auditor
+SÍ emitió pero el gate ya murió, o el artefacto es grande y lleva
 **>11 min** sin cosecha → `--parse-only` (PROC-03). Jamás dejar un gate polleando indefinido
 contra un auditor parado.
 
@@ -294,9 +294,25 @@ contra un auditor parado.
 de una corrida previa que quedó vivo interfiere el pane del auditor y encadena `INVALID` (visto: 3
 corridas perdidas en un canal por un proc stale). Antes de relanzar, ubicar los PID que casan
 (`pgrep -f 'audit-gate\.sh <carril>'`), **excluir el propio proceso** y **matar por PID concreto**
-(`kill <pid>`) — **NUNCA** `pkill -f`/`pkill -9` del patrón crudo: el patrón aparece en la línea de
-comandos del propio `pkill` y se auto-mata por self-match (`exit 144`; regla de kill host-side por
-PID en `references/09-gotchas.md` §9).
+(`kill -USR1 <pid>`, que no deja parada del operador) — **NUNCA** `pkill -f`/`pkill -9` del patrón
+crudo: el patrón aparece en la línea de comandos del propio `pkill` y se auto-mata por self-match
+(`exit 144`; regla de kill host-side por PID en `references/09-gotchas.md` §9).
+
+**Parada del operador (issue 10264)**: tras un TERM/INT/HUP al gate o al extractor del plan (RC 143/130/129)
+se deja `parada-operador-<canal>.env` en `runs/` (CARRIL, SCRIPT, SIGNAL, TS, PID; 0600) y los dos scripts
+se niegan a arrancar con rc/exit 22 hasta que una orden humana nueva la levante (con `mv`, sin borrar; el
+mensaje del script imprime la orden y el sello `PARADA-LEVANTADA-<canal>`). Un RC 143 NO significa «lo maté yo».
+USR1 solo para un gate propio STALE: para el árbol del gate y sale con 138 sin dejar parada; nunca para cortar
+un gate que ha parado por un diálogo de aprobación (ese ya salió con rc 4 y no hay nada que matar). El USR1 y
+su motivo se anotan en el log del coordinador. `--parse-only` sigue permitido y no se bloquea. Límites
+declarados: SIGKILL no se puede capturar y quien tiene shell puede mover el fichero (la garantía es el
+fail-closed por defecto, esta doctrina y la traza `PARADA-OPERADOR-<canal>-<epoch>` en el bus).
+
+**El auditor Codex pide permiso (issue 10264)**: con el sandbox de Codex roto, cada orden abre un diálogo
+(«Would you like to run the following command?»). El sandbox de Codex no arranca en un contenedor anidado; la fábrica escala en vez de aprobar:
+el gate PARA (rc 4, `ESCALAR`; `extract-plan.sh` exit 23), sella `APROBACION-PENDIENTE-<canal>-<epoch>` solo
+con `orden_bin`, `orden_sha`, `sandbox` y `panel`, y decide una persona mirando el pane `.1`. Nada del gate ni
+del coordinador teclea sobre ese diálogo (ni Enter, ni Escape, ni «solo lecturas»).
 
 ### PROC-03 — Recuperar un veredicto huérfano
 
@@ -470,4 +486,4 @@ calibrado o dev que no converge → fallback de modelo / re-scope / descope. **D
 desbloquear**: si un finding depende de una decisión externa u otro issue no listo, se DESCOPA a
 una issue dependiente nueva y se entrega el resto — no se bloquea el canal entero.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.

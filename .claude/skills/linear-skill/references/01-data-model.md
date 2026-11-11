@@ -318,7 +318,7 @@ Ver ejemplos GraphQL ejecutables en `references/03-graphql-cheatsheet.md`.
   `last_verified: 2026-09-05`)
 - `stateHistory` — historial de transiciones de `WorkflowState` de la issue. La fábrica lo usa para
   verificar que el flujo real fue `In Progress → In Review → Done` (no solo que el estado final es
-  `Done`) — ver `talent-coordination/references/05-verificacion-independiente.md`. Útil en cualquier
+  `Done`) — ver `talent-channel-operation/references/04-protocolo-auditoria.md`. Útil en cualquier
   auditoría/verificación independiente de cierre, no solo dentro de la fábrica.
 
 **Importante**:

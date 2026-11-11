@@ -26,8 +26,11 @@ ANEXO="$HERE/anexo-*.md"
 case "$TF_PAQUETE_ESTADO" in
   distribucion) : ;;
   instancia)
+    PAQUETE="$HERE/../../../paquete"
+    [ -d "$PAQUETE" ] || PAQUETE="$HERE/../../../scripts/paquete"
+    [ -z "${TM_SELFTEST_CONGELADO:-}" ] || PAQUETE="$TM_SELFTEST_CONGELADO/paquete"
     # shellcheck source=/dev/null
-    . "$HERE/../../skill-creator/scripts/lib-package.sh"
+    . "$PAQUETE/lib-package.sh"
     pkg_parse_identity_conf "$HERE/../../talent-channel-operation/scripts/repo-identity.conf" || exit 2
     case "$PKGID_TCO_REPO_STACK" in
       supabase) : ;;
@@ -341,10 +344,10 @@ if [ -z "${TM_SELFTEST_CONGELADO:-}" ]; then
     "$(dirname "$GH_CONTRATO")/gh-dobles.sh" "$WORK/gh-fixtures/" || exit 2
   if [ "$TF_PAQUETE_ESTADO" = instancia ]; then
     # El hijo conserva estado, identidad y lector dentro del mismo congelado.
-    mkdir -p "$WORK/skill-creator/scripts" "$WORK/talent-channel-operation/scripts" || exit 2
-    cp -a "$HERE/../../skill-creator/scripts/lib-package.sh" "$WORK/skill-creator/scripts/" || exit 2
+    mkdir -p "$WORK/paquete" "$WORK/talent-channel-operation/scripts" || exit 2
+    cp -a "$PAQUETE/lib-package.sh" "$WORK/paquete/" || exit 2
     cp -a "$HERE/../../talent-channel-operation/scripts/repo-identity.conf" "$WORK/talent-channel-operation/scripts/" || exit 2
-    [ ! -L "$WORK/skill-creator/scripts/lib-package.sh" ] &&
+    [ ! -L "$WORK/paquete/lib-package.sh" ] &&
       [ ! -L "$WORK/talent-channel-operation/scripts/repo-identity.conf" ] || exit 2
   fi
   # Enlaces simbolicos: `cp -a` los CONSERVA, `find -type f` NO los mete en la huella, y los
@@ -467,33 +470,107 @@ cat > "$MOCKBIN/curl" <<'CURL'
 #!/usr/bin/env bash
 # mock curl: emite `body\ncode` (formato -w $'\n%{http_code}'). Estado del ledger en
 # $MOCK_STATE (una versión por línea); el apply lo actualiza. FORCE_* fuerza respuestas.
+# Ampliación del bloque T37 (todo opt-in por variables MOCK_*; sin ellas se comporta como antes):
+#  · registra cada llamada por tipo en $MOCK_STATE.cnt/ (calls.log y un contador por tipo) y,
+#    con MOCK_ARGV, vuelca el argv de cada llamada;
+#  · sondeo de cuota (query `select 1;`): cabeceras por `-D` (MOCK_QUOTA, MOCK_QUOTA_HDR,
+#    MOCK_QUOTA_NOHDR) y 429 en las N primeras llamadas (MOCK_PROBE_429);
+#  · 429 del ledger antes/después del primer apply (MOCK_LEDGER_429_PRE/_POST) y de advisors (MOCK_ADV_429);
+#  · ensayo (payload cerrado con `rollback;`): NUNCA toca el ledger; MOCK_ENSAYO_429, MOCK_ENSAYO_BODY,
+#    MOCK_ENSAYO_CODE, MOCK_ENSAYO_NETFAIL;
+#  · SQL que el servidor rechazaría: el marcador MARCADOR-GUARDA-DIVERGENTE responde HTTP 400 y no aplica
+#    nada; con MOCK_EMULA_OBJETOS=1 un `create table` repetido (en el lote o ya aplicado) responde 400;
+#  · MOCK_APPLY_429: el POST de apply responde 429 sin mutar; MOCK_DUMP_DIR vuelca cada query.
 set -uo pipefail
-url=""; data_src=""; prev=""
+url=""; data_src=""; hdr_file=""; prev=""
 for a in "$@"; do
-  case "$prev" in --data-binary) data_src="$a" ;; esac
+  case "$prev" in --data-binary) data_src="$a" ;; -D) hdr_file="$a" ;; esac
   case "$a" in https://*) url="$a" ;; esac
   prev="$a"
 done
+cnt=""; [ -z "${MOCK_STATE:-}" ] || cnt="$MOCK_STATE.cnt"
+[ -z "${MOCK_ARGV:-}" ] || printf '%s\n' "$*" >> "$MOCK_ARGV"
+tick() {  # $1 tipo · $2 'nolog' opcional · imprime el nº de orden (1, 2, …) de esa llamada
+  [ -n "$cnt" ] || { echo 0; return 0; }
+  mkdir -p "$cnt"; local n; n="$(cat "$cnt/$1" 2>/dev/null)"; n=$(( ${n:-0} + 1 ))
+  echo "$n" > "$cnt/$1"; [ "${2:-}" = nolog ] || echo "$1" >> "$cnt/calls.log"; echo "$n"
+}
+dentro() { [ "$1" -ge 1 ] && [ "$1" -le "$2" ]; }   # $1 = nº de llamada · $2 = cuántas primeras fallan
 emit() { printf '%s\n%s' "$1" "$2"; }
 if [[ "$url" == *"/advisors/"* ]]; then
+  n="$(tick adv)"
+  if dentro "$n" "${MOCK_ADV_429:-0}"; then emit '{"message":"ThrottlerException"}' 429; exit 0; fi
   abody="${FORCE_ADVISOR_BODY:-}"; [ -n "$abody" ] || abody='{"lints":[]}'
   emit "$abody" "${FORCE_ADVISOR_CODE:-200}"; exit 0
 fi
 if [ "$data_src" = "@-" ]; then payload="$(cat)"; elif [ -n "$data_src" ]; then payload="$(cat "${data_src#@}")"; else payload=""; fi
+q=""; [ -z "$payload" ] || q="$(jq -r '.query // empty' <<<"$payload" 2>/dev/null)"
 if grep -q -- 'order by version' <<<"$payload"; then
+  n="$(tick ledger)"
+  n_apply="$(cat "$cnt/apply" 2>/dev/null)"
+  if [ "${n_apply:-0}" -ge 1 ]; then
+    m="$(tick ledger_post nolog)"; lim="${MOCK_LEDGER_429_POST:-0}"
+  else
+    m="$(tick ledger_pre nolog)"; lim="${MOCK_LEDGER_429_PRE:-0}"
+  fi
+  if dentro "$m" "$lim"; then emit '{"message":"ThrottlerException"}' 429; exit 0; fi
   if [ -n "${FORCE_LEDGER_BODY:-}" ]; then emit "$FORCE_LEDGER_BODY" "${FORCE_LEDGER_CODE:-200}"; exit 0; fi
   arr="$(if [ -s "$MOCK_STATE" ]; then jq -R . "$MOCK_STATE" | jq -s 'map({version:.})'; else echo '[]'; fi)"
   emit "$arr" "200"; exit 0
 fi
+if [ "$q" = 'select 1;' ]; then
+  n="$(tick probe)"
+  cabecera() {  # $1 = código · $2 = línea de cabecera de cuota (vacía = ninguna); termina en CRLF como curl
+    [ -n "$hdr_file" ] || return 0
+    { printf 'HTTP/2 %s\r\ncontent-type: application/json\r\n' "$1"
+      [ -z "$2" ] || printf '%s\r\n' "$2"
+      printf '\r\n'; } > "$hdr_file"
+  }
+  if dentro "$n" "${MOCK_PROBE_429:-0}"; then cabecera 429 'x-ratelimit-remaining: 0'; emit '{"message":"ThrottlerException"}' 429; exit 0; fi
+  if [ -n "${MOCK_PROBE_CODE:-}" ]; then cabecera "$MOCK_PROBE_CODE" ''; emit '{"message":"boom"}' "$MOCK_PROBE_CODE"; exit 0; fi
+  if [ -n "${MOCK_QUOTA_NOHDR:-}" ]; then cabecera 200 ''
+  else cabecera 200 "${MOCK_QUOTA_HDR:-x-ratelimit-remaining: ${MOCK_QUOTA:-119}}"; fi
+  emit '[{"?column?":1}]' 200; exit 0
+fi
 if grep -q -- 'begin;' <<<"$payload"; then
-  [ -n "${MOCK_DUMP_PAYLOAD:-}" ] && printf '%s' "$payload" >> "$MOCK_DUMP_PAYLOAD"
+  cierre="$(printf '%s\n' "$q" | grep -v '^[[:space:]]*$' | tail -n1)"
+  rechazo=""
+  if grep -q 'MARCADOR-GUARDA-DIVERGENTE' <<<"$q"; then rechazo='{"message":"MARCADOR-GUARDA-DIVERGENTE"}'; fi
+  if [ -z "$rechazo" ] && [ -n "${MOCK_EMULA_OBJETOS:-}" ]; then
+    objs="$(printf '%s\n' "$q" | tr 'A-Z' 'a-z' | grep -oE 'create table +[a-z0-9_.]+' | sed -E 's/create table +//')"
+    dup="$( { printf '%s\n' "$objs"; cat "$MOCK_STATE.objs" 2>/dev/null; } | grep -v '^$' | sort | uniq -d | head -1)"
+    [ -z "$dup" ] || rechazo="$(jq -nc --arg o "$dup" '{message:("relation \"" + $o + "\" already exists")}')"
+  fi
+  if [ "$cierre" = 'rollback;' ]; then
+    n="$(tick ensayo)"
+    [ -z "${MOCK_DUMP_DIR:-}" ] || printf '%s\n' "$q" > "$MOCK_DUMP_DIR/ensayo-$n.sql"
+    if [ -n "${MOCK_ENSAYO_NETFAIL:-}" ]; then echo "curl: (7) simulado" >&2; exit 7; fi
+    if dentro "$n" "${MOCK_ENSAYO_429:-0}"; then emit '{"message":"ThrottlerException"}' 429; exit 0; fi
+    if [ -n "${MOCK_ENSAYO_CODE:-}" ]; then emit '{"message":"boom"}' "$MOCK_ENSAYO_CODE"; exit 0; fi
+    if [ -n "${MOCK_ENSAYO_BODY:-}" ]; then emit "$MOCK_ENSAYO_BODY" 200; exit 0; fi
+    if [ -n "$rechazo" ]; then emit "$rechazo" 400; exit 0; fi
+    emit '[]' 200; exit 0
+  fi
+  n="$(tick apply)"
+  [ -z "${MOCK_DUMP_PAYLOAD:-}" ] || printf '%s' "$payload" >> "$MOCK_DUMP_PAYLOAD"
+  [ -z "${MOCK_DUMP_DIR:-}" ] || printf '%s\n' "$q" > "$MOCK_DUMP_DIR/apply-$n.sql"
+  if [ -n "${MOCK_APPLY_429:-}" ]; then emit '{"message":"ThrottlerException"}' 429; exit 0; fi
+  if [ -n "$rechazo" ]; then emit "$rechazo" 400; exit 0; fi
   ver="$(printf '%s' "$payload" | grep -oE "values\('[0-9]{14}'" | head -1 | grep -oE '[0-9]{14}')"
   [ -n "$ver" ] && echo "$ver" >> "$MOCK_STATE"
+  [ -z "${MOCK_EMULA_OBJETOS:-}" ] || printf '%s\n' "$objs" >> "$MOCK_STATE.objs"
   if [ -n "${FORCE_APPLY_BODY:-}" ]; then emit "$FORCE_APPLY_BODY" "${FORCE_APPLY_CODE:-200}"; exit 0; fi
   emit '[]' "200"; exit 0
 fi
 emit '{"message":"payload inesperado"}' "400"
 CURL
+
+cat > "$MOCKBIN/sleep" <<'SLEEP'
+#!/usr/bin/env bash
+# doble de sleep: no espera; registra cada llamada (solo T37 la lee).
+[ -z "${MOCK_STATE:-}" ] || { mkdir -p "$MOCK_STATE.cnt"; printf '%s\n' "$*" >> "$MOCK_STATE.cnt/sleep.log"; }
+exit 0
+SLEEP
 
 cat > "$MOCKBIN/git" <<'GIT'
 #!/usr/bin/env bash
@@ -503,7 +580,7 @@ case "$1" in
   *) exit 0 ;;
 esac
 GIT
-chmod +x "$MOCKBIN/curl" "$MOCKBIN/git"
+chmod +x "$MOCKBIN/curl" "$MOCKBIN/git" "$MOCKBIN/sleep"
 
 # 3) Sandbox por caso + runner + asserts.
 setup() {  # $1 = "TS_name ..." locales
@@ -3246,6 +3323,263 @@ _pf_ck "sin TM_FLOCK_CANONICO_TRUSTED no hay procedencia"       "3 NO-ESCRIBIO" 
 # Comparar texto seria medir un proxy del recurso — dos rutas distintas nombran el mismo fichero.
 _pf_ck "symlink al canonico: mismo fichero, se acepta"  "0 ESCRIBIO"      flock.log enlace
 
+
+echo "== T37: cuota, 429 y ensayo en seco del lote (Paso 0a, Paso 2b y relecturas de Paso 2 / Paso 5) =="
+echo "   Tres incidentes medidos, ahora con dobles: S-A lote a medias por una guarda que falla en la 3.ª;"
+echo "   S-B lote lanzado con la cuota casi vacía; S-C 429 de la verificación final con todo aplicado =="
+# Ayudantes: cuentan sobre el registro del doble (calls.log), no sobre el texto de la salida.
+n_calls() { local v; v="$(grep -c "^$2\$" "$1/.ledger.cnt/calls.log" 2>/dev/null)"; echo "${v:-0}"; }
+n_sleeps() { if [ -f "$1/.ledger.cnt/sleep.log" ]; then wc -l < "$1/.ledger.cnt/sleep.log" | tr -d '[:space:]'; else echo 0; fi; }
+n_ledger() { if [ -f "$1/.ledger" ]; then wc -l < "$1/.ledger" | tr -d '[:space:]'; else echo 0; fi; }
+orden_calls() { if [ -f "$1/.ledger.cnt/calls.log" ]; then tr '\n' ' ' < "$1/.ledger.cnt/calls.log"; fi; }
+vault_corrio() { if [ -e "$1/.vault-ran" ]; then echo si; else echo no; fi; }
+clase_de() { cat "$1/.class" 2>/dev/null; }
+eqck() {  # $1 nombre · $2 esperado · $3 obtenido (igualdad exacta)
+  if [ "$2" = "$3" ]; then echo "  ✓ $1"; pass=$((pass+1)); else echo "  ✗ $1 (esperaba '$2', obtuve '$3')"; fail=$((fail+1)); fi
+}
+# Gate de Vault que deja huella: prueba que NO corre cuando el sondeo aborta.
+marca_vault() { printf '#!/usr/bin/env bash\ntouch .vault-ran\nexit 0\n' > "$1/$VAULT_GATE"; }
+# Migración cuya guarda DO diverge (el md5 del cuerpo de una función medido en el reset local no
+# es el de producción): el doble la RECHAZA con HTTP 400, como lo haría el servidor al evaluarla.
+guarda_divergente() {  # $1 = ruta del .sql
+  printf '%s\n' 'do $$' 'begin' \
+    "  if (select md5(prosrc) from pg_proc where proname = 'f_demo') <> 'b3e4b09e' then" \
+    "    raise exception 'MARCADOR-GUARDA-DIVERGENTE: md5 distinto';" \
+    '  end if;' 'end $$;' 'create table g_demo (id int);' > "$1"
+}
+
+echo "-- T37a (S-B): cuota 59 -> aborta ANTES de Vault, ledger, ensayo y apply --"
+b="$(setup "20270101000000_a")"; marca_vault "$b"
+o="$(run "$b" env MOCK_QUOTA=59 PROC_M13_CLASS_FILE="$b/.class")"
+ck "S-B cuota 59: EXIT=1" "EXIT=1" "$o"
+ck "S-B cuota 59: mensaje del Paso 0a con la cifra" "Paso 0a: cuota insuficiente (remaining=59)" "$o"
+eqck "S-B cuota 59: clase TRANSITORIO" "TRANSITORIO" "$(clase_de "$b")"
+eqck "S-B cuota 59: el gate de Vault NO se ejecuta" "no" "$(vault_corrio "$b")"
+eqck "S-B cuota 59: cero llamadas de ledger, ensayo y apply" "0/0/0" "$(n_calls "$b" ledger)/$(n_calls "$b" ensayo)/$(n_calls "$b" apply)"
+eqck "S-B cuota 59: 18 sondeos con 17 esperas" "18/17" "$(n_calls "$b" probe)/$(n_sleeps "$b")"
+eqck "S-B cuota 59: nada aplicado" "0" "$(n_ledger "$b")"
+
+echo "-- T37b: cuota 60 pasa; 429 en el sondeo se espera y se reintenta --"
+b="$(setup "20270101000000_a")"; marca_vault "$b"
+o="$(run "$b" env MOCK_QUOTA=60)"
+ck "cuota 60 pasa el Paso 0a" "✓ Paso 0a" "$o"; ck "cuota 60: EXIT=0" "EXIT=0" "$o"
+eqck "cuota 60: el gate de Vault SÍ se ejecuta" "si" "$(vault_corrio "$b")"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_PROBE_429=2)"
+ck "sondeo 429x2 y luego 200: EXIT=0" "EXIT=0" "$o"
+eqck "sondeo 429x2: 3 sondeos y sleep llamado 2 veces" "3/2" "$(n_calls "$b" probe)/$(n_sleeps "$b")"
+b="$(setup "20270101000000_a")"; marca_vault "$b"
+o="$(run "$b" env MOCK_PROBE_429=999 PROC_M13_CLASS_FILE="$b/.class")"
+ck "sondeo 429 permanente: EXIT=1" "EXIT=1" "$o"
+ck "sondeo 429 permanente: mensaje de cuota" "Paso 0a: cuota insuficiente (HTTP 429)" "$o"
+eqck "sondeo 429 permanente: clase TRANSITORIO" "TRANSITORIO" "$(clase_de "$b")"
+eqck "sondeo 429 permanente: aborta tras el tope de 18 sin tocar Vault" "18/no" "$(n_calls "$b" probe)/$(vault_corrio "$b")"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_PROBE_CODE=500 PROC_M13_CLASS_FILE="$b/.class")"
+ck "sondeo HTTP 500: EXIT=1 sin reintentar" "EXIT=1" "$o"
+eqck "sondeo HTTP 500: una sola llamada, clase TRANSITORIO" "1/TRANSITORIO" "$(n_calls "$b" probe)/$(clase_de "$b")"
+
+echo "-- T37c: cabecera ausente o malformada -> fail-closed; mayúsculas y CR -> pasa --"
+for hdrcase in 'AUSENTE' 'x-ratelimit-remaining: abc' 'x-ratelimit-remaining: -1' 'x-ratelimit-remaining: 60abc' 'x-ratelimit-remaining: ' 'x-ratelimit-remaining: 99999999999999999999'; do
+  b="$(setup "20270101000000_a")"; marca_vault "$b"
+  if [ "$hdrcase" = AUSENTE ]; then o="$(run "$b" env MOCK_QUOTA_NOHDR=1 PROC_M13_CLASS_FILE="$b/.class")"
+  else o="$(run "$b" env "MOCK_QUOTA_HDR=$hdrcase" PROC_M13_CLASS_FILE="$b/.class")"; fi
+  eqck "cabecera [$hdrcase]: aborta fail-closed (EXIT=1, TRANSITORIO)" "EXIT=1/TRANSITORIO" "$(printf '%s' "$o" | grep -o 'EXIT=[0-9]*')/$(clase_de "$b")"
+  eqck "cabecera [$hdrcase]: un solo sondeo, Vault intacto, nada aplicado" "1/no/0" "$(n_calls "$b" probe)/$(vault_corrio "$b")/$(n_ledger "$b")"
+done
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env 'MOCK_QUOTA_HDR=X-RateLimit-Remaining: 119')"
+ck "cabecera X-RateLimit-Remaining con CR final y mayúsculas: pasa" "remaining=119" "$o"
+ck "cabecera con mayúsculas: EXIT=0" "EXIT=0" "$o"
+
+echo "-- T37d (S-C): 429 en el ledger final con todo aplicado -> se reintenta y se sella --"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_LEDGER_429_POST=3)"
+ck "S-C ledger final 429x3: ✓ PROC-M13 completo" "✓ PROC-M13 completo" "$o"
+ck "S-C ledger final 429x3: EXIT=0" "EXIT=0" "$o"
+eqck "S-C ledger final 429x3: el apply se ejecutó UNA vez" "1" "$(n_calls "$b" apply)"
+eqck "S-C ledger final 429x3: tres esperas" "3" "$(n_sleeps "$b")"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_LEDGER_429_POST=999 PROC_M13_CLASS_FILE="$b/.class")"
+ck "ledger final 429 permanente: EXIT=1" "EXIT=1" "$o"
+ck "ledger final 429 permanente: dice que quedó aplicado" "migraciones aplicadas, verificación pendiente" "$o"
+ck "ledger final 429 permanente: lo aplicado consta" "✓ aplicada 20270101000000 (a)" "$o"
+eqck "ledger final 429 permanente: clase TRANSITORIO" "TRANSITORIO" "$(clase_de "$b")"
+eqck "ledger final 429 permanente: apply 1, relecturas 61, esperas 60" "1/61/60" "$(n_calls "$b" apply)/$(( $(n_calls "$b" ledger) - 1 ))/$(n_sleeps "$b")"
+rm -rf "$b/.ledger.cnt"
+o="$(run "$b")"
+ck "segunda corrida (ledger ya al día): sin gap" "sin gap" "$o"; ck "segunda corrida: EXIT=0" "EXIT=0" "$o"
+eqck "segunda corrida: cero ensayos y cero applies" "0/0" "$(n_calls "$b" ensayo)/$(n_calls "$b" apply)"
+
+echo "-- T37e: 429 del ledger del Paso 2 se reintenta; 500/401 NO --"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_LEDGER_429_PRE=1)"
+ck "ledger Paso 2 429x1 y luego 200: continúa" "✓ PROC-M13 completo" "$o"; ck "  EXIT=0" "EXIT=0" "$o"
+for lcode in 500 401; do
+  b="$(setup "20270101000000_a")"
+  o="$(run "$b" env FORCE_LEDGER_BODY='x' FORCE_LEDGER_CODE=$lcode PROC_M13_CLASS_FILE="$b/.class")"
+  ck "ledger HTTP $lcode: aborta" "HTTP $lcode" "$o"
+  eqck "ledger HTTP $lcode: NO se reintenta (1 llamada, 0 esperas)" "1/0" "$(n_calls "$b" ledger)/$(n_sleeps "$b")"
+done
+
+echo "-- T37f: advisors 429 se reintenta; el POST de apply con 429 NO --"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_ADV_429=2)"
+ck "advisors 429x2 y luego 200: continúa" "✓ PROC-M13 completo" "$o"; ck "  EXIT=0" "EXIT=0" "$o"
+eqck "advisors 429x2: 4 llamadas (3 + 1) y 2 esperas" "4/2" "$(n_calls "$b" adv)/$(n_sleeps "$b")"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_ADV_429=999 PROC_M13_CLASS_FILE="$b/.class")"
+ck "advisors 429 permanente tras apply: verificación pendiente" "migraciones aplicadas, verificación pendiente" "$o"
+eqck "advisors 429 permanente: EXIT=1, TRANSITORIO, 61 llamadas" "EXIT=1/TRANSITORIO/61" "$(printf '%s' "$o" | grep -o 'EXIT=[0-9]*')/$(clase_de "$b")/$(n_calls "$b" adv)"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_APPLY_429=1 PROC_M13_CLASS_FILE="$b/.class")"
+ck "POST de apply 429: EXIT=1" "EXIT=1" "$o"; ck "POST de apply 429: HTTP 429 en el mensaje" "Paso 4 (20270101000000): HTTP 429" "$o"
+eqck "POST de apply 429: UNA llamada de apply, clase ESCALAR, 0 esperas" "1/ESCALAR/0" "$(n_calls "$b" apply)/$(clase_de "$b")/$(n_sleeps "$b")"
+ck "POST de apply 429: ninguna ✓ aplicada" "" "$(printf '%s' "$o" | grep '✓ aplicada' || true)"
+
+echo "-- T37g (S-A): guarda divergente en la 3.ª de un lote de 3 -> CERO aplicadas, nombra la culpable --"
+b="$(setup "20270101000000_a 20270105000000_b 20270712093000_c")"
+guarda_divergente "$b/$MIGRACIONES_DIR/20270712093000_c.sql"
+o="$(run "$b" env PROC_M13_CLASS_FILE="$b/.class")"
+ck "S-A lote de 3, guarda en la 3.ª: EXIT=1" "EXIT=1" "$o"
+ck "S-A: el mensaje nombra el timestamp de la 3.ª" "Paso 2b: la guarda del lote falla en 20270712093000 (c)" "$o"
+eqck "S-A: clase ESCALAR" "ESCALAR" "$(clase_de "$b")"
+eqck "S-A: ledger intacto (0 versiones nuevas)" "0" "$(n_ledger "$b")"
+eqck "S-A: cero applies y ninguna ✓ aplicada" "0/0" "$(n_calls "$b" apply)/$(printf '%s' "$o" | grep -c '✓ aplicada')"
+eqck "S-A: ensayos <= 1 + ceil(log2 3)" "ok" "$([ "$(n_calls "$b" ensayo)" -le 3 ] && echo ok || echo "$(n_calls "$b" ensayo)")"
+
+echo "-- T37h: lote de 4 con la guarda fallida en la 2.ª (y variante con 2.ª y 4.ª) --"
+b="$(setup "20270101000000_a 20270105000000_b 20270301000000_c 20270712093000_d")"
+guarda_divergente "$b/$MIGRACIONES_DIR/20270105000000_b.sql"
+o="$(run "$b")"
+ck "lote de 4, guarda en la 2.ª: el mensaje nombra la 2.ª" "Paso 2b: la guarda del lote falla en 20270105000000 (b)" "$o"
+eqck "lote de 4: ensayos <= 1 + ceil(log2 4) = 3, cero applies" "ok/0/0" "$([ "$(n_calls "$b" ensayo)" -le 3 ] && echo ok || echo "$(n_calls "$b" ensayo)")/$(n_calls "$b" apply)/$(n_ledger "$b")"
+b="$(setup "20270101000000_a 20270105000000_b 20270301000000_c 20270712093000_d")"
+guarda_divergente "$b/$MIGRACIONES_DIR/20270105000000_b.sql"; guarda_divergente "$b/$MIGRACIONES_DIR/20270712093000_d.sql"
+o="$(run "$b")"
+ck "dos guardas malas (2.ª y 4.ª): se nombra la PRIMERA" "falla en 20270105000000 (b)" "$o"
+eqck "dos guardas malas: ledger intacto" "0" "$(n_ledger "$b")"
+
+echo "-- T37i: control transaccional top-level en la 3.ª -> aborta en validación, SIN ensayo ni applies --"
+b="$(setup "20270101000000_a 20270105000000_b 20270712093000_c")"
+printf 'create table c_demo (id int);\nCOMMIT;\n' > "$b/$MIGRACIONES_DIR/20270712093000_c.sql"
+o="$(run "$b" env PROC_M13_CLASS_FILE="$b/.class")"
+ck "lote de 3, commit; en la 3.ª: detecta tx top-level" "control de transacción top-level" "$o"
+eqck "lote de 3, commit; en la 3.ª: CERO ensayos y CERO applies" "0/0/0" "$(n_calls "$b" ensayo)/$(n_calls "$b" apply)/$(n_ledger "$b")"
+eqck "lote de 3, commit; en la 3.ª: clase ESCALAR" "ESCALAR" "$(clase_de "$b")"
+
+echo "-- T37j: lote correcto de 3 -> UN ensayo cerrado en rollback, luego 3 applies EN ORDEN; ensayo == apply --"
+b="$(setup "20270101000000_a 20270105000000_b 20270712093000_c")"; mkdir -p "$b/dump"
+o="$(run "$b" env MOCK_DUMP_DIR="$b/dump")"
+ck "lote de 3 correcto: EXIT=0" "EXIT=0" "$o"
+eqck "lote de 3: exactamente 1 POST de ensayo y 3 applies" "1/3" "$(n_calls "$b" ensayo)/$(n_calls "$b" apply)"
+eqck "lote de 3: orden de llamadas sondeo, ledger, ensayo, 3 applies, ledger, advisors" \
+  "probe ledger ensayo apply apply apply ledger adv adv " "$(orden_calls "$b")"
+eqck "lote de 3: el ledger del doble tiene exactamente las 3 versiones (el ensayo no escribió)" "3" "$(n_ledger "$b")"
+ens="$b/dump/ensayo-1.sql"
+eqck "el payload del ensayo termina en rollback; y no contiene commit;" "rollback;/0" "$(grep -v '^[[:space:]]*$' "$ens" | tail -n1)/$(grep -c 'commit;' "$ens")"
+eqck "el ensayo lleva 3 locks, 3 guardas y 3 inserts del ledger" "3/3/3" \
+  "$(grep -c '^lock table supabase_migrations.schema_migrations in exclusive mode;' "$ens")/$(grep -c 'ya aplicada' "$ens")/$(grep -c '^insert into supabase_migrations.schema_migrations' "$ens")"
+# ensayo == apply: el cuerpo (sin begin ni cierre) del ensayo es la concatenación de los de los applies.
+sed '1d;$d' "$ens" > "$b/dump/cuerpo-ensayo"
+: > "$b/dump/cuerpo-applies"
+for k in 1 2 3; do sed '1d;$d' "$b/dump/apply-$k.sql" >> "$b/dump/cuerpo-applies"; done
+eqck "ensayo == apply: lock, guarda, DDL e insert idénticos (solo cambia el cierre)" "iguales" \
+  "$(if cmp -s "$b/dump/cuerpo-ensayo" "$b/dump/cuerpo-applies"; then echo iguales; else echo distintos; fi)"
+eqck "los applies cierran con commit; y el ensayo con rollback;" "commit;/commit;/commit;" \
+  "$(for k in 1 2 3; do grep -v '^[[:space:]]*$' "$b/dump/apply-$k.sql" | tail -n1; done | paste -sd/)"
+ck "los applies salen en orden a, b, c" "$(printf '✓ aplicada 20270101000000 (a)\n✓ aplicada 20270105000000 (b)\n✓ aplicada 20270712093000 (c)')" "$o"
+
+echo "-- T37k: el ensayo que no concluye NO aplica nada (cuerpo distinto de [], red, 5xx, 429) --"
+for ebody in '[{"x":1}]' 'null' 'no soy json'; do
+  b="$(setup "20270101000000_a")"
+  o="$(run "$b" env "MOCK_ENSAYO_BODY=$ebody" PROC_M13_CLASS_FILE="$b/.class")"
+  eqck "ensayo con cuerpo [$ebody]: ESCALAR, cero applies, EXIT=1" "ESCALAR/0/EXIT=1" "$(clase_de "$b")/$(n_calls "$b" apply)/$(printf '%s' "$o" | grep -o 'EXIT=[0-9]*')"
+done
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_ENSAYO_429=1)"
+ck "ensayo 429x1 y luego []: se reintenta y continúa" "✓ PROC-M13 completo" "$o"
+eqck "ensayo 429x1: 2 POST de ensayo, 1 espera, 1 apply" "2/1/1" "$(n_calls "$b" ensayo)/$(n_sleeps "$b")/$(n_calls "$b" apply)"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_ENSAYO_429=999 PROC_M13_CLASS_FILE="$b/.class")"
+eqck "ensayo 429 permanente: TRANSITORIO, 61 POST de ensayo, cero applies" "TRANSITORIO/61/0" "$(clase_de "$b")/$(n_calls "$b" ensayo)/$(n_calls "$b" apply)"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_ENSAYO_NETFAIL=1 PROC_M13_CLASS_FILE="$b/.class")"
+eqck "ensayo con fallo de red: TRANSITORIO, cero applies, EXIT=1" "TRANSITORIO/0/EXIT=1" "$(clase_de "$b")/$(n_calls "$b" apply)/$(printf '%s' "$o" | grep -o 'EXIT=[0-9]*')"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env MOCK_ENSAYO_CODE=500 PROC_M13_CLASS_FILE="$b/.class")"
+eqck "ensayo con HTTP 500: ESCALAR, una sola llamada de ensayo, cero applies" "ESCALAR/1/0" "$(clase_de "$b")/$(n_calls "$b" ensayo)/$(n_calls "$b" apply)"
+b="$(setup "20270101000000_a")"; printf '20270101000000\n' > "$b/.ledger"
+o="$(run "$b")"
+eqck "sin gap: cero POST de ensayo" "0" "$(n_calls "$b" ensayo)"
+
+echo "-- T37l: el token no aparece en el argv de NINGUNA llamada (sondeo, ensayo, apply, ledger, advisors) --"
+b="$(setup "20270101000000_a 20270105000000_b")"
+o="$(run "$b" env MOCK_ARGV="$b/argv.log")"
+ck "corrida completa con argv volcado: EXIT=0" "EXIT=0" "$o"
+eqck "se registraron las 8 llamadas (sondeo, ledger, ensayo, 2 applies, ledger, 2 advisors) y ninguna lleva el token" "8/0" "$(grep -c -- '-K ' "$b/argv.log")/$(grep -c 'sbp_fake' "$b/argv.log")"
+
+echo "-- T37m: migraciones independientes se funden SIN renumerar (condición de la dirección) --"
+# Un hueco en el ledger: prod ya tiene b (aplicada fuera de orden), main trae además a (más antigua)
+# y c. No es divergencia: son pendientes independientes que se aplican con SU timestamp, en orden, y
+# el ensayo del lote las cubre juntas antes de aplicar.
+b="$(setup "20270101000000_a 20270105000000_b 20270110000000_c")"; mkdir -p "$b/dump"
+printf '20270105000000\n' > "$b/.ledger"
+o="$(run "$b" env MOCK_EMULA_OBJETOS=1 MOCK_DUMP_DIR="$b/dump")"
+ck "independientes: aplica a y luego c, con su timestamp" "$(printf '✓ aplicada 20270101000000 (a)\n✓ aplicada 20270110000000 (c)')" "$o"
+ck "independientes: EXIT=0" "EXIT=0" "$o"
+eqck "independientes: el ledger conserva las 3 versiones ORIGINALES (sin renumerar)" "20270101000000 20270105000000 20270110000000" "$(sort "$b/.ledger" | paste -sd' ')"
+eqck "independientes: UN ensayo que cubre a y c y no b" "1/1/1/0" \
+  "$(n_calls "$b" ensayo)/$(grep -c "values('20270101000000'" "$b/dump/ensayo-1.sql")/$(grep -c "values('20270110000000'" "$b/dump/ensayo-1.sql")/$(grep -c "values('20270105000000'" "$b/dump/ensayo-1.sql")"
+# Colisión de OBJETOS entre dos pendientes independientes (misma tabla creada por las dos): el ensayo
+# del lote la ve ANTES de aplicar nada; sin ensayo, la primera quedaría aplicada y la segunda no.
+b="$(setup "20270101000000_a 20270105000000_b 20270110000000_c")"
+printf '20270105000000\n' > "$b/.ledger"
+printf 'create table objeto_comun (id int);\n' > "$b/$MIGRACIONES_DIR/20270101000000_a.sql"
+printf 'create table objeto_comun (id int);\n' > "$b/$MIGRACIONES_DIR/20270110000000_c.sql"
+o="$(run "$b" env MOCK_EMULA_OBJETOS=1 PROC_M13_CLASS_FILE="$b/.class")"
+ck "colisión entre pendientes: el ensayo la nombra en la 2.ª del lote" "Paso 2b: la guarda del lote falla en 20270110000000 (c)" "$o"
+ck "colisión entre pendientes: el servidor dijo que el objeto ya existe" 'already exists' "$o"
+eqck "colisión entre pendientes: ESCALAR, cero applies, ledger intacto (solo b)" "ESCALAR/0/1" "$(clase_de "$b")/$(n_calls "$b" apply)/$(n_ledger "$b")"
+# Colisión contra el estado REAL de prod: el objeto ya existe por una migración anterior.
+b="$(setup "20270101000000_a 20270105000000_b")"
+printf '20270101000000\n' > "$b/.ledger"; printf 'objeto_previo\n' > "$b/.ledger.objs"
+printf 'create table objeto_previo (id int);\n' > "$b/$MIGRACIONES_DIR/20270105000000_b.sql"
+o="$(run "$b" env MOCK_EMULA_OBJETOS=1 PROC_M13_CLASS_FILE="$b/.class")"
+ck "colisión contra prod: el ensayo nombra la migración" "falla en 20270105000000 (b)" "$o"
+eqck "colisión contra prod: ESCALAR y cero applies" "ESCALAR/0" "$(clase_de "$b")/$(n_calls "$b" apply)"
+
+
+echo "-- T37n: una lectura FALLIDA del .sql (cat rc 74) aborta el lote ANTES de aplicar nada --"
+# Doble de cat que solo se antepone al PATH en estos casos (no encarece el resto de T37): falla con rc 74
+# al leer un .sql. `siempre` = todas las lecturas; `una-vez-c` = la 3.ª migración, una sola vez (la
+# primera lectura, que es la del ensayo); las demás lecturas y el apply funcionan. Sin propagar el rc
+# del constructor, el ensayo viajaba SIN el DDL de esa migración y el lote aplicaba parcialmente.
+catstub="$(mktemp -d "$WORK/catstub.XXXXXX")"
+cat > "$catstub/cat" <<'CATSTUB'
+#!/usr/bin/env bash
+case "${1:-}" in
+  *.sql)
+    if [ "${CAT_FALLA:-}" = siempre ] || { [ "${CAT_FALLA:-}" = una-vez-c ] && case "$1" in *_c.sql) true ;; *) false ;; esac \
+         && [ ! -e "$MOCK_STATE.cat-fallo" ]; }; then
+      : > "$MOCK_STATE.cat-fallo"; echo "cat: lectura SQL rc=74 (doble)" >&2; exit 74
+    fi ;;
+esac
+exec /bin/cat "$@"
+CATSTUB
+chmod +x "$catstub/cat"
+b="$(setup "20270101000000_a")"
+o="$(run "$b" env "PATH=$catstub:$MOCKBIN:$PATH" CAT_FALLA=siempre PROC_M13_CLASS_FILE="$b/.class")"
+ck "lectura fallida (siempre): EXIT=1 sin salir con el rc de la dependencia" "EXIT=1" "$o"
+ck "lectura fallida (siempre): el mensaje dice que no se aplica" "no pude construir el payload" "$o"
+eqck "lectura fallida (siempre): clase ESCALAR, cero ensayos, cero applies, ledger intacto" "ESCALAR/0/0/0" \
+  "$(clase_de "$b")/$(n_calls "$b" ensayo)/$(n_calls "$b" apply)/$(n_ledger "$b")"
+b="$(setup "20270101000000_a 20270105000000_b 20270712093000_c")"
+guarda_divergente "$b/$MIGRACIONES_DIR/20270712093000_c.sql"
+o="$(run "$b" env "PATH=$catstub:$MOCKBIN:$PATH" CAT_FALLA=una-vez-c PROC_M13_CLASS_FILE="$b/.class")"
+ck "lectura fallida solo en el ensayo (lote de 3): EXIT=1" "EXIT=1" "$o"
+eqck "lectura fallida solo en el ensayo: cero applies y ledger intacto" "0/0" "$(n_calls "$b" apply)/$(n_ledger "$b")"
+eqck "lectura fallida solo en el ensayo: clase ESCALAR y ninguna ✓ aplicada" "ESCALAR/0" "$(clase_de "$b")/$(printf '%s' "$o" | grep -c '✓ aplicada')"
 
 # La huella viaja JUNTO al resultado: es la línea que se pega en un acta, y pegar un recuento
 # sin decir sobre qué contenido se obtuvo es lo que volvió inexplicable la divergencia anterior.

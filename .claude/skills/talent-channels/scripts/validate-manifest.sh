@@ -7,7 +7,7 @@
 #   1) formato: solo líneas KEY=value con KEY en [A-Za-z][A-Za-z0-9_]* (blancas/comentario '#' se ignoran);
 #      cualquier otra línea → RECHAZO (fail-closed). NB: la KEY admite minúsculas en el sufijo — el
 #      manifiesto real las usa (p.ej. TF_GATE_CMD_typecheck / TF_GATE_CMD_db_guards: el gate-id va en
-#      minúscula). Restringir a [A-Z] rechazaría el academy.conf real (verificado por el smoke de §13).
+#      minúscula). Restringir a [A-Z] rechazaría el fixture manifiesto-ejemplo.conf (smoke de §13).
 #   2) claves DUPLICADAS → RECHAZO (una fábrica no puede consumir dos valores de la misma clave).
 #   3) claves consumidas REQUERIDAS presentes y NO vacías (TF_PROJECT y TF_REPO_URL siempre; + las de
 #      --require K1,K2,…).
@@ -74,7 +74,7 @@ vm_validate() {
   dup="$(vm_dupes "$f")"
   [ -z "$dup" ] || { echo "ABORT:duplicado $(printf '%s' "$dup" | paste -sd, -)"; return 1; }
   # requeridas: TF_PROJECT y TF_REPO_URL siempre + las de --require. El manifiesto real declara el
-  # repo objetivo como TF_REPO_URL (academy.conf), no TF_REPO.
+  # repo objetivo como TF_REPO_URL (ejemplo.conf), no TF_REPO.
   req="TF_PROJECT TF_REPO_URL"
   [ -n "$reqcsv" ] && req="$req $(printf '%s' "$reqcsv" | tr ',' ' ')"
   for k in $req; do

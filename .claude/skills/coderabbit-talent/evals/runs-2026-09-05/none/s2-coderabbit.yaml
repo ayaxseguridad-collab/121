@@ -1,0 +1,246 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — punto de partida para un repo Node.js/TypeScript nuevo
+# (Next.js frontend + Express backend en el mismo repo).
+#
+# Verificado contra el schema v2 vigente (coderabbit config validate,
+# CLI 0.7.6) y https://docs.coderabbit.ai/reference/configuration — 2026-09-05.
+# Cambia `language` a "en-US" si el equipo no opera en español.
+
+early_access: false      # No activar features en fase early access sin decisión previa.
+enable_free_tier: true   # Deja los checks gratuitos disponibles a colaboradores sin plan pago.
+
+language: es-ES          # Cambiar a "en-US" (u otro locale soportado) si el equipo no es hispanohablante.
+
+# Límite duro de 250 caracteres en el schema v2 (top-level). Detalle de tono
+# más largo va en reviews.instructions, que no tiene ese límite.
+tone_instructions: |
+  Sé directo y conciso. Explica el razonamiento en una frase. Usa ejemplos
+  de código TS/JS en las sugerencias. No elogies código que ya está bien.
+
+reviews:
+  profile: chill                      # "assertive" genera abandono por ruido en las primeras semanas.
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: false
+  changed_files_summary: true
+  # NUNCA poner esto en false: mata el flujo de "aplicar el fix sugerido
+  # con un agente" (Claude Code / Cursor / Copilot) que depende de este bloque.
+  enable_prompt_for_ai_agents: true
+  abort_on_close: true                # Si el PR se cierra/mergea a mitad de review, no la termines.
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+      - master
+      - develop
+      - staging
+
+  # Paths excluidos globalmente del review.
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/out/**"
+    - "!**/coverage/**"
+    - "!**/.turbo/**"
+    # Lockfiles
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/yarn.lock"
+    # Generado / tipos autogenerados
+    - "!**/*.generated.*"
+    - "!**/*.gen.*"
+    - "!**/*.d.ts"
+    - "!**/generated/**"
+    - "!**/__generated__/**"
+    # Minificado / bundleado
+    - "!**/*.min.js"
+    - "!**/*.min.css"
+    - "!**/*.bundle.js"
+    # Assets binarios
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.gif"
+    - "!**/*.svg"
+    - "!**/*.ico"
+    - "!**/*.pdf"
+    - "!**/*.woff*"
+    # Snapshots de tests
+    - "!**/__snapshots__/**"
+    - "!**/*.snap"
+    # Assets estáticos servidos tal cual
+    - "!**/public/**"
+
+  # Qué NO comentar / dónde poner el foco.
+  instructions: |
+    Proyecto Node.js/TypeScript con frontend Next.js y backend Express en el
+    mismo repo. No comentes sobre:
+    - Orden de imports (lo maneja ESLint/Prettier/Biome automáticamente)
+    - Longitud de líneas o trailing commas (autoformateado)
+    - Falta de JSDoc en funciones internas no exportadas
+    - Uso de `any` en archivos de test (**/*.test.ts, **/*.spec.ts)
+    - Naming de variables internas en scopes pequeños (i, j, tmp)
+
+    Enfoca atención extra en:
+    - Manejo completo de errores (try/catch, middlewares de error de Express,
+      promesas sin `.catch`/`await` sin try-catch)
+    - Vulnerabilidades de seguridad: inyección SQL/NoSQL/command, XSS, SSRF,
+      secretos hardcodeados, CORS mal configurado, falta de rate limiting
+    - Validación de input en endpoints Express (body/query/params sin
+      esquema de validación tipo zod/yup/joi) y en Route Handlers/Server
+      Actions de Next.js
+    - Autenticación/autorización: middlewares de auth ausentes o mal
+      ordenados, checks de permisos que se puedan saltar
+    - Tipos TypeScript incorrectos: `any` en código de producción, casts
+      innecesarios con `as`, uso de `@ts-ignore`/`@ts-expect-error` sin
+      justificación
+    - SSR/CSR mismatches en Next.js (acceso a `window`/`document` sin guard)
+    - Variables de entorno leídas en cliente sin prefijo `NEXT_PUBLIC_`
+    - Manejo de loading/error states en componentes que hacen fetch
+    - Performance en queries a base de datos y loops sobre datasets grandes
+    - Race conditions en código concurrente (colas, workers, event listeners)
+
+  path_instructions:
+    - path: "**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/__tests__/**"
+      instructions: |
+        Código de test. No comentes sobre uso de `any` ni sobre coverage.
+        Enfócate solo en: assertions correctas (comparar valores esperados
+        reales, no tautologías), mocks que no se limpian entre tests, y
+        tests que dependen de orden de ejecución.
+    - path: "server/**,src/server/**,src/routes/**,src/controllers/**,src/middleware/**,api/**"
+      instructions: |
+        Backend Express. Foco obligatorio en: validación de input (zod/yup/joi)
+        en cada handler, orden correcto de middlewares (auth antes que la
+        lógica de negocio), manejo de errores que no filtre stack traces al
+        cliente, rate limiting en endpoints públicos, y logs que no incluyan
+        PII ni secretos.
+    - path: "src/app/**,src/pages/**,src/components/**"
+      instructions: |
+        Frontend Next.js. Foco en Server Components vs Client Components
+        (marcar "use client" solo cuando haga falta), dependency arrays de
+        hooks, accesibilidad básica (alt, aria-label, tabIndex), y
+        prevención de re-renders innecesarios solo si es código caliente.
+    - path: "**/migrations/**,**/prisma/schema.prisma,**/drizzle/**"
+      instructions: |
+        Cambios de esquema de base de datos. Verificar que sean reversibles
+        o que el PR documente el plan de rollback, e índices en columnas
+        usadas en WHERE/JOIN de queries nuevas.
+
+  tools:
+    # Seguridad / secrets
+    gitleaks: { enabled: true }
+    trufflehog: { enabled: true }
+    semgrep: { enabled: true }
+    opengrep: { enabled: true }
+    osvScanner: { enabled: true }
+    trivy: { enabled: true }
+    checkov: { enabled: true }
+    zizmor: { enabled: true }         # Analizador estático de workflows de GitHub Actions.
+    presidio: { enabled: true }       # PII de alta señal en ficheros cambiados.
+    ast-grep: { essential_rules: true }
+    # Lenguaje natural (prosa en docs/PR descriptions)
+    languagetool:
+      enabled: true
+      level: "default"
+      disabled_categories:
+        - "TYPOS"
+        - "TYPOGRAPHY"
+        - "CASING"
+    # Docs / YAML / Actions / Shell
+    markdownlint: { enabled: true }
+    yamllint: { enabled: true }
+    actionlint: { enabled: true }
+    shellcheck: { enabled: true }
+    hadolint: { enabled: true }
+    # JS/TS — dejar activos hasta que el repo tenga ESLint/Biome como fuente
+    # de verdad local corriendo en CI; si ya lo tiene, poner enabled: false
+    # aquí para evitar comentarios duplicados.
+    eslint: { enabled: true }
+    biome: { enabled: true }
+    reactDoctor: { enabled: true }    # Seguridad/performance/accesibilidad en código React (Next.js).
+    github-checks:
+      enabled: true
+
+  pre_merge_checks:
+    title:
+      mode: warning
+      requirements: |
+        PR title debe seguir Conventional Commits:
+        feat|fix|chore|docs|refactor|test|ci(scope): descripción
+    description:
+      mode: warning
+    issue_assessment:
+      mode: warning
+    custom_checks:
+      - mode: "error"
+        name: "No secrets in code"
+        instructions: |
+          El PR NO debe contener secrets, API keys, tokens, private keys ni
+          URLs con credenciales embebidas (claves de Stripe, tokens de
+          Slack/GitHub, AWS access keys, API keys de Google, private keys,
+          cadenas de conexión con usuario:contraseña embebidos, JWT secrets).
+          Si se detecta cualquier credencial real: BLOQUEAR merge y pedir
+          rotar la credencial inmediatamente.
+      - mode: "warning"
+        name: "Breaking changes documentados"
+        instructions: |
+          Si el PR modifica el esquema de datos, elimina endpoints públicos
+          de Express, o cambia firmas públicas de funciones/tipos
+          exportados, debe incluir sección "## Breaking changes" en la
+          descripción con: 1) qué rompe, 2) plan de migración,
+          3) compatibilidad hacia atrás.
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    simplify:
+      enabled: false                  # Opt-in por PR: puede reescribir código intencionalmente verboso.
+    autofix:
+      enabled: true
+    fix_ci:
+      enabled: true                   # Requiere plan Team+.
+    resolve_merge_conflict:
+      enabled: true                   # Requiere plan Team+.
+
+  labeling_instructions:
+    - label: "security"
+      instructions: "Aplica cuando el PR toca autenticación, autorización, secrets o dependencias con CVE."
+    - label: "breaking-change"
+      instructions: "Aplica cuando el PR rompe un tipo exportado, una API pública o un endpoint de Express existente."
+
+chat:
+  auto_reply: true
+  # Por default "auto" permite que @coderabbitai cree issues de Linear/Jira
+  # desde el chat de un PR sin pasar por el flujo de gestión de tareas del
+  # equipo. Fijar "disabled" si no se quiere ese atajo:
+  # integrations:
+  #   linear:
+  #     usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CLAUDE.md"
+      - "AGENTS.md"
+      - "docs/decisions/**"
+      - ".cursorrules"
+      - ".cursor/rules/**"

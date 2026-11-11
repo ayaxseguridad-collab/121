@@ -205,7 +205,7 @@ export -f incus
 REPO_DIR="$T"
 target_path() { printf '%s/%s' "$REPO_DIR" "$1"; }
 _ok() { :; }; _fail() { :; }; mark_fail() { HAS_FAIL=1; }
-eval "$(sed -n '/^verificar_equivalente()/,/^}/p' "$S/../../talent-repo-onboarding/scripts/verify-repo-parity.sh")"
+eval "$(sed -n '/^verificar_equivalente()/,/^}/p' "$S/../../../instalacion/scripts/paridad/verify-repo-parity.sh")"
 for kind in dos basura lista vacio; do
   case "$kind" in
     dos) printf '{}\n{}\n' ;;

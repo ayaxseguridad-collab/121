@@ -234,6 +234,25 @@ merge ya ocurrió — lo que sigue es la ejecución del turno ya reservado, no l
    PROC-M13 escribe él mismo en un canal separado, nunca derivado de texto que un tercero
    controla), sin excepción.
 
+**PROC-M13 mide la cuota y ensaya el lote ANTES de aplicar (Paso 0a y Paso 2b del anexo).**
+La Management API limita `POST …/database/query` a 120 peticiones por minuto, un bucket propio
+separado del endpoint general: el 8-oct-2026 el general marcaba 119 restantes mientras
+`database/query` marcaba 0, y tres corridas abortaron en el gate de Vault con HTTP 429. El
+**Paso 0a** sondea ese mismo endpoint (`select 1`), lee `x-ratelimit-remaining` y solo sigue con
+60 o más; con menos espera de 5 s en 5 s (tope 18 sondeos) y, si no se recupera, sale
+**TRANSITORIO** sin haber tocado Vault, ledger ni producción; una cabecera ausente o no numérica
+aborta (fail-closed). El **Paso 2b** valida el lote ENTERO (Pasos 0c y 1) y envía UN
+`begin; …; rollback;` con el mismo constructor de payload que usa el apply: si una guarda falla
+(el 7-oct-2026 una guarda `DO` comparaba el `md5` del cuerpo de una función y diferían solo cinco
+líneas de comentarios, con las migraciones anteriores del lote ya confirmadas) se sale **ESCALAR**
+con CERO migraciones aplicadas, nombrando la primera que falla. La aplicación sigue siendo una
+transacción por migración más su fila en el ledger, con los advisors después. Las lecturas
+posteriores al apply (ledger y advisors) reintentan un 429 cada 5 s (tope 60) y, agotado el tope,
+salen **TRANSITORIO** diciendo «migraciones aplicadas, verificación pendiente»: volver a correr
+PROC-M13 es idempotente. El 429 del POST de apply NO se reintenta (muta) y sigue **ESCALAR**.
+Migraciones independientes de PRs distintos se funden sin renumerar: el hueco del ledger se
+aplica con su timestamp original, y la colisión de objetos entre ellas la ve el ensayo.
+
 Si el apply falla, la recuperación NO siempre exige una migración nueva (ronda 17,
 BLOQUEANTE; categorías corregidas ronda 18 y 19): PROC-M13 sale `≠0` tanto por un defecto
 real de contenido como por un fallo puramente operativo que nunca dejó la BD en un estado

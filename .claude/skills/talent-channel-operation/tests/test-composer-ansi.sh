@@ -89,7 +89,7 @@ external() (
     *)
       export TC_CUSER=USER
       # shellcheck source=/dev/null
-      . "$SC/../../talent-coordination/scripts/idle-check.sh"
+      . "$SC/idle-check.sh"
       _tc_cap_e() { printf '%s\n' "$external_capture"; }
       sleep() { :; }
       case "$op" in

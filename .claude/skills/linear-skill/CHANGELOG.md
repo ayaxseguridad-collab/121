@@ -1,9 +1,11 @@
 # Changelog — linear-skill
 
+- Pieza P2 (issue 8544): puntero, herramientas y doctrina del paquete en `scripts/paquete/`; lista de diez miembros tras retirar skill-creator.
+
 Esta es la distribución publicable del paquete de fábrica: la bitácora interna de
 desarrollo no se incluye.
 
-## Distribución pública — 2026-09 (paquete 1.7.4, versión intermedia)
+## Distribución pública — 2026-09 (paquete 2.0.0)
 
 - La clave de Linear se resuelve por este orden: `LINEAR_API_KEY` exportada; si `TA_OPERATION_ENV`
   está definida y no vacía, el fichero al que apunta y solo ese; si no, `.env.local` en la raíz del

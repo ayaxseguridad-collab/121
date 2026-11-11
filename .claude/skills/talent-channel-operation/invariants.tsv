@@ -6,12 +6,12 @@ INV-CO-005	scripts/00-config.sh	MUST_NOT	Talent-Academ[y]-2\.0|te-talentacademy|
 INV-CO-006	scripts/00-config.sh	MUST	LINEAR_API_KEY\|GITHUB_TOKEN\|GH_TOKEN\|SUPABASE_ACCESS_TOKEN	ronda-P0-2-allowlist-tokens
 INV-CO-007	references/02-pipeline-y-gates.md	MUST	Scope ledger	paquete-v1-m2-scope-ledger
 INV-CO-008	tests/run-tests.sh	MUST	parse_verdict	TAL-1493-antiinyeccion-verdict
-INV-CO-009	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-CO-009	SKILL.md	MUST	scripts/paquete/package\.manifest	paquete-D3-puntero-manifiesto
 INV-CO-010	scripts/00-config.sh	MUST	tco_validate_env_rel	review-pr13-A1-traversal-loader
 INV-CO-011	scripts/00-config.sh	MUST	TCO_HOST_ENV_REL solo es identidad EXIGIDA	review-pr13-A3-precedencia-env
 INV-CO-012	references/09-gotchas.md	MUST	Umbral 60 %	reconciliacion-tal3394-compact-60-lead-2026-07-08
 INV-CO-013	references/09-gotchas.md	MUST_NOT	Umbral 70%, no antes	reconciliacion-tal3394-anti-regresion-umbral-70
-INV-CO-014	tests/run-tests.sh	MUST	TOTAL_ESPERADO=1002	conteo-completo-del-inventario-y-regresiones
+INV-CO-014	tests/run-tests.sh	MUST	TOTAL_ESPERADO=1025	conteo-completo-del-inventario-y-regresiones
 INV-CO-015	tests/run-tests.sh	MUST	rev-parse --show-toplevel	tal-3375-gate1-toplevel
 INV-CO-016	scripts/lib.sh	MUST	tco_model_picker_pick	TAL-3619-picker-por-numero-nunca-hardcodeado
 INV-CO-017	scripts/lib.sh	MUST_NOT	send-keys -t '\$pane' '/model \$model' C-m	TAL-3619-retira-envio-inline-de-model-noop
@@ -155,13 +155,39 @@ INV-CO-154	tests/test-dialog-autonomy.sh	MUST	afirmativa genérica.*incompatible
 INV-CO-155	tests/test-dialog-autonomy.sh	MUST	esfuerzo nombrado distinto no pulsa afirmativa	nivel-pedido-exacto-antes-de-confirmar
 INV-CO-156	tests/test-dialog-autonomy.sh	MUST	clasificación tras dígito	redibujado-acotado-y-dialogo-identico-dos-veces-sin-teclas-en-transicion
 INV-CO-157	tests/test-dialog-autonomy.sh	MUST	fotogramas reales tras dígito	transcripcion-en-transicion-sin-teclas-y-anomalia-dos-capturas-consecutivas
-INV-CO-158	tests/test-code-audit-go.sh	MUST	TOTAL_ESPERADO=182	conteo-m8-tercera-via-code-audit-tal9011
-INV-CO-159	scripts/verify-code-audit-go.sh	MUST	tco_code_audit_go_verify\(\)	m8-code-audit-verificador-del-go-falla-cerrado-tal9011
-INV-CO-160	scripts/merge-gate.sh	MUST	tco_m8_compose_rev\(\)	m8-tercera-via-solo-con-revisor-code-audit-tal9011
-INV-CO-161	tests/test-slash-composer.sh	MUST	continuación en otra columna rechaza	lista-de-ordenes-2-1-302-columna-de-descripcion-derivada-no-fija
-INV-CO-162	tests/test-calibration-preflight.sh	MUST	sin calibrar	cli-sin-calibrar-error-claro-y-temprano-antes-de-teclear
-INV-CO-163	scripts/lib.sh	MUST	tco_pane_calibration_preflight\(\)	preflight-de-calibracion-de-los-panes-del-despacho
-INV-CO-164	scripts/dispatch.sh	MUST	tco_pane_calibration_preflight "\$CARRIL"	despacho-exige-par-cli-version-calibrado-antes-del-gate-de-modelo
-INV-CO-165	scripts/lib.sh	MUST	tco_tui_list_open_from\(\)	barra-solo-vale-con-la-lista-de-ordenes-abierta
-INV-CO-166	tests/capturas-codificadas.sh	MUST	tco_fixture_sweep\(\)	barrido-de-fixtures-cubre-nombres-del-manifiesto-y-rutas
-INV-CO-167	scripts/lib.sh	MUST	recycle suave rechazado por el preflight	reciclaje-suave-comprueba-calibracion-antes-de-teclear
+INV-CO-158	scripts/lib-modelos.sh	MUST	tco_modelos_guarda_proveedores	independencia-por-proveedor
+INV-CO-159	scripts/resolver-modelos.sh	MUST	debug models --bundled	catalogo-local-sol
+INV-CO-160	scripts/lib-modelos.sh	MUST	code_sensible	codigo-sensible-por-rol
+INV-CO-161	scripts/modelos-roles.sh	MUST	--tsv	interfaz-lectura-roles
+INV-CO-162	tests/modelos-por-rol.sh	MUST	RESULTADO modelos-por-rol	cobertura-roles-proveedores
+INV-CO-163	references/11-modelo-effort-y-recycle.md	MUST	PROGRESO-ESTANCADO	doctrina-activo-sin-progreso-solo-avisa
+INV-CO-164	scripts/behavior-watch.sh	MUST_NOT	send-keys|incus exec .*kill|recycle	vigia-solo-avisa-nunca-teclea-ni-mata
+INV-CO-165	tests/test-code-audit-go.sh	MUST	TOTAL_ESPERADO=182	conteo-m8-tercera-via-code-audit-tal9011
+INV-CO-166	scripts/verify-code-audit-go.sh	MUST	tco_code_audit_go_verify\(\)	m8-code-audit-verificador-del-go-falla-cerrado-tal9011
+INV-CO-167	scripts/merge-gate.sh	MUST	tco_m8_compose_rev\(\)	m8-tercera-via-solo-con-revisor-code-audit-tal9011
+INV-CO-168	tests/test-slash-composer.sh	MUST	continuación en otra columna rechaza	lista-de-ordenes-2-1-302-columna-de-descripcion-derivada-no-fija
+INV-CO-169	tests/test-calibration-preflight.sh	MUST	sin calibrar	cli-sin-calibrar-error-claro-y-temprano-antes-de-teclear
+INV-CO-170	scripts/lib.sh	MUST	tco_pane_calibration_preflight\(\)	preflight-de-calibracion-de-los-panes-del-despacho
+INV-CO-171	scripts/dispatch.sh	MUST	tco_pane_calibration_preflight "\$CARRIL"	despacho-exige-par-cli-version-calibrado-antes-del-gate-de-modelo
+INV-CO-172	scripts/lib.sh	MUST	tco_tui_list_open_from\(\)	barra-solo-vale-con-la-lista-de-ordenes-abierta
+INV-CO-173	tests/capturas-codificadas.sh	MUST	tco_fixture_sweep\(\)	barrido-de-fixtures-cubre-nombres-del-manifiesto-y-rutas
+INV-CO-174	scripts/lib.sh	MUST	recycle suave rechazado por el preflight	reciclaje-suave-comprueba-calibracion-antes-de-teclear
+INV-CO-175	scripts/lib.sh	MUST	local -x TCO_TUI_CLI	perfil-del-tui-solo-con-local-x-en-las-entradas-por-panel
+INV-CO-176	scripts/00-config.sh	MUST	unset TCO_TUI_CLI	perfil-del-tui-nunca-heredado-del-entorno
+INV-CO-177	tests/run-tests.sh	MUST	test-tui-codex.sh	perfil-codex-del-tui-registrado-en-el-arnes
+INV-CO-178	tests/test-tui-codex.sh	MUST	TOTAL_ESPERADO=164	conteo-perfil-codex-capturas-reales-sin-cruce-con-claude
+INV-CO-179	scripts/lib.sh	MUST	nativo_de\(\)	identidad-del-pane-reconoce-el-binario-nativo-de-codex-npm-tras-execve
+INV-CO-180	tests/run-tests.sh	MUST	npm_escape_mutante	casos-codex-npm-y-mutante-sin-contencion-en-la-raiz-registrados-en-el-arnes
+INV-CO-181	tests/pane-identity-regressions.py	MUST	npm_escape_mutante	mutante-literal-quita-la-contencion-y-el-enlace-que-se-escapa-se-acredita
+INV-CO-182	tests/test-dispatch-safety.sh	MUST	j5_identidad_acreditada_execve	acreditacion-de-la-sonda-con-execve-acredita-y-casa
+INV-CO-183	tests/run-tests.sh	MUST	test-plan-pantalla.sh	plan-pendiente-con-el-cli-en-waiting-registrado-en-el-arnes
+INV-CO-184	tests/test-plan-pantalla.sh	MUST	TOTAL_ESPERADO=79	conteo-plan-pendiente-capturas-reales-2-1-318
+INV-CO-185	scripts/extract-plan.sh	MUST	_tco_plan_ledger_equal\(\)	plan-identico-a-una-ronda-auditada-no-se-gatea-otra-vez-exit-21
+INV-CO-186	tests/run-tests.sh	MUST	test-approval-dialog.sh	dialogos-de-permiso-del-auditor-registrados-en-el-arnes
+INV-CO-187	tests/test-approval-dialog.sh	MUST	TOTAL_ESPERADO=267	conteo-dialogos-de-permiso-capturas-reales-codex-0-167-0
+INV-CO-188	scripts/lib.sh	MUST	_tco_guard_dialog\(\)	ninguna-tecla-de-confirmacion-sobre-un-dialogo-ni-una-seleccion-numerada
+INV-CO-189	scripts/lib.sh	MUST	tco_approval_dialog_from\(\)	predicado-puro-de-dialogo-de-aprobacion-sin-perilla
+INV-CO-190	scripts/audit-gate.sh	MUST	printf 'ESCALAR'; return 4	el-gate-para-con-rc-4-ante-un-dialogo-de-aprobacion
+INV-CO-191	scripts/audit-gate.sh	MUST	tco_parada_exigir "\$carril" audit-gate	parada-del-operador-bloquea-el-relanzamiento-del-gate
+INV-CO-192	scripts/extract-plan.sh	MUST	tco_parada_exigir "\$carril" extract-plan	parada-del-operador-bloquea-el-relanzamiento-del-extractor
+INV-CO-193	scripts/lib.sh	MUST	_ksig=TERM; \[ "\$_vsig" != USR1 \] \|\| _ksig=USR1	usr1-atraviesa-la-cascada-del-vigilante-sin-dejar-parada

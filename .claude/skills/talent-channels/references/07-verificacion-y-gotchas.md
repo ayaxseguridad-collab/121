@@ -22,7 +22,7 @@ corre contra la ruta del manifiesto: `validate-manifest.sh <manifiesto> [--proje
 (`TF_PROJECT`/`TF_REPO_URL` siempre + `--require`), y **coincidencia** `TF_PROJECT`/`TF_REPO_URL` con
 `--project`/`--repo` (comparando el valor **sin comillas** shell — los manifiestos reales citan los
 valores). Rc 0 = válido; rc≠0 = inválido (token `ABORT:*`). Predicados puros `vm_*` cubiertos por
-`tests/run-tests.sh` §13 (incl. smoke contra el `academy.conf` real).
+`tests/run-tests.sh` §13 (incl. smoke obligatorio contra `tests/fixtures/manifiesto-ejemplo.conf`).
 
 **Aviso "motor detrás de origin"**: el motor sembrado en el golden puede ir por **detrás de su
 origin** (se hornea en un momento; el motor evoluciona). Antes de correr gates del motor:
@@ -112,6 +112,16 @@ selección hecha en el host"* — nunca presentar una señal más débil como si
     `$nrconf{override_rc}{qr(^incus)} = 0;`), `APT::Periodic::Unattended-Upgrade "0";` y updater
     gráfico desactivado. Las actualizaciones del host pasan a ser EXPLÍCITAS, en ventana sin vuelo
     (misma doctrina que los binarios de agente, ref 06 §Mantenimiento).
+    Parches de seguridad (norma del 22-oct-2026): en ventana programada o de noche sin suites, de
+    UNA máquina en una y nunca en paralelo, con `ionice -c3 nice -n19`; en los hosts con runners,
+    esperar a que el avg60 de presión de IO sea < 5 % antes de cada tanda, porque el apt comparte
+    disco con los gates (un apt en paralelo dejó la cola de merge casi parada unos 40 min). Un log
+    de espera sin líneas nuevas no es un cuelgue: mira la presión de IO del host antes de tocar
+    prioridades. HOLD (`apt-mark hold`) de todo lo que reinicie el escritorio remoto del operador
+    (libfreerdp*, libwinpr*, gdm, gnome-shell, gnome-remote-desktop): ese escritorio jamás se
+    desactiva, filtra ni reinicia, y toda regla de cortafuegos se acota por puerto (nunca una
+    política DROP por defecto en INPUT). Si un paquete pendiente lo reinicia, queda fuera y se
+    avisa al CEO.
 
 20. **Crash de Claude con kernel 7.0.0 × Bun 1.4.0 (segfault del GC, causa DISTINTA del gotcha 14)**
     → con la combinación causal EXACTA **kernel 7.0.0 × Bun 1.4.0** en contenedor unprivileged
@@ -141,11 +151,41 @@ selección hecha en el host"* — nunca presentar una señal más débil como si
 22. **Un shim con nombre de herramienta del sistema en PATH compartido puede simular censos falsos
     de infra** (contenedores "muertos"/flotas fantasma que no lo están) → verificar con **rutas
     absolutas** (`/usr/bin/incus`) o `command -v` antes de creer un censo. La doctrina completa de
-    higiene HOST-GUARD (anti-shim + anti-host-equivocado) vive en `talent-coordination`; aquí es
+    higiene HOST-GUARD (anti-shim + anti-host-equivocado) se aplica también en `talent-channel-operation`; aquí es
     solo el recordatorio de no fiarse ciegamente de un binario resuelto por PATH.
+23. **[issue 9562] Puertos de Supabase local abiertos a la LAN y a la tailnet → cortafuegos opcional**
+    (`scripts/cortafuegos-supabase.sh`, desactivado por defecto) → el rango publicado (por defecto
+    54421-54424) escucha en todas las interfaces. Con Tailscale, `ts-forward` acepta lo que entra por
+    `tailscale0` antes de DOCKER-USER, así que la regla clave va en raw/PREROUTING (se evalúa antes del
+    DNAT). **Cuándo usarlo**: hosts con Tailscale o en una LAN no confiable que corren la pila de los
+    gates, y SOLO tras `--dry-run`. **Cuándo NO**: hosts con RDP (el script se niega a aplicar, y a
+    medir mal también: sin `ss`, `systemctl` o `hostname` no aplica), hosts de la lista de excluidos y
+    hosts donde los canales de Incus apunten a la IP del puente del host en esos puertos (también los
+    corta). **Antes de activar**: leer las redes de los puentes de docker (`docker network ls`,
+    `docker network inspect <red>`, `default-address-pools` de `/etc/docker/daemon.json`) y declarar UN
+    CIDR que las cubra en `CORTAFUEGOS_REDES_DOCKER` (obligatoria, sin valor por defecto: sin ella
+    `apply` se niega y el dry-run imprime `<REDES_DOCKER>`). **Configuración**:
+    `/etc/talent-channels/cortafuegos.conf` (`KEY=valor`, sin permisos de escritura de grupo/otros, de
+    root si corre root); puertos y CIDR en decimal SIN ceros a la izquierda (iptables lee `06475` en octal
+    y sería el puerto de RDP: se rechaza). **Persistir** (opcional, a mano): instalar el script con
+    `install -m 0755 -o root -g root cortafuegos-supabase.sh /usr/local/sbin/`, la unit
+    `assets/cortafuegos-supabase.service` en `/etc/systemd/system/`, y `systemctl enable --now`. La unit
+    lleva `After=` de `gnome-remote-desktop` y `xrdp` (solo ordenación, sin dependencia) para que, al
+    arrancar el host, la negativa por RDP vea esos servicios ya activos. **Límite de la detección**: la
+    señal autoritativa es el oyente en el puerto de RDP (`ss`); `systemctl --user` de GNOME solo se
+    consulta como complemento y, si falla (sin bus de sesión, desde root o la unit), se ignora, así que
+    un RDP de usuario activo pero que aún no escucha no se ve. **Revertir**:
+    `systemctl disable --now cortafuegos-supabase.service` y `cortafuegos-supabase.sh remove`; `remove`
+    DESCUBRE con `-S` las reglas con la marca `tc-supabase-fw` y la forma de este script (no las
+    reconstruye desde la configuración, que ni lee), las quita aunque el CIDR o los puertos hayan cambiado,
+    nunca bloquea por RDP, lista y deja una línea con la marca y otra forma y sale con rc 1 si queda
+    algo; con `status` se comprueba que no queda ninguna. `apply` exige root (rc 4 si no), crea DOCKER-USER
+    con `-N` si no existe, y `remove` no la borra (solo quita las reglas con la marca). **Cambiar el CIDR o los puertos**: `remove` y
+    luego `apply` (`apply` añade, no sustituye: la regla vieja de raw seguiría cortando). Pruebas: `tests/cortafuegos-supabase.sh` (dobles de `iptables`,
+    `ip6tables`, `ss`, `systemctl`, `hostname`, `id` y `stat`; sin root ni cortafuegos real).
 
 ## Reparación puntual
 
 Cada fase es invocable suelta: `sudo bash scripts/<fase>.sh`. O `provision.sh --only <fase>` / `--from <fase>`.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.

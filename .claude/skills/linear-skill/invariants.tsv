@@ -4,7 +4,7 @@ INV-LS-003	SKILL.md	MUST	dedupe	dedupe-antes-de-crear
 INV-LS-004	SKILL.md	MUST	magic words	cierre-por-magic-word
 INV-LS-005	SKILL.md	MUST	pregunta al humano	no-adivinar-clasificacion
 INV-LS-006	SKILL.md	MUST	trazabilidad	sin-token-no-fabricar-issues
-INV-LS-007	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-LS-007	SKILL.md	MUST	scripts/paquete/package\.manifest	paquete-D3-puntero-manifiesto
 INV-LS-008	SKILL.md	MUST	constantes compartidas del workspace	review-pr13-C-frontera-workspace
 INV-LS-009	examples/label-taxonomy.json	MUST_NOT	type/	tal-3366-ratchet-taxonomia
 INV-LS-010	examples/talent-engine-config.json	MUST_NOT	type/	tal-3366-ratchet-taxonomia

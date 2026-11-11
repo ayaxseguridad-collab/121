@@ -23,12 +23,24 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 S="$ROOT/scripts"
 
-TOTAL_ESPERADO=268
+TOTAL_ESPERADO=275
 PASS=0; FAIL=0; SKIP=0
 ok()  { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
 bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
 assert_rc(){ if [ "$2" = "$3" ]; then ok "$1"; else bad "$1 (rc esperado=$2 obtenido=$3)"; fi; }
 assert_eq(){ if [ "$2" = "$3" ]; then ok "$1"; else bad "$1 (esperado='$2' obtenido='$3')"; fi; }
+
+# >>> encadena-inicio
+# muestra_sublog <log> <rc>: lo que una suite encadenada deja en el log de ESTA suite. Siempre la cola (tres
+# lineas); si la suite encadenada fallo (rc distinto de 0), ADEMAS cada linea `  FAIL ...` del sublog completa,
+# porque el sublog vive en un temporal que se borra y la cola sola no dice QUE caso enrojecio (issue 8936).
+# Solo imprime: no toca contadores ni rc (el veredicto sigue siendo el assert_rc del llamador).
+muestra_sublog() {
+  tail -n 3 "$1" | sed 's/^/    | /'
+  if [ "$2" -ne 0 ]; then grep -E '^  FAIL ' "$1" | sed 's/^/    ! /'; fi
+  return 0
+}
+# <<< encadena-fin
 
 nl=$'\n'; cr=$'\r'   # separadores de registro, para los fixtures de forja
 T="$(mktemp -d)"; trap 'chmod -R u+rwX "$T" 2>/dev/null; rm -rf "$T"' EXIT
@@ -466,7 +478,7 @@ printf '== r5: los cuatro de la ronda 4 ==\n'
 # SKILL.md es el mapa del propio skill: si senala un `references/*.md` que no existe, el siguiente
 # que lo lea no encuentra el overlay. Se comprueba TODA referencia, no la que fallaba.
 # Dos trampas que este caso aprendio a la mala, las dos midiendo:
-# (1) la regex captura el prefijo de ruta COMPLETO: `skill-creator/references/09-*.md` es una
+# (1) la regex captura el prefijo de ruta COMPLETO: `scripts/paquete/PAQUETE.md` es una
 #     referencia legitima a un skill HERMANO, y empezar la regex en `references/` la leeria como
 #     propia y la daria por rota. El defecto estaba en el test, no en el SKILL.md.
 # (2) el ANEXO es un OVERLAY y su nombre concreto es de cada repo —en un arbol se llama de una
@@ -1696,8 +1708,35 @@ printf '== r16: el doctor de instancia y la re-acreditacion (TAL-8043) ==\n'
 # [r16-1] Su suite propia (supervision) lleva su autoconteo; aqui se encadena como UN caso: si enrojece,
 # o si su contador no cuadra, esta suite lo dice. La salida completa queda en su fichero temporal.
 bash "$HERE/test-supervision.sh" > "$T/supervision.log" 2>&1; rc16=$?
-tail -n 3 "$T/supervision.log" | sed 's/^/    | /'
+muestra_sublog "$T/supervision.log" "$rc16"
 assert_rc "[r16-1] test-supervision.sh: 0 FAIL y su autoconteo cuadra" 0 "$rc16"
+
+printf '== r17: nombre de arranque de la sesion claude (issue 8571) ==\n'
+# [r17-1] Su suite propia lleva su autoconteo; aqui se encadena como UN caso, igual que r16-1.
+bash "$HERE/test-nombre-sesion.sh" > "$T/nombre-sesion.log" 2>&1; rc17=$?
+muestra_sublog "$T/nombre-sesion.log" "$rc17"
+assert_rc "[r17-1] test-nombre-sesion.sh: 0 FAIL y su autoconteo cuadra" 0 "$rc17"
+
+printf '== runners-al-dia: origin/main de cada runner = main real antes de cualquier prueba (issue 8593) ==\n'
+# [rad-1] Su suite propia (R1-R12 con dobles de ssh, incus y su) lleva su autoconteo; aqui se encadena como UN caso.
+# TEST_RAD_SCRIPT solo existe para demostrar mutantes: la suite del skill siempre prueba el script real.
+env -u TEST_RAD_SCRIPT bash "$HERE/test-runners-al-dia.sh" > "$T/runners-al-dia.log" 2>&1; rc_rad=$?
+muestra_sublog "$T/runners-al-dia.log" "$rc_rad"
+assert_rc "[rad-1] test-runners-al-dia.sh: 0 FAIL y su autoconteo cuadra" 0 "$rc_rad"
+
+printf '== vigias: una linea = un evento accionable, lectura por cursor y multiplexor que solo termina a sus hijos (issue 8592) ==\n'
+# [vig-1] Su suite propia (C1-C12 con dobles de date, df, du, timeout y ssh, un mutante por guarda y el control rojo
+# de la prueba de mejora) lleva su autoconteo; aqui se encadena como UN caso.
+bash "$HERE/test-vigias.sh" > "$T/vigias.log" 2>&1; rc_vig=$?
+muestra_sublog "$T/vigias.log" "$rc_vig"
+assert_rc "[vig-1] test-vigias.sh: 0 FAIL y su autoconteo cuadra" 0 "$rc_vig"
+
+printf '== medidores: sellador alineado y canario de main (issue 8594) ==\n'
+# [med-1] Su suite propia (S1-S3 y D1-D10 con dobles, mas un mutante por guarda) lleva su autoconteo; aqui se encadena como UN caso.
+# TEST_SELLAR_SCRIPT y TEST_CANARIO_SCRIPT solo existen para demostrar mutantes: la suite del skill siempre prueba los scripts reales.
+env -u TEST_SELLAR_SCRIPT -u TEST_CANARIO_SCRIPT bash "$HERE/test-medidores.sh" > "$T/medidores.log" 2>&1; rc_med=$?
+muestra_sublog "$T/medidores.log" "$rc_med"
+assert_rc "[med-1] test-medidores.sh: 0 FAIL y su autoconteo cuadra" 0 "$rc_med"
 
 printf '== leer-auditor: resolución del lanzador y fallo cerrado ==\n'
 for regression in alias_claude alias_codex missing_both absolute launcher_file builtin_derived function_derived builtin_declared function_declared; do
@@ -1707,6 +1746,22 @@ done
 
 python3 "$HERE/test-acreditacion-propietarios.py"
 assert_rc 'lector con propietarios y permisos reales' 0 "$?"
+
+bash "$HERE/test-desvio.sh" > "$T/desvio.log" 2>&1; rc_desvio=$?
+muestra_sublog "$T/desvio.log" "$rc_desvio"
+assert_rc 'test-desvio.sh: contrato y autoconteo' 0 "$rc_desvio"
+
+# [enc-1] Su suite propia (doble de una suite encadenada que falla, mutante del helper y censo de los seis encadenados)
+# lleva su autoconteo; aqui se encadena como UN caso, con el propio helper (issue 8936).
+bash "$HERE/test-encadena.sh" > "$T/encadena.log" 2>&1; rc_enc=$?
+muestra_sublog "$T/encadena.log" "$rc_enc"
+assert_rc '[enc-1] test-encadena.sh: el helper de los encadenados muestra el caso rojo y su autoconteo cuadra' 0 "$rc_enc"
+
+# [sd-1] Sondas de seguridad del doctor (issue 9559): su suite propia lleva su autoconteo; aqui se encadena como UN caso.
+# TEST_SEG_DOCTOR solo existe para demostrar mutantes: la suite del skill siempre prueba el doctor real.
+env -u TEST_SEG_DOCTOR bash "$HERE/test-seguridad-doctor.sh" > "$T/seguridad-doctor.log" 2>&1; rc_sd=$?
+muestra_sublog "$T/seguridad-doctor.log" "$rc_sd"
+assert_rc '[sd-1] test-seguridad-doctor.sh: sondas de Node, LiteLLM y zombis; 0 FAIL y su autoconteo cuadra' 0 "$rc_sd"
 
 printf '\n== %d ok, %d FAIL, %d SKIP (esperados: %d casos) ==\n' "$PASS" "$FAIL" "$SKIP" "$TOTAL_ESPERADO"
 rc=0

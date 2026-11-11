@@ -1,0 +1,9 @@
+  >_ OpenAI Codex (v0.167.0)
+     ~/producto
+› Ejecuta en primer plano con la herramienta Bash: python3 -c "import time; time.sleep(40)" y despues
+  responde solo: terminado
+• Ejecuto la espera en primer plano.
+• Working (5s • esc to interrupt)
+› Ask Codex to do anything
+  GPT-5.6-Sol medium · ~/producto · Ejecuta espera de 40 segundos
+  ← for agents · ? for shortcuts

@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — Rust
+#
+# last_verified: 2026-09-22
+
+early_access: false
+enable_free_tier: true
+
+language: es-ES
+
+tone_instructions: |
+  Sé directo y conciso. Usa ejemplos de Rust idiomático.
+
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  enable_prompt_for_ai_agents: true  # NUNCA false: lo depende el comando `resolve` del skill.
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: [main, master]
+
+  path_filters:
+    - "!**/target/**"
+    - "!**/Cargo.lock"
+    - "!**/*.rs.bk"
+
+  instructions: |
+    Rust project. Cargo check / Clippy ya corren en CI, no dupliques esos warnings.
+
+    Enfócate en:
+    - unsafe blocks sin justificación en comentario
+    - .unwrap() / .expect() en código que no sea tests o main
+    - panic! en código de librería
+    - Borrows que podrían ser más cortos (lifetimes excesivos)
+    - Lógica que podría ser zero-cost con iterators en lugar de collect intermedio
+    - async functions que hacen blocking I/O sin spawn_blocking
+    - Falta de #[must_use] en tipos que retornan Result o handles
+    - Secretos hardcodeados
+
+  tools:
+    clippy:
+      enabled: true
+    gitleaks:
+      enabled: true
+    zizmor: { enabled: true }    # Analizador estático de workflows de GitHub Actions.
+    presidio: { enabled: true }  # PII de alta señal en ficheros cambiados.
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    autofix:
+      enabled: true
+
+  labeling_instructions:
+    - label: "breaking-change"
+      instructions: "Aplica cuando el PR rompe una firma pública o cambia un tipo exportado del crate."
+
+chat:
+  auto_reply: true
+  # integrations.linear.usage default es "auto" (activo en repos privados).
+  # Descomentar para que el chat de un PR NUNCA cree issues de Linear fuera
+  # del flujo de talent-issue-craft (CLAUDE.md regla 21):
+  # integrations:
+  #   linear:
+  #     usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto

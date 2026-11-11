@@ -9,18 +9,21 @@ case "${1:-}" in --comprobar|--plan|--ejecutar) mode="$1" ;; *) echo 'uso: actua
 dest="$(tco_modelos_path)"
 tco_modelos_read
 old_opus="$TCO_OPUS_VIGENTE"; old_sonnet="$TCO_SONNET_VIGENTE"; old_cli="$TCO_MODELOS_CLI"
+old_sol="$TCO_SOL_VIGENTE"
 [ ! -L "${dest%/*}/actualizar-modelos.lock" ] || exit 1
 exec {lock}>"${dest%/*}/actualizar-modelos.lock"
 flock -x "$lock"
 work="$(mktemp -d "${dest%/*}/.comparar.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
+cp "$dest" "$work/modelos.conf"
 TCO_MODELOS_REGISTRO="$work/modelos.conf" bash "$HERE/resolver-modelos.sh"
 tco_modelos_read "$work/modelos.conf"
 new_opus="$TCO_OPUS_VIGENTE"; new_sonnet="$TCO_SONNET_VIGENTE"
+new_sol="$TCO_SOL_VIGENTE"
 changed=0
-[ "$old_opus|$old_sonnet" = "$new_opus|$new_sonnet" ] || changed=1
+[ "$old_opus|$old_sonnet|$old_sol" = "$new_opus|$new_sonnet|$new_sol" ] || changed=1
 printf 'CLI instalado=%s registro=%s; la actualización del propio CLI es responsabilidad de su actualizador; no se instala ni se consulta un catálogo externo\n' "$TCO_MODELOS_CLI" "$old_cli"
-printf 'CAMBIO=%s Opus=%s -> %s Sonnet=%s -> %s\n' "$changed" "$old_opus" "$new_opus" "$old_sonnet" "$new_sonnet"
+printf 'CAMBIO=%s Opus=%s -> %s Sonnet=%s -> %s%s\n' "$changed" "$old_opus" "$new_opus" "$old_sonnet" "$new_sonnet" "${new_sol:+ SOL=$old_sol -> $new_sol}"
 if [ "$mode" = --comprobar ]; then [ "$changed" = 0 ] && exit 0; exit 3; fi
 if [ "$mode" = --plan ]; then
   echo 'PLAN: actualizar registro y configuración; aplicar a canales confirmados ociosos; diferir ocupados; avisar torres por bus'
@@ -39,9 +42,7 @@ for carril in $TCO_DEV_CARRILES $TCO_AUDIT_CARRILES; do
   if ! tco_carril_libre "$carril"; then printf 'DIFERIDO %s ocupado o sin prueba de reposo\n' "$carril"; tco_lock_release "dispatch-$carril"; continue; fi
   cont="$(tco_container "$carril")"
   if bash "$HERE/preparar-modelo-canal.sh" "$cont" "$TCO_CUSER" &&
-     tco_ensure_model "$carril" "$(tco_pane_dev)" "$new_sonnet" &&
-     { [ "$(tco_cli_exe "$TCO_AUDIT_CLI")" != claude ] ||
-       tco_ensure_model "$carril" "$(tco_pane_audit)" "$new_sonnet"; }; then
+     tco_ensure_model "$carril" "$(tco_pane_dev)" "$new_sonnet"; then
     printf 'APLICADO %s\n' "$carril"
   else printf 'ERROR aplicación %s\n' "$carril" >&2; rc=1; fi
   tco_lock_release "dispatch-$carril"

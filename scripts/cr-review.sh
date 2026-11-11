@@ -713,15 +713,18 @@ BASE_SHA="$(git rev-parse origin/main 2>/dev/null || echo '')"
 # CLI— sean, literalmente, EL MISMO fichero, no dos lecturas separadas de un original mutable ajeno.
 # Snapshot INMUTABLE: se congela `.coderabbit/` en un directorio privado de este run (nace vacío,
 # nadie más conoce su ruta, muere con el run) ANTES de la primera lectura que cuenta para la
-# atribución; el resto del HOME real se enlaza tal cual (`.ssh`, `.gitconfig`, etc. — el CLI puede
-# necesitarlos y no son el recurso en disputa). `auth status`, el cálculo de SEAT_FP y `review` se
+# atribución; del HOME real se enlazan tal cual SOLO los dotfiles (`.ssh`, `.gitconfig`, etc. — el
+# CLI puede necesitarlos y no son el recurso en disputa). Las entradas sin punto NO se enlazan: con
+# un HOME grande eran decenas de miles de inodos de `$TMPDIR` por review (issue 9561). El directorio
+# lleva el prefijo trazable `cr-snap-home.` para identificar cualquier residuo.
+# `auth status`, el cálculo de SEAT_FP y `review` se
 # invocan los TRES contra `HOME=$SNAP_HOME` — ninguna escritura concurrente al HOME real (otra torre
 # rotando su asiento, incluida una secuencia A->B->A) puede alcanzar esta copia tras tomada: la
 # relación dejó de ser una ventana que sondear para ser estructuralmente imposible de romper.
-SNAP_HOME="$(mktemp -d)" || defer_or_block no-cli-auth
+SNAP_HOME="$(mktemp -d "${TMPDIR:-/tmp}/cr-snap-home.XXXXXX")" || defer_or_block no-cli-auth
 chmod 700 "$SNAP_HOME" 2>/dev/null || true
-( shopt -s dotglob nullglob
-  for entry in "$HOME"/*; do
+( shopt -s nullglob
+  for entry in "$HOME"/.[!.]* "$HOME"/..?*; do
     base="$(basename "$entry")"
     [ "$base" = ".coderabbit" ] && continue
     ln -s "$entry" "$SNAP_HOME/$base" 2>/dev/null

@@ -1,4 +1,4 @@
-INV-CEO-001	SKILL.md	MUST	skill-creator/assets/package\.manifest	puntero al manifiesto (patrón INV-PM-013)
+INV-CEO-001	SKILL.md	MUST	scripts/paquete/package\.manifest	puntero al manifiesto (patrón INV-PM-013)
 INV-CEO-002	SKILL.md	MUST	sin perfil válido.*rc 2	fail-closed explícito: «rc 2» a secas casaría cualquier rc, incluso negado
 INV-CEO-003	SKILL.md	MUST_NOT	torre-c[0-9]|torre-m[0-9]|vibe-runner[-]|100\.[0-9]+\.	anti-nombres reales fuera del anexo
 INV-CEO-004	references/01-rol-mando-y-fronteras.md	MUST	poderes delegados	el mando es delegado, no propio
@@ -46,12 +46,12 @@ INV-CEO-045	tests/supervision-ronda3.sh	MUST	pendiente-doble	ronda3-conserva-rec
 INV-CEO-046	references/07-doctor-y-acreditacion.md	MUST	exactamente la palabra .export. seguida de un espacio	compatibilidad-prefijo-export-solo-agents
 INV-CEO-047	tests/test-supervision.sh	MUST	supervision-manifiesto\.sh	regresiones permanentes de manifiesto y generador real encadenadas
 INV-CEO-048	tests/supervision-manifiesto.sh	MUST	instalacion/tests/fixtures/minima\.resp	lectores contrastados con el generador real sobre respuestas distribuidas
-INV-CEO-049	tests/run-tests.sh	MUST	TOTAL_ESPERADO=268	conteo-union-con-propietarios-reales
+INV-CEO-049	tests/run-tests.sh	MUST	TOTAL_ESPERADO=275	conteo-union-doctor-desvio-nombre-sesion-runners-al-dia-vigias-y-medidores
 INV-CEO-050	tests/run-tests.sh	MUST	launcher-identity-regressions.py	lector-real-acredita-alias-y-ruta-absoluta-falla-cerrado-si-ambos-faltan-rechaza-builtin-y-funcion-con-cwd-homonimo-en-ambas-ramas
 INV-CEO-051	scripts/doctor.sh	MUST	check_modelo_actor	modelo-vigente-del-usuario-de-la-torre
 INV-CEO-052	scripts/cron-modelos.sh	MUST	17 3 \* \* 0	comprobacion-y-aplicacion-semanal
 INV-CEO-053	scripts/doctor.sh	MUST	check_modelo_auditor	sonnet-vigente-del-auditor-claude
-INV-CEO-054	tests/test-supervision.sh	MUST	TOTAL_ESPERADO=605	reconciliacion-union
+INV-CEO-054	tests/test-supervision.sh	MUST	TOTAL_ESPERADO=620	reconciliacion-union
 INV-CEO-055	scripts/doctor.sh	MUST	registro del mando ausente o inválido	canales-sin-registro-del-operador
 INV-CEO-056	tests/supervision-modelo-mando.sh	MUST	sudo no lee registros	registro-del-mando-y-operador-sin-cuenta
 INV-CEO-057	references/07-doctor-y-acreditacion.md	MUST	registro propio del mando	autoridad-del-modelo-del-canal
@@ -64,3 +64,87 @@ INV-CEO-063	tests/run-tests.sh	MUST	test-acreditacion-propietarios.py	lector-con
 INV-CEO-064	scripts/leer-acreditacion.sh	MUST	O_NOFOLLOW	componentes-abiertos-sin-seguir-enlaces
 INV-CEO-065	scripts/leer-acreditacion.sh	MUST	os.read\(fd	lectura-del-descriptor-comprobado
 INV-CEO-066	tests/test-acreditacion-propietarios.py	MUST	carrera-sustitucion	regresion-de-sustitucion-entre-comprobacion-y-lectura
+INV-CEO-067	scripts/doctor.sh	MUST	check_nucleo	nucleo-del-paquete-y-del-clon
+INV-CEO-068	scripts/doctor.sh	MUST	check_version	sonda-publicada-fail-closed
+INV-CEO-069	scripts/doctor.sh	MUST	check_miembros	miembros-de-manifiesto-sin-lista-fija
+INV-CEO-070	scripts/doctor.sh	MUST	check_modelos_rol	registros-de-todos-los-usuarios-locales
+INV-CEO-071	scripts/doctor.sh	MUST	check_guardas	guardas-separadas-del-nucleo
+INV-CEO-072	scripts/lib-desvio.sh	MUST	DOCTOR_EXTRA	extensiones-registradas-en-mismo-proceso
+INV-CEO-073	scripts/doctor.sh	MUST	desvio_informe	informe-con-mismo-recorrido-y-rc
+INV-CEO-074	tests/run-tests.sh	MUST	test-desvio.sh	contrato-C1-a-C12-encadenado
+INV-CEO-075	scripts/lib-desvio.sh	MUST	talent-factory/instalacion/NUCLEO.sha256	ZIP-solo-lectura-con-nombres-fijos
+INV-CEO-076	scripts/doctor.sh	MUST	categoría .* sin remedio declarado	categoria-sin-remedio-cierra-puerta
+INV-CEO-077	tests/test-desvio.sh	MUST	regresion_m1	ultima-entrada-SHA-sin-salto-se-valida-y-contrasta
+INV-CEO-078	tests/test-desvio.sh	MUST	regresion_m2	directorio-ilegible-o-inventario-fallido-cierra-extensiones
+INV-CEO-079	scripts/nombre-sesion.sh	MUST	com\[p\] != "claude"	el proceso se elige por comm (ejecutable), nunca por la linea de comandos
+INV-CEO-080	scripts/nombre-sesion.sh	MUST_NOT	pgrep|pkill|killall	sin patrones sobre procesos: solo se lee el argv del pid ya elegido
+INV-CEO-081	scripts/nombre-sesion.sh	MUST	cmdline	solo el argv del pid elegido, leido de cmdline (limites de argumento), sin volcar el resto
+INV-CEO-082	tests/test-nombre-sesion.sh	MUST	comm distinto	mutante de comm distinto: el senuelo con claude --name en el argv no acredita
+INV-CEO-083	tests/run-tests.sh	MUST	test-nombre-sesion\.sh	la prueba de nombre de sesion esta encadenada en la suite del skill
+INV-CEO-084	scripts/nombre-sesion.sh	MUST	read -r -d	el argv se separa por NUL: --name solo cuenta como argumento propio y su valor es el siguiente completo
+INV-CEO-085	scripts/nombre-sesion.sh	MUST	RAIZ-PROC-NO-PERMITIDA	la raiz de proc inyectada solo se acepta estrictamente bajo el directorio temporal; sin variable, /proc
+INV-CEO-086	scripts/nombre-sesion.sh	MUST	sin NUL final	un cmdline sin NUL final es un registro incompleto: rc 2 antes de buscar el nombre
+INV-CEO-180	scripts/runners-al-dia.sh	MUST	bundle verify	el-bundle-se-verifica-antes-de-tocar-ningun-runner
+INV-CEO-181	scripts/runners-al-dia.sh	MUST	list-heads	el-ref-debe-figurar-en-el-bundle-y-su-sha-se-compara-con-el-esperado
+INV-CEO-182	scripts/runners-al-dia.sh	MUST	perfil_rows runner	los-runners-salen-del-perfil-no-de-ficheros-ni-listas-fijas
+INV-CEO-183	scripts/runners-al-dia.sh	MUST	_citar_posix	los-valores-del-perfil-viajan-citados-como-en-relay-ceo
+INV-CEO-184	scripts/runners-al-dia.sh	MUST_NOT	eval|kill|pgrep	ni-cadena-evaluada-ni-procesos-senalados
+INV-CEO-185	scripts/runners-al-dia.sh	MUST	update-ref --no-deref refs/remotes/origin/main FETCH_HEAD	solo-cambia-la-ref-origin-main-nombrada-sin-seguir-refs-simbolicas
+INV-CEO-186	scripts/runners-al-dia.sh	MUST	runners-al-dia\.XXXXXX	el-bundle-temporal-tiene-nombre-impredecible-dentro-del-contenedor
+INV-CEO-187	scripts/runners-al-dia.sh	MUST	trap 'rm -f -- "\$tmp"' EXIT	el-bundle-temporal-se-borra-siempre-tambien-ante-fallo
+INV-CEO-188	tests/run-tests.sh	MUST	test-runners-al-dia\.sh	la-suite-del-skill-encadena-la-prueba-de-runners-al-dia
+INV-CEO-189	references/08-vigias-y-medidores.md	MUST	^## Runners al d	la-referencia-documenta-la-ley-de-runners-al-dia
+INV-CEO-140	scripts/lib-vigias.sh	MUST	UN EVENTO ACCIONABLE	el-contrato-del-vigia-es-una-linea-un-evento-accionable
+INV-CEO-141	scripts/lib-vigias.sh	MUST	POR CURSOR, NO POR COLA EN VIVO	la-ley-vigia-por-cursor-no-por-cola-en-vivo
+INV-CEO-142	scripts/vigia-bus.sh	MUST	EL CURSOR ES DEL VIG	el-vigia-del-bus-lleva-su-propio-cursor-y-solo-avanza-sobre-lo-entregado
+INV-CEO-143	scripts/vigia-bus.sh	MUST_NOT	tail -[Ff]	el-vigia-del-bus-no-sigue-el-fichero-en-vivo
+INV-CEO-144	scripts/vigia-silencio.sh	MUST	HORA ISO COMPLETA DEL PROPIO SELLO	la-edad-del-silencio-se-mide-con-la-hora-iso-del-sello
+INV-CEO-145	scripts/vigia-silencio.sh	MUST_NOT	date -u \+%F	el-silencio-no-reconstruye-la-fecha-de-hoy
+INV-CEO-146	scripts/lib-vigias.sh	MUST	bash "\$VIG_AQUI/vigia-cuota\.sh"	la-transicion-la-decide-vigia-cuota-y-no-se-reimplementa
+INV-CEO-147	scripts/lib-vigias.sh	MUST	^vig_no_medido\(\)	un-fallo-de-medicion-tiene-su-linea-no-medido-y-no-es-calma
+INV-CEO-148	scripts/lib-vigias.sh	MUST	printf 'bajo' > "\$f"	sin-estado-previo-se-parte-de-bajo
+INV-CEO-149	scripts/vigia-ociosa.sh	MUST	--hueco-max	la-racha-de-ociosidad-se-mide-en-tiempo-y-un-hueco-la-reinicia
+INV-CEO-150	scripts/vigia-ociosa.sh	MUST	vig_centesimas	la-ociosidad-compara-en-centesimas-enteras-sin-decimales
+INV-CEO-151	scripts/vigia-recursos.sh	MUST	LOS TOPES SON DATO	los-topes-de-carpeta-son-dato-y-nunca-codigo
+INV-CEO-152	scripts/vigia-recursos.sh	MUST	"\$clave-\$t"	cada-umbral-de-disco-es-su-propia-transicion
+INV-CEO-153	scripts/vigias.sh	MUST	^es_hijo_mio\(\)	el-multiplexor-verifica-que-el-pid-es-su-hijo-antes-de-terminarlo
+INV-CEO-154	scripts/vigias.sh	MUST	VIGIAS-PARADOS	el-multiplexor-declara-su-parada
+INV-CEO-155	scripts/vigias.sh	MUST_NOT	kill 0|pkill|pgrep|kill -- -	el-multiplexor-no-senala-grupos-ni-patrones
+INV-CEO-156	tests/run-tests.sh	MUST	test-vigias\.sh	la-suite-del-skill-encadena-la-prueba-de-los-vigias
+INV-CEO-157	tests/test-vigias.sh	MUST	multiplexor-mata-por-grupo	la-prueba-tiene-el-mutante-de-matar-por-grupo
+INV-CEO-158	references/08-vigias-y-medidores.md	MUST	^## Vig	la-referencia-documenta-la-ley-de-los-vigias
+INV-CEO-159	references/08-vigias-y-medidores.md	MUST	por cursor, no por cola en vivo	la-referencia-nombra-la-ley-del-cursor
+INV-CEO-160	scripts/canario-main.sh	MUST	jq -r --arg sha	el-veredicto-del-canario-sale-del-receipt-con-sha-y-gate
+INV-CEO-161	scripts/canario-main.sh	MUST	finished_at < \$t0	un-receipt-anterior-al-arranque-de-la-corrida-no-vale
+INV-CEO-162	scripts/canario-main.sh	MUST	MARCA-DE-HECHO-SOLO-TRAS-VEREDICTO	el-sha-no-se-marca-hecho-antes-de-correr
+INV-CEO-163	scripts/canario-main.sh	MUST	if \[ "\$veredicto" != NO-MEDIDO \]; then printf	un-no-medido-no-marca-el-sha-y-se-reintenta
+INV-CEO-164	scripts/canario-main.sh	MUST	flock -n 9	un-solo-canario-por-estado
+INV-CEO-165	scripts/canario-main.sh	MUST	2>&1 9>&-	el-gate-corre-sin-heredar-el-candado
+INV-CEO-166	scripts/canario-main.sh	MUST	^    1:ok:FAIL\)	solo-rc-1-con-receipt-FAIL-es-rojo
+INV-CEO-167	scripts/canario-main.sh	MUST	mktemp -d "\$estado/rec/	cada-intento-lee-solo-los-receipts-de-su-propio-directorio
+INV-CEO-168	scripts/canario-main.sh	MUST	CANARIO-FIN %s %s rc=%s result=%s	contrato-del-registro-que-puede-consumir-la-apertura-de-ventanas
+INV-CEO-169	scripts/canario-main.sh	MUST	worktree remove --force	el-worktree-desechable-se-retira-siempre
+INV-CEO-170	scripts/bus-sellar.sh	MUST	_aviso_hora\(\)	el-sellador-avisa-de-un-marcador-con-hora-desmentida-por-el-reloj
+INV-CEO-171	scripts/bus-sellar.sh	MUST	"\$dif" -gt 5	el-aviso-salta-con-mas-de-cinco-minutos-de-diferencia
+INV-CEO-172	scripts/bus-sellar.sh	MUST	"\$rn" "\$dif" >&2	el-aviso-va-por-stderr-y-no-cambia-la-salida-estandar
+INV-CEO-173	scripts/bus-sellar.sh	MUST	\[ -s "\$src" \]	src-vacio-se-rechaza
+INV-CEO-174	tests/test-medidores.sh	MUST	TOTAL_ESPERADO=59	la-prueba-de-medidores-se-afirma-a-si-misma
+INV-CEO-175	tests/run-tests.sh	MUST	test-medidores\.sh	la-suite-del-skill-encadena-la-prueba-de-medidores
+INV-CEO-176	references/08-vigias-y-medidores.md	MUST	^## Cuotas	la-referencia-documenta-el-modo-creditos
+INV-CEO-177	references/08-vigias-y-medidores.md	MUST	^## Canario	la-referencia-documenta-el-canario
+INV-CEO-178	references/08-vigias-y-medidores.md	MUST	^## Sellador	la-referencia-documenta-el-sellador-alineado
+INV-CEO-179	scripts/canario-main.sh	MUST	_grupo_es_el_gate\(\)	el-gate-se-verifica-por-grupo-registrado-y-linea-de-ordenes-antes-de-senalarlo
+INV-CEO-190	scripts/origen-instalado.sh	MUST	SOLO LECTURA: no escribe, no sigue enlaces	el-detector-de-origen-es-solo-lectura
+INV-CEO-191	scripts/origen-instalado.sh	MUST	NUNCA decide la etiqueta	la-version-declarada-no-decide-la-etiqueta
+INV-CEO-192	scripts/origen-instalado.sh	MUST	casan A LA VEZ el sha256 del NUCLEO y el del manifiesto	la-etiqueta-sale-de-la-huella-del-contenido
+INV-CEO-193	scripts/origen-instalado.sh	MUST	NO es un fallo: rc 0	una-instancia-desconocida-no-es-un-fallo
+INV-CEO-194	scripts/origen-instalado.sh	MUST	\[ ! -L "\$1" \]	el-detector-no-sigue-enlaces-en-los-ficheros-que-lee
+INV-CEO-195	scripts/origen-instalado.sh	MUST	\[ "\$\{#t\}" -eq 3 \]	la-tabla-de-huellas-es-estricta-cuatro-campos
+INV-CEO-196	scripts/origen-instalado.sh	MUST	NOTA=tabla-invalida	una-tabla-ilegible-da-desconocida-con-nota-y-no-falla
+INV-CEO-197	scripts/origen-instalado.sh	MUST_NOT	^[^#]*\b(eval|curl|wget|sudo)\b	el-detector-no-usa-eval-ni-red-ni-sudo
+INV-CEO-198	scripts/doctor-origenes.tsv	MUST	^1\.7\.2[[:space:]]+94d91b91	la-tabla-de-huellas-trae-la-1-7-2
+INV-CEO-199	scripts/doctor-origenes.tsv	MUST	^1\.7\.3[[:space:]]+eea1970c	la-tabla-de-huellas-trae-la-1-7-3
+INV-CEO-200	scripts/doctor-origenes.tsv	MUST	^1\.7\.4[[:space:]]+82aad0b2	la-tabla-de-huellas-trae-la-1-7-4
+INV-CEO-201	scripts/doctor-origenes.tsv	MUST	^1\.7\.5[[:space:]]+8d17b00d	la-tabla-de-huellas-trae-la-1-7-5
+INV-CEO-202	tests/test-desvio.sh	MUST	OI M-C7a: exigir la 1\.7\.5	la-suite-prueba-que-exigir-la-1-7-5-se-detecta
+INV-CEO-203	tests/test-desvio.sh	MUST	OI sin NUCLEO: desconocida	la-suite-ejercita-el-detector-de-origen

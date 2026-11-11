@@ -1,0 +1,30 @@
+ - Riesgos con mitigación y verificación por paso: sí.
+ - Migraciones o superficie sensible: no aplica.
+
+ Cambios tras el NO-GO (run tco_1793905800_c798df75b414)
+
+ 1. Bloqueante 1 (el literal no se comparaba): válido.
+    - Se añaden L1 (bloque exacto) y L2 (párrafo contra el literal extraído en vivo de Linear).
+    - Se añaden L1-mut y L2-mut como prueba de que son una red real: una mutación de igual forma se pone en
+      rojo.
+    - Se añade AC-4 al scope ledger.
+ 2. Bloqueante 2 (orden imposible): válido.
+    - La verificación se parte en Fase A, pre-push, que va al informe y se puede ejecutar sin PR, y Fase B,
+      entrega después del GO: D1 antes del push y D2 con el PR y el HANDOFF publicados.
+    - El informe pre-push ya no declara D1 ni D2.
+ 3. Defecto propio detectado al revisar: la fila de longitudes con awk daba 49/79 en mawk (mide bytes), no
+    los 48/77 esperados. Se elimina; L1 y AC-3 ya cubren el formato.
+
+ PLAN-FIN
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Claude has written up a plan and is ready to execute. Would you like to proceed?
+
+ ❯ 1. Yes, and switch to BYPASS PERMISSIONS (no further prompts) for this session
+   2. Yes, manually approve edits
+   3. Tell Claude what to change
+      shift+tab to approve with this feedback
+
+ ctrl+g to edit in Vim · ~/.claude/plans/plan-neutro.md
+

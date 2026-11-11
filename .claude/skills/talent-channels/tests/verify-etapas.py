@@ -113,6 +113,8 @@ def casos(package, tmp, expect, log=None):
     subprocess.run(['git', 'init', '-q', str(pkg)], check=True)
     bindir = root/'bin'
     bindir.mkdir()
+    (bindir/'claude').write_text('#!/bin/sh\nprintf "2.1.289\\n"\n')
+    (bindir/'claude').chmod(0o755)
     for tool in ('incus', 'sudo', 'systemctl', 'getent', 'id'):
         path = bindir/tool
         path.write_text(CLIENTE)
@@ -146,6 +148,8 @@ def casos(package, tmp, expect, log=None):
         (h/'.claude.json').write_text('{"hasCompletedOnboarding":true}\n')
         s = h/'.claude/settings.json'
         s.write_text(json.dumps({'model':'', 'tui':'default', 'statusLine':{'type':'command', 'command':'statusline-ctx.sh'}}))
+        subprocess.run(['bash', str(pkg/'skills/talent-context/scripts/install-compact-vivo.sh'), '--puesto', 'canal'],
+                       env=dict(env, HOME=str(h)), check=True, capture_output=True, text=True)
         settings.append(s)
         (h/'.bashrc').write_text('export DISABLE_AUTOUPDATER=1\nexport CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1\n')
         (h/'.tmux.conf').write_text('set -g alternate-screen off\n')
@@ -170,6 +174,18 @@ def casos(package, tmp, expect, log=None):
         return p.returncode, p.stdout+p.stderr
     rc, out = ejecutar(['bash', verify, '--etapa', 'creado'])
     expect('creado sin registro: verde y modelo pendiente explícito', rc == 0 and 'PENDIENTE:' in out and 'FAIL=0' in out)
+    original_compact = settings[0].read_text()
+    for defecto in ('hook', 'ventana'):
+        data = json.loads(original_compact)
+        if defecto == 'hook':
+            data['hooks']['PreCompact'] = []
+        else:
+            data['env']['CLAUDE_CODE_AUTO_COMPACT_WINDOW'] = '190000'
+        settings[0].write_text(json.dumps(data))
+        rc, out = ejecutar(['bash', verify, '--etapa', 'creado'])
+        expect('creado rechaza compact vivo '+defecto, rc == 1 and any(
+               'FAIL ' in line and 'compact vivo: hooks, ventana y lista conforme' in line for line in out.splitlines()))
+        settings[0].write_text(original_compact)
     for rel in ('.claude/.credentials.json', '.codex/auth.json', '.claude_token.env'):
         channel_credential = settings[0].parent.parent/rel
         channel_credential.write_text('{}')
@@ -335,8 +351,8 @@ if __name__ == '__main__':
         print(('PASS ' if condition else 'FAIL ')+label)
     with tempfile.TemporaryDirectory(prefix='verify-etapas-') as td:
         casos(args.paquete, Path(td), expect, args.log)
-    if sum(counters) != 66:
-        print('FAIL conteo: esperados=66 ejecutados='+str(sum(counters)))
+    if sum(counters) != 68:
+        print('FAIL conteo: esperados=68 ejecutados='+str(sum(counters)))
         counters[1] += 1
     print('PASS='+str(counters[0])+' FAIL='+str(counters[1]))
     raise SystemExit(bool(counters[1]))

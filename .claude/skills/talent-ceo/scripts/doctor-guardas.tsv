@@ -1,0 +1,18 @@
+# ruta	ámbito	por qué es guarda
+githooks/pre-push	paquete	Rechaza pushes sin acreditación
+scripts/check-push-audit.sh	paquete	Exige auditoría antes del push
+scripts/audit-go.sh	paquete	Exige sello de auditoría
+scripts/cr-review.sh	paquete	Exige revisión
+scripts/draft-handoff.sh	paquete	Exige entrega comprobable
+scripts/verify-handoff.sh	paquete	Verifica la entrega
+scripts/run-gate-sealed.sh	paquete	Exige gate sellado
+scripts/post-local-gates.sh	paquete	Exige gates locales
+scripts/paquete/validate-package.sh	paquete	Rechaza paquete inválido
+skills/talent-channel-operation/scripts/audit-gate.sh	ambos	Rechaza auditoría incompleta
+skills/talent-channel-operation/scripts/merge-gate.sh	ambos	Rechaza merge sin gates
+skills/talent-channel-operation/scripts/preflight-issue.sh	ambos	Rechaza despacho inválido
+skills/talent-channel-operation/scripts/approve-merge.sh	ambos	Exige aprobación
+skills/talent-channel-operation/scripts/waive-cr.sh	ambos	Exige autoridad para excepción
+skills/talent-channel-operation/scripts/lib-modelos.sh	ambos	Rechaza registros inválidos
+skills/talent-ceo/scripts/bus-sellar.sh	ambos	Rechaza sellado ambiguo
+skills/talent-merger/references/apply-gate.sh	ambos	Exige gates antes de aplicar

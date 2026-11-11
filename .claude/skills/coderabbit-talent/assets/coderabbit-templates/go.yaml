@@ -1,0 +1,83 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — Go
+#
+# last_verified: 2026-09-22
+
+early_access: false
+enable_free_tier: true
+
+language: es-ES
+
+tone_instructions: |
+  Sé directo y conciso. Usa ejemplos de Go idiomático.
+
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  enable_prompt_for_ai_agents: true  # NUNCA false: lo depende el comando `resolve` del skill.
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: [main, master]
+
+  path_filters:
+    - "!**/vendor/**"
+    - "!**/*.pb.go"
+    - "!**/*_gen.go"
+    - "!**/mock_*.go"
+    - "!**/mocks/**"
+    - "!**/go.sum"
+    - "!**/coverage.out"
+
+  instructions: |
+    Go project. No comentes sobre:
+    - Orden de imports (goimports lo maneja)
+    - Nombres cortos en loops triviales (i, j, k)
+
+    Enfócate en:
+    - Errors no manejados (if err != nil faltante)
+    - Defer dentro de loops (puede explotar memoria)
+    - Goroutines sin wait/cancel mechanism (goroutine leaks)
+    - Map access concurrente sin sync.Mutex / sync.Map
+    - Context.Context no propagado
+    - SQL injection via fmt.Sprintf en queries
+    - Panics en código de producción (debería retornar error)
+    - Slicing con índices que podrían pasar el len
+
+  tools:
+    golangci-lint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    zizmor: { enabled: true }    # Analizador estático de workflows de GitHub Actions.
+    presidio: { enabled: true }  # PII de alta señal en ficheros cambiados.
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    autofix:
+      enabled: true
+
+  labeling_instructions:
+    - label: "breaking-change"
+      instructions: "Aplica cuando el PR rompe una firma pública exportada o un contrato de API."
+
+chat:
+  auto_reply: true
+  # integrations.linear.usage default es "auto" (activo en repos privados).
+  # Descomentar para que el chat de un PR NUNCA cree issues de Linear fuera
+  # del flujo de talent-issue-craft (CLAUDE.md regla 21):
+  # integrations:
+  #   linear:
+  #     usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto

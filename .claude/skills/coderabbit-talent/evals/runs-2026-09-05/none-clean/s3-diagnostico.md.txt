@@ -1,0 +1,129 @@
+# Diagnóstico — 3 problemas de CodeRabbit en la misma sesión
+
+Metodología: diagnóstico solo-lectura. Se comprobó la superficie real del CLI CodeRabbit
+instalado localmente (`coderabbit --version` → `0.7.6`) con `coderabbit --help`, `coderabbit
+review --help`, `coderabbit pullrequest --help`, `coderabbit config --help` y `coderabbit
+doctor` — todos comandos de inspección, sin ejecutar ninguna review real ni comentar en PRs.
+
+---
+
+## (1) `git push` rechazado con un mensaje sobre un "sentinel" de CodeRabbit
+
+**Qué está pasando**: es un **hook local de pre-push** (client-side, vive en el repo o en la
+config de git del equipo, no en GitHub) que exige, antes de dejar salir el `push`, la prueba de
+que se corrió una review de CodeRabbit sobre el SHA que se va a empujar. Esa "prueba" es un
+fichero **sentinel** — normalmente algo tipo `.cr-review-ok` o similar, generado por un script
+del propio equipo que envuelve `coderabbit review` (con `--agent` para salida estructurada) y
+solo escribe el sentinel si la review terminó limpia (sin findings bloqueantes) **para el commit
+HEAD exacto**. El hook compara el SHA guardado dentro del sentinel contra el SHA real de HEAD;
+si no coinciden o el fichero no existe, bloquea el push con ese mensaje.
+
+Causas típicas, de más a menos frecuente:
+- Se hizo un commit nuevo (o un `--amend`/rebase) **después** de generar el sentinel → el SHA
+  del sentinel quedó desactualizado. Los sentinels de este tipo son casi siempre *one-shot* por
+  diseño (para impedir exactamente esto: correr la review una vez y luego seguir commiteando sin
+  volver a pasar por CodeRabbit).
+- Nunca se corrió el script de review local en esta sesión (sentinel inexistente de entrada).
+- El script de review sí corrió pero encontró findings y por tanto **no** emitió el sentinel
+  (el bloqueo está haciendo su trabajo: hay algo que revisar antes de empujar).
+
+**Cómo se resuelve**:
+1. Ejecutar el script de review local del equipo (el wrapper que emite el sentinel) contra el
+   HEAD actual — no `coderabbit review` "a pelo" si el equipo tiene su propio wrapper, porque el
+   sentinel probablemente lo escribe el wrapper, no el CLI en sí.
+2. Si no hay wrapper y hay que hacerlo a mano: `coderabbit review --committed --agent` (o sin
+   `--agent` para lectura humana) contra el HEAD que se va a empujar, resolver cualquier finding
+   real, y volver a correrlo hasta que quede limpio — recién ahí el hook debería dejar pasar el
+   push (asumiendo que el propio hook, no el CLI, es quien escribe el sentinel al ver una review
+   limpia).
+3. Verificar que el sentinel corresponde al SHA de HEAD (`git rev-parse HEAD`) — si se hizo
+   cualquier commit/rebase después de generarlo, hay que regenerarlo.
+4. Si el bloqueo es genuinamente indeseado en este caso puntual (falso positivo del hook, no de
+   CodeRabbit), la vía explícita es `git push --no-verify` — pero eso salta el hook a propósito y
+   solo debería usarse con conocimiento consciente de que se está evitando el gate, nunca como
+   forma habitual de evitar correr la review.
+
+---
+
+## (2) El status `CodeRabbit` del PR está en `FAILURE`
+
+**Qué está pasando**: este es un **commit status/check de GitHub** que la GitHub App de
+CodeRabbit publica sobre el PR — distinto del hook local del punto (1). Un `FAILURE` en este
+status normalmente significa una de dos cosas:
+
+- **Pre-merge checks configurados como bloqueantes fallaron** (p. ej. `title`, `description`,
+  `issue_assessment`, o cualquier check custom del `.coderabbit.yaml` del repo con `mode` que no
+  sea `off`/`warning`) — CodeRabbit publica `FAILURE` cuando alguno de esos checks en modo
+  estricto no pasa.
+- **La propia review de CodeRabbit no pudo completarse** (error interno, timeout contra el
+  proveedor de modelo, o un problema de permisos/instalación de la App en ese repo) — en ese caso
+  el `FAILURE` no refleja un problema de código sino un fallo operacional de la herramienta.
+
+**Cómo se resuelve**:
+1. Abrir el PR en GitHub → pestaña de checks → click en el detalle del check `CodeRabbit` (no
+   solo el resumen del status, el link "Details"). Ahí CodeRabbit expone cuál pre-merge check
+   concreto falló y por qué (mensaje de "Explanation"/"Resolution" como los que aparecen en el
+   comentario de walkthrough del PR).
+2. Si es un pre-merge check de contenido (título, descripción, breaking changes no
+   documentados, etc.): corregir lo que pide literalmente (ajustar el título a Conventional
+   Commits, añadir la sección que falta a la descripción, etc.) y dejar que se re-evalúe con el
+   siguiente push, o forzar re-review comentando `@coderabbitai review` o `@coderabbitai full
+   review` en el PR.
+3. Si tras leer el detalle no hay ningún check realmente fallido y parece un error operacional
+   de la herramienta (timeout, 5xx, etc.): reintentar con `@coderabbitai review` (reintento
+   simple) antes de escalar; si persiste, es un problema de servicio de CodeRabbit, no del PR.
+4. Confirmar si ese status es o no un *required check* de la rama en este repo. Si no lo es,
+   `FAILURE` no bloquea el merge por sí solo (aunque conviene resolverlo igual); si lo es, no hay
+   forma de mergear sin dejarlo en verde salvo que un admin lo saltee explícitamente.
+
+---
+
+## (3) Script interno falla con `unknown option '--type'` al invocar el CLI de CodeRabbit
+
+**Qué está pasando**: comprobado en vivo contra el CLI instalado (`coderabbit` v0.7.6) — **no
+existe ningún flag `--type` en ninguno de sus subcomandos actuales**:
+
+```
+coderabbit review --help        # --light --show-prompts --agent --use-credits --committed
+                                 # --uncommitted --include-untracked -c/--config --base
+                                 # --base-commit --dir --api-key --usage --region  (sin --type)
+coderabbit pullrequest --help   # --show-prompts --agent                          (sin --type)
+coderabbit config --help        # validate [file]                                (sin --type)
+coderabbit stats --help         # --rebuild                                       (sin --type)
+```
+
+Esto es el patrón clásico de **desfase de versión entre el script interno y el CLI instalado**:
+el script fue escrito (o copiado de un ejemplo/doc) contra una versión distinta del CLI que sí
+tenía (o se esperaba que tuviera) un flag `--type` — típicamente para seleccionar un modo/alcance
+de review (algo como "tipo de revisión: full/incremental" o "tipo: security") — y esa superficie
+fue renombrada o eliminada en actualizaciones posteriores. La CLI moderna resuelve ese mismo caso
+de uso con flags más explícitos: `--committed` / `--uncommitted` / `--include-untracked` para
+alcance de cambios, `--base`/`--base-commit` para contra qué comparar, y `--agent` vs modo texto
+plano para el "tipo" de salida.
+
+**Cómo se resuelve**:
+1. Confirmar la versión real instalada donde falla el script: `coderabbit --version` — si difiere
+   de la que el script asume (ver changelog/docs de esa versión), ahí está la causa raíz.
+2. Ejecutar `coderabbit doctor` para confirmar que el binario en sí está sano (auth, storage,
+   conectividad) y descartar que el error sea de instalación y no de flags — en este entorno
+   `doctor` da 9/9 checks en verde, así que si el mismo síntoma aparece aquí es 100% un problema
+   de flags del script, no del entorno.
+3. Editar el script interno para dejar de pasar `--type` y usar el flag equivalente vigente según
+   lo que el script realmente necesitaba expresar (alcance de cambios → `--committed`/
+   `--uncommitted`/`--base <branch>`; formato de salida para consumo por otra herramienta →
+   `--agent`).
+4. Regla general del equipo: cualquier script/wrapper que envuelva `coderabbit` debería fijar (o
+   al menos loguear) la versión del CLI contra la que se validó, y correr `coderabbit --help` /
+   `coderabbit <subcomando> --help` como smoke test en CI antes de asumir que un flag sigue
+   existiendo — así este tipo de rotura se detecta en un paso de verificación en vez de en medio
+   de un push real.
+
+---
+
+## Resumen
+
+| # | Síntoma | Capa | Causa raíz probable | Acción principal |
+|---|---|---|---|---|
+| 1 | `git push` rechazado, mensaje de sentinel | Hook local de pre-push del equipo | Sentinel ausente/desactualizado (SHA no coincide con HEAD, o review con findings) | Correr el wrapper de review local hasta dejarlo limpio para el HEAD actual; `--no-verify` solo si es una excepción consciente |
+| 2 | Status `CodeRabbit` en `FAILURE` en el PR | GitHub App / commit status | Pre-merge check bloqueante sin cumplir, o fallo operacional de la review | Abrir el detalle del check, corregir lo que pide o reintentar con `@coderabbitai review` |
+| 3 | `unknown option '--type'` en script interno | CLI local invocado por un script propio | Desfase de versión: `--type` no existe en el CLI instalado (0.7.6 confirmado) | Actualizar el script a los flags vigentes (`--committed`/`--uncommitted`/`--base`/`--agent`) |

@@ -1,0 +1,14 @@
+[Unit]
+Description=Cortafuegos opcional de los puertos publicados de Supabase local (talent-channels)
+Documentation=file:///usr/local/sbin/cortafuegos-supabase.sh
+After=docker.service gnome-remote-desktop.service xrdp.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=CORTAFUEGOS_CONF=/etc/talent-channels/cortafuegos.conf
+ExecStart=/usr/local/sbin/cortafuegos-supabase.sh apply
+
+[Install]
+WantedBy=docker.service multi-user.target

@@ -1,0 +1,12 @@
+  responde solo: terminado
+• Ejecuto la espera en primer plano.
+• Running python3 -c "import time; time.sleep(40)"
+  Would you like to run the following command?
+  Environment: local
+  Reason: ¿Permites ejecutar fuera del sandbox la espera de 40 segundos solicitada? El sandbox falló al
+  inicializar la red loopback.
+  $ python3 -c "import time; time.sleep(40)"
+› 1. Yes, proceed (y)
+  2. Yes, and don't ask again for commands that start with `python3 -c 'import time; time.sleep(40)'` (p)
+  3. No, and tell Codex what to do differently (esc)
+  Press enter to confirm or esc to cancel

@@ -1,0 +1,92 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — Docs-only repo (blogs, wikis, talent-docs, knowledge bases)
+#
+# last_verified: 2026-09-22
+
+early_access: false
+enable_free_tier: true
+
+language: es-ES
+
+tone_instructions: |
+  Sé directo y enfocado en contenido. Señala typos, inconsistencias técnicas,
+  y contradicciones entre secciones. No comentes sobre estilo de redacción
+  salvo que sea objetivamente confuso.
+
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  enable_prompt_for_ai_agents: true  # NUNCA false: lo depende el comando `resolve` del skill.
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: [main, master]
+
+  path_filters:
+    # Solo markdown, mdx, y configs de sitio
+    - "!**/*"
+    - "**/*.md"
+    - "**/*.mdx"
+    - "**/*.rst"
+    - "**/*.txt"
+    # Excepciones de assets pero no binarios
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.pdf"
+
+  instructions: |
+    Documentation repo. No hay código para revisar.
+
+    Foco en:
+    - Typos, gramática inconsistente (tú vs usted en español)
+    - Ejemplos de código que no compilan o tienen bugs obvios
+    - Comandos shell con flags incorrectos para la plataforma
+    - Referencias rotas (links internos a secciones que no existen)
+    - Contradicciones entre secciones del mismo doc
+    - Pasos de tutoriales en orden incorrecto
+    - Snippets que usan sintaxis/APIs deprecated
+
+    No comentes sobre:
+    - Preferencias de estilo de escritura
+    - Longitud de oraciones
+    - Uso de bullets vs párrafos
+
+  tools:
+    markdownlint:
+      enabled: true
+    languagetool:
+      enabled: true
+      enabled_rules:
+        - SPELLING_RULE
+        - GRAMMAR
+    presidio: { enabled: true }  # PII de alta señal si algún doc pega un ejemplo real por error.
+
+  finishing_touches:
+    docstrings:
+      enabled: false  # No aplica a un repo sin código.
+    unit_tests:
+      enabled: false
+    autofix:
+      enabled: true
+
+  labeling_instructions:
+    - label: "broken-link"
+      instructions: "Aplica cuando el PR introduce o deja una referencia interna rota."
+
+chat:
+  auto_reply: true
+  # integrations.linear.usage default es "auto" (activo en repos privados).
+  # Descomentar para que el chat de un PR NUNCA cree issues de Linear fuera
+  # del flujo de talent-issue-craft (CLAUDE.md regla 21):
+  # integrations:
+  #   linear:
+  #     usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto

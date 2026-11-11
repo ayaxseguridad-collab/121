@@ -1,0 +1,49 @@
+
+  >_ OpenAI Codex (v0.166.0)
+     ~/producto
+  permissions: YOLO mode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+› /model  choose what model and reasoning effort to use
+
+› /model
+
+  GPT-5.6-Sol medium · ~/producto

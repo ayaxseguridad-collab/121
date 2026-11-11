@@ -25,6 +25,13 @@ falló»— y daría un «repetido» falso que impediría sellar el hito de verd
 | 2 | Precondición: bus ausente/ilegible, `src` **es** el bus, lock no adquirible, **identidad del rol no verificable** |
 | 3 | **Marcador repetido** — ya estaba sellado |
 
+**`--src` es una guarda de identidad, no un adjunto.** Debe ser un fichero regular, existente y no vacío (si no, rc 2
+con motivo y el bus no cambia); la comprobación de identidad contra el bus va primero y conserva su mensaje. Su
+contenido **no se escribe**: el bus es una línea por sello y lo que se quiera decir va en `--nota`.
+
+**Aviso de hora (stderr, no bloquea).** Si el marcador acaba en `-HHMM` válido y difiere más de 5 minutos de la hora
+medida, el sellador avisa por stderr. La salida estándar y los rc no cambian. Detalle en la ref 08, apartado «Sellador».
+
 ### La identidad del sellador se VERIFICA; no basta con declararla
 
 La 01 promete que «cada rol sella con su identidad». Comprobar el **charset** de `--rol` no cumple

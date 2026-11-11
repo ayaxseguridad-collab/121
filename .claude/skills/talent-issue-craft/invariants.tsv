@@ -5,5 +5,5 @@ INV-IC-004	templates/00-nucleo.md	MUST	GATE DE DESPACHO: cero decisiones abierta
 INV-IC-005	references/01-nucleo-y-despachabilidad.md	MUST	MISMO comportamiento observable	paquete-v1-m1-test-confianza
 INV-IC-006	references/02-verificaciones.md	MUST	MISMO comportamiento observable	paquete-v1-m1-test-confianza
 INV-IC-007	references/03-linear-nativo.md	MUST	templateData	TAL-3089-shape-congelado
-INV-IC-008	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-IC-008	SKILL.md	MUST	scripts/paquete/package\.manifest	paquete-D3-puntero-manifiesto
 INV-IC-009	templates/00-nucleo.md	MUST	Contratos cross-pieza	TAL-5158-clausula-cross-pieza-narrativa

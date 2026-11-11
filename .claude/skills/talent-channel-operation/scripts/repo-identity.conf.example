@@ -3,7 +3,7 @@
 #   1. Copiar a repo-identity.conf (misma carpeta) y sustituir CADA marcador PENDIENTE-<CLAVE> por el valor adjudicado.
 #   2. O generarlo con `sync-package.sh --migrate-identity --authority <manifiesto> --approved <fragmento>`.
 # Un marcador PENDIENTE-* NO es un valor: sync-package.sh, 00-config.sh y validate-package.sh --estado instancia lo rechazan (fail-closed).
-# Claves: ver skill-creator/scripts/lib-package.sh (PKG_IDENTITY_KEYS). Con TCO_REPO_STACK=ninguno
+# Claves: ver scripts/paquete/lib-package.sh (PKG_IDENTITY_KEYS). Con TCO_REPO_STACK=ninguno
 # (sin backend gestionado) TCO_SUPABASE_REF se OMITE; con =supabase es el ref del proyecto; con =convex, el literal no-aplica.
 PKG_IDENTITY_PROJECT=PENDIENTE-PKG_IDENTITY_PROJECT
 TCO_REPO_DIR=PENDIENTE-TCO_REPO_DIR

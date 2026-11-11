@@ -1,0 +1,9 @@
+# precios.tsv — precio de LISTA por modelo, en USD por millón de tokens (MTok), con fecha de vigencia.
+# Columnas (TAB): desde_fecha(AAAA-MM-DD)  modelo  in  out  cache_w_5m  cache_w_1h  cache_r  fuente(URL oficial + fecha de consulta)
+# Regla (sellada 9): se usa la fila del modelo con la mayor desde_fecha <= fecha de la unidad.
+# Un modelo SIN fila vigente da cost_usd = NULL y cost_estado = NO MEDIDO — nunca 0.
+#
+# DIFERIDA D1 (plan de la F1): los valores iniciales los pone el CEO con la página oficial de precios
+# del proveedor y su fecha. Hasta entonces este fichero NO trae filas de datos: todo coste sale
+# NO MEDIDO. Escribir aquí una tarifa de memoria sería fabricar un coste.
+desde_fecha	modelo	in	out	cache_w_5m	cache_w_1h	cache_r	fuente

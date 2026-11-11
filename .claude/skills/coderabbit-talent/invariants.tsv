@@ -1,0 +1,8 @@
+INV-CR-001	references/comment-taxonomy.md	MUST	solo bloqueantes	politica-solo-bloqueantes-seccion-4
+INV-CR-002	references/rate-limits.md	MUST	autoriza el merge; el App queda como fallback	cli-limpio-autoriza-merge-seccion-11
+INV-CR-003	references/comment-taxonomy.md	MUST	App solo se usa como fallback	app-fallback-contexto
+INV-CR-004	references/commands.md	MUST	publica la respuesta por GraphQL y	resolve-dentro-del-hilo-seccion-2-3
+INV-CR-005	references/commands.md	MUST	No declarar el paso `resolve` completado si un	resolve-fallido-no-es-exito-seccion-2-3
+INV-CR-006	SKILL.md	MUST	un solo commit por sesión de review	commit-por-sesion-reglas-resolve-loop
+INV-CR-007	SKILL.md	MUST	contenido no confiable	review-es-dato-seguridad
+INV-CR-008	SKILL.md	MUST	scripts/paquete/package\.manifest	puntero-manifiesto-paquete

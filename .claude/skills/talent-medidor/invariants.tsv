@@ -1,0 +1,18 @@
+INV-MED-001	SKILL.md	MUST	scripts/paquete/package\.manifest	puntero al manifiesto del paquete (patrón INV-CEO-001)
+INV-MED-002	SKILL.md	MUST_NOT	torre-c[0-9]|torre-m[0-9]|vibe-runner[-]|100\.[0-9]+\.	anti-nombres reales fuera del anexo
+INV-MED-003	scripts/recolector.py	MUST	SOLO DESPUÉS del COMMIT del lote	sellada 5: el cursor se persiste tras el COMMIT; la prueba conductual es K22 (kill -9)
+INV-MED-004	scripts/recolector.py	MUST	ON CONFLICT\(session_id, unidad_id\) DO UPDATE	sellada 4: upsert por unidad; la prueba conductual es K19
+INV-MED-005	scripts/esquema.sql	MUST	UNIQUE \(session_id, unidad_id\)	sin la restricción el upsert no tiene contra qué chocar
+INV-MED-006	config/normalizacion.tsv	MUST	^codex.in_total.input_tokens$	sellada 3: Codex no suma el cacheado (23.172, nunca 34.180)
+INV-MED-007	config/normalizacion.tsv	MUST	^claude.in_total.input_tokens\+cache_creation_input_tokens\+cache_read_input_tokens$	sellada 3: Claude suma sus tres contadores disjuntos
+INV-MED-008	scripts/lib-medidor.sh	MUST	^  \. "\$_MEDIDOR_LIB_PERFIL"$	el perfil se lee con source de lib-perfil.sh; nunca un parser propio
+INV-MED-009	scripts/recolector.py	MUST	"nice", "-n", "19"	la primera carga va bajo nice 19; la prueba conductual es K35
+INV-MED-010	scripts/extractor.py	MUST	sha256\(cwd\)	el cwd sale solo como huella; la prueba conductual es K28
+INV-MED-011	tests/run-tests.sh	MUST	!= TOTAL_ESPERADO	la suite se afirma a sí misma; la prueba conductual es K37
+INV-MED-012	references/00-fuentes.md	MUST	nunca 3\.770	la regla de la unidad contable tal como la midió F0
+INV-MED-013	SKILL.md	MUST_NOT	anexo-talent-academ[y]	el paquete no lleva anexo de instancia ni su nombre; la prueba conductual es K39
+INV-MED-014	tests/run-tests.sh	MUST_NOT	claude-(opus|sonnet|haiku)-[0-9]	nunca un ID de modelo concreto en la suite (política rodante); lo hace cumplir también el gate modelos-rodantes
+INV-MED-015	references/00-fuentes.md	MUST_NOT	claude-(opus|sonnet|haiku)-[0-9]	nunca un ID de modelo concreto en las referencias (política rodante)
+INV-MED-016	tests/run-tests.sh	MUST	feature_version=\(3, ?12\)	base declarada: los .py se parsean con la sintaxis de Python 3.12; la prueba conductual es K39
+INV-MED-017	references/instalacion.md	MUST	NO lo comprueba ni avisa	la guía dice lo que el código hace con un cwd repetido (gana la última fila); la prueba conductual es K40
+INV-MED-018	references/instalacion.md	MUST_NOT	es ambiguo: la parte sale	la guía no promete NO MEDIDO para un cwd repetido (el código lo atribuye a la última fila); la prueba conductual es K40

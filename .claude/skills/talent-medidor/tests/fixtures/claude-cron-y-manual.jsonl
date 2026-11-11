@@ -1,0 +1,4 @@
+{"type": "system", "subtype": "scheduled_task_fire", "uuid": "fx-fire-uuid01", "parentUuid": null, "sessionId": "fx-session-0004", "taskId": "fx-task-0001", "taskKind": "fixture", "cron": "* * * * *", "cronKind": "fixture"}
+{"type": "user", "uuid": "fx-u-0001", "parentUuid": "fx-fire-uuid01", "sessionId": "fx-session-0004"}
+{"type": "assistant", "uuid": "fx-a-0001", "parentUuid": "fx-u-0001", "sessionId": "fx-session-0004", "message": {"id": "msg_fx0004a", "model": "claude-fx-modelo-a", "usage": {"input_tokens": 2, "output_tokens": 40}}}
+{"type": "user", "uuid": "fx-manual-0001", "parentUuid": null, "sessionId": "fx-session-0004"}

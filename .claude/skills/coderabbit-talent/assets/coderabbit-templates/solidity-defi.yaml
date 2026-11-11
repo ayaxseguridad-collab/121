@@ -1,0 +1,176 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — Solidity / DeFi / Trading bots
+# Diseñado para el stack de Example Project: Hyperliquid hedging bot, Uniswap V3 LP
+# management en Arbitrum/Ethereum, ERC-721 NFT system, y contratos en general.
+#
+# FIX v3: `pre_merge_checks` estaba a nivel top-level en la versión anterior
+# de este template (fuera de `reviews:`), donde el schema v2 no lo reconoce
+# y CodeRabbit lo ignoraba en silencio. Movido dentro de `reviews:`.
+#
+# last_verified: 2026-09-22
+
+early_access: false
+enable_free_tier: true
+
+language: es-ES
+
+tone_instructions: |
+  Sé directo y conciso. En código DeFi, cada comentario puede prevenir pérdida
+  de fondos — prioriza claridad y razonamiento explícito.
+  Cuando sugieras cambios, explica el vector de ataque o riesgo específico.
+
+reviews:
+  profile: assertive  # En DeFi queremos más feedback, no menos
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  sequence_diagrams: true  # Útil para flujos de contratos interactuando
+  enable_prompt_for_ai_agents: true  # NUNCA false: lo depende el comando `resolve` del skill.
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: [main, master, develop]
+
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/artifacts/**"  # Hardhat compilation output
+    - "!**/cache/**"
+    - "!**/out/**"  # Foundry output
+    - "!**/forge-cache/**"
+    - "!**/typechain/**"
+    - "!**/typechain-types/**"
+    - "!**/coverage/**"
+    - "!**/broadcast/**"  # Foundry deployment logs
+    - "!**/*.lock"
+    - "!**/pnpm-lock.yaml"
+    - "!**/yarn.lock"
+
+  instructions: |
+    Este es código DeFi / Solidity / trading bot. Tratamos con fondos reales.
+
+    CRÍTICO (siempre flaggear):
+    - Reentrancia: llamadas externas antes de actualizar state (checks-effects-interactions)
+    - Integer overflow/underflow en versiones <0.8.0 o con unchecked blocks
+    - Falta de access control (onlyOwner, roles, multi-sig) en funciones que mueven fondos
+    - tx.origin usado para auth (vulnerable a phishing)
+    - delegatecall a contratos no confiables
+    - Uso de block.timestamp o blockhash como fuente de aleatoriedad
+    - Front-running / sandwich en swaps sin slippage protection
+    - Oracle manipulation (lectura única de Uniswap TWAP corto, sin validación)
+    - Hardcoded addresses que deberían ser immutable args o params
+    - Centralization risks (función que permite al deployer drenar fondos)
+
+    En trading bots / scripts off-chain (Node.js/Python):
+    - Private keys en código fuente, env commiteado, o logs
+    - Envío de tx sin simular primero (eth_call / estimateGas)
+    - Falta de gas estimation con buffer (confirmar EIP-1559 parameters)
+    - Slippage tolerance hardcoded sin configuración por ambiente
+    - Retry loops que reenvían misma nonce (risk de double-spend)
+    - Falta de manejo para reorgs (esperar N confirmaciones en mainnet)
+    - Manejo incorrecto de decimales (18 vs 6 vs 8 — USDC vs WETH vs WBTC)
+
+    No flaggees:
+    - Missing natspec en funciones internal/private
+    - Variable naming de length <3 en loops triviales
+
+  path_instructions:
+    - path: "**/contracts/**,**/src/**/*.sol"
+      instructions: |
+        Contratos Solidity. Aplica todas las reglas CRÍTICAS arriba.
+        Verifica además:
+        - SafeERC20 para tokens no-estándar (USDT, etc.)
+        - Pull-over-push para pagos (evitar DoS en receive)
+        - Events emitidos para todas las state changes relevantes
+        - Upgrade patterns (UUPS vs Transparent) con storage layout preservation
+        - Pausable patterns para emergency stop
+
+    - path: "**/test/**,**/tests/**,**/*.t.sol"
+      instructions: |
+        Tests de contratos. Foco en: cobertura de edge cases (zero amounts,
+        max uint, reentrancy tests con vault mock), fuzz tests con bounds
+        razonables, invariant tests donde aplique. No comentes sobre estilo.
+
+    - path: "**/hyperliquid/**,**/bots/**/hyperliquid*"
+      instructions: |
+        Hyperliquid trading bot. Foco en:
+        - Manejo correcto de maker vs taker orders
+        - Rate limiting de API (evitar ban por spam)
+        - Reconexión de WebSocket con backoff exponencial
+        - Persistencia de estado de posiciones (no perder posiciones si el bot reinicia)
+        - Hedging ratios correctos (long/short balanceado)
+        - Liquidation price monitoring con margin de seguridad
+
+    - path: "**/uniswap*/**,**/v3-lp/**,**/lp-manager/**"
+      instructions: |
+        Uniswap V3 LP management. Foco en:
+        - Tick spacing correcto por fee tier (500=10, 3000=60, 10000=200)
+        - Cálculo de sqrtPriceX96 con precisión de bits correcta
+        - Impermanent loss tracking
+        - Rebalancing logic con umbrales para evitar ping-pong de gas
+        - NFT position ownership antes de llamar increaseLiquidity/decreaseLiquidity
+        - Permit vs approve para gas efficiency
+
+    - path: "**/nft/**,**/erc721/**,**/mint*"
+      instructions: |
+        Contratos NFT (sistema Talent NFT en Arbitrum).
+        Foco en: minting access control, royalties (ERC-2981),
+        metadata immutable vs mutable (IPFS vs onchain), batch operations
+        con límite para evitar out-of-gas, y compatibilidad OpenSea
+        (supportsInterface correcto).
+
+  tools:
+    gitleaks:
+      enabled: true
+    zizmor: { enabled: true }    # Analizador estático de workflows de GitHub Actions.
+    presidio: { enabled: true }  # PII de alta señal (y private keys en texto plano) en ficheros cambiados.
+    # Slither sería ideal pero no está en la lista de integraciones oficiales de CR
+    # Correrlo separadamente en CI
+    markdownlint:
+      enabled: true
+
+  # Pre-merge checks son muy valiosos aquí dado el riesgo
+  pre_merge_checks:
+    docstrings:
+      mode: warning
+    issue_assessment:
+      mode: warning
+    custom_checks:
+      - mode: "error"
+        name: "No private keys in code"
+        instructions: |
+          El PR NO debe contener private keys, mnemonics, ni credenciales de
+          wallets reales (placeholders para evitar falsos positivos de secret
+          scanners al propagar este template a otros repos): <eth-private-key>,
+          <mnemonic-phrase>, <infura-project-id>, <alchemy-api-key>.
+          Si se detecta cualquier credencial real: BLOQUEAR merge y pedir rotar
+          la wallet/credencial inmediatamente.
+
+  finishing_touches:
+    docstrings:
+      enabled: false  # Ruidoso en contratos: preferimos NatSpec manual y revisado.
+    unit_tests:
+      enabled: true
+    autofix:
+      enabled: false  # En DeFi, un autofix mal aplicado puede costar fondos: revisión manual siempre.
+
+  labeling_instructions:
+    - label: "security-critical"
+      instructions: "Aplica cuando el PR toca manejo de fondos, access control o lógica de liquidación/oracle."
+
+chat:
+  auto_reply: true
+  # integrations.linear.usage default es "auto" (activo en repos privados).
+  # Descomentar para que el chat de un PR NUNCA cree issues de Linear fuera
+  # del flujo de talent-issue-craft (CLAUDE.md regla 21):
+  # integrations:
+  #   linear:
+  #     usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto

@@ -38,8 +38,10 @@ case "${TF_PAQUETE_ESTADO:-instancia}" in
 esac
 SKIPS=0
 if [ "$EN_INSTANCIA" = yes ]; then
+  PAQUETE="$HERE/../../../paquete"
+  [ -d "$PAQUETE" ] || PAQUETE="$HERE/../../../scripts/paquete"
   # shellcheck source=/dev/null
-  . "$HERE/../../skill-creator/scripts/lib-package.sh"
+  . "$PAQUETE/lib-package.sh"
   pkg_parse_identity_conf "$SC/repo-identity.conf" || exit 2
   case "$PKGID_TCO_REPO_STACK" in
     supabase) : ;;

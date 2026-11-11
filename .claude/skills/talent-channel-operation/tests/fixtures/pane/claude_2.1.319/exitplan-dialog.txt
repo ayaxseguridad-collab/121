@@ -1,0 +1,12 @@
+ ├───────────────────────────────────────┼───────────────────────────────────────────────────────────────┤
+ │ markdownlint sin errores nuevos       │ L0 antes y después (23 y 23) y L1 con diff en exit 0          │
+ └───────────────────────────────────────┴───────────────────────────────────────────────────────────────┘
+ PLAN-FIN
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Claude has written up a plan and is ready to execute. Would you like to proceed?
+ ❯ 1. Yes, and switch to BYPASS PERMISSIONS (no further prompts) for this session
+   2. Yes, manually approve edits
+   3. Tell Claude what to change
+      shift+tab to approve with this feedback
+ ctrl+g to edit in Vim · ~/.claude/plans/plan-neutro.md

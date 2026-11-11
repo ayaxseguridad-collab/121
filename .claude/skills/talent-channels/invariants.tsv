@@ -7,7 +7,7 @@ INV-CH-006	SKILL.md	MUST	NO MCP	TAL-1490-token-only
 INV-CH-007	references/06-operacion-y-launchers.md	MUST	TODA la flota	TAL-3318/F3-artefacto-flota-golden
 INV-CH-008	SKILL.md	MUST	CEO usa Opus vigente	politica-rodante-por-rol
 INV-CH-009	tests/verify-cr-cli-pin.sh	MUST	sha256	pin-cli-cr-02-golden
-INV-CH-010	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-CH-010	SKILL.md	MUST	scripts/paquete/package\.manifest	paquete-D3-puntero-manifiesto
 INV-CH-011	SKILL.md	MUST	echo-probe	TAL-4731-pz7-relaunch-tras-pkill-22-23ago
 INV-CH-012	references/05-credenciales-por-carril.md	MUST	401 masivo del censo	TAL-4731-pz9-refresh-on-401-22ago
 INV-CH-013	SKILL.md	MUST	Probe headless real	TAL-4731-pz10-pozo-en-uso-invalida-escrow-23ago
@@ -41,3 +41,7 @@ INV-CH-040	tests/run-tests.sh	MUST	--orden incus	Doble-envuelto-valida-gh-antes-
 INV-CH-041	scripts/verify.sh	MUST	\.claude_token\.env	Rutas-unicas-de-sesiones-y-token
 INV-CH-042	tests/verify-etapas.py	MUST	creado rechaza ruta de credencial	Creacion-sin-las-tres-rutas-de-credencial
 INV-CH-043	tests/verify-etapas.py	MUST	acreditado permite token de canal	Token-permitido-en-canal-acreditado
+INV-CH-044	scripts/runner-provision.sh	MUST	restos ajenos NO tocados	Reparto-sin-alterar-contenido-ajeno
+INV-CH-045	scripts/lib-perfil-attr3.sh	MUST	perfil_attr3	Atributos-valor-ausente-no-medido
+INV-CH-046	tests/test-runner-provision.sh	MUST	TOTAL_ESPERADO=16	Cobertura-del-reparto-del-pin
+INV-CH-047	assets/codex-config.toml	MUST_NOT	^model[[:space:]]*=	auditor-sin-id-fijo

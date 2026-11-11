@@ -61,7 +61,7 @@ canónico de autorización de merge cuando el bucket de una identidad se degrada
 **extensión operativa de ADR-0043** (no lo contradice): mantiene CLI-primero y App-fallback
 **por PR**; la rotación reparte el volumen entre buckets independientes para que ninguna
 identidad se recaliente. Identidades **por NOMBRE, jamás por valor** (las keys/tokens viven
-en `.env.local`, se referencian por variable): **A = blackvamp** (arranca fría, prioridad
+en `.env.local`, se referencian por variable): **A = cuenta-a** (arranca fría, prioridad
 inicial) · **B = academia-ejemplo-root** (histórica, tiende a estar recalentada). El merge lo
 ejecuta SIEMPRE la sesión `gh` vigente de la estación — la rotación es solo atribución de la
 review, no del merge.

@@ -246,22 +246,69 @@ eval "$(sed -n '/^    tco_modelos_config/,/no pude iniciar los procesos de agent
 grep -qF -- "/fx/codex'\\'' --sandbox --model modelo-neutral --config esfuerzo=alto" "$T/lanzamiento"
 unset -f incus
 printf 'PASS consumidores: daemon cerrado y auditor ajeno conservado en lanzamiento\n'
-# Doble de cambio: auditor Claude recibe el Sonnet del registro y propaga cada fallo.
+# Ley del lead del 7-nov: el revisor es siempre Codex; un auditor Claude PARA, con cualquier topología y con o sin argumentos previos.
 # shellcheck source=/dev/null
 . "$S/00-config.sh"
-TCO_AUDIT_CLI=claude tco_modelos_config
-[ "$TCO_AUDIT_MODEL_ARGS" = '--model claude-sonnet-5-5' ]
+rc=0
+TCO_AUDIT_CLI=claude TCO_AUDIT_TOPOLOGY=distinto tco_modelos_config > "$T/out" 2> "$T/err" || rc=$?
+[ "$rc" = 1 ]; [ ! -s "$T/out" ]
+grep -q 'Codex es obligatorio como revisor' "$T/err"
+[ "$TCO_AUDIT_MODEL_ARGS" = '--model modelo-neutral --config esfuerzo=alto' ]
+rc=0
+TCO_AUDIT_CLI=claude TCO_AUDIT_TOPOLOGY=mismo-adversarial tco_modelos_config > "$T/out" 2> "$T/err" || rc=$?
+[ "$rc" = 1 ]; [ ! -s "$T/out" ]
+grep -q 'Codex es obligatorio como revisor' "$T/err"
+[ "$TCO_AUDIT_MODEL_ARGS" = '--model modelo-neutral --config esfuerzo=alto' ]
+# Con los argumentos vacíos tampoco se deriva ningún modelo de Claude para el auditor.
+TCO_AUDIT_MODEL_ARGS=''
+rc=0
+TCO_AUDIT_CLI=claude TCO_AUDIT_TOPOLOGY=mismo-adversarial tco_modelos_config > "$T/out" 2> "$T/err" || rc=$?
+[ "$rc" = 1 ]; [ -z "$TCO_AUDIT_MODEL_ARGS" ]
+printf 'PASS compatibilidad: un auditor Claude PARA con cualquier topología y no se deriva modelo para él\n'
 tco_ensure_model() { printf '%s %s %s\n' "$1" "$2" "$3" > "$T/auditor"; return "${AUDIT_RC:-0}"; }
-TCO_AUDIT_CLI=claude tco_ensure_audit_model 01
-grep -q '^01 .*:.1 claude-sonnet-5-5$' "$T/auditor"
+if TCO_AUDIT_CLI=claude tco_ensure_audit_model 01; then exit 1; fi
+[ ! -e "$T/auditor" ]
 if TCO_AUDIT_CLI=claude AUDIT_RC=2 tco_ensure_audit_model 01; then exit 1; fi
 eval "$(sed -n '/^tco_audit_once()/,/^}/p' "$S/audit-gate.sh")"
 incus() { printf 'transporte inesperado\n' > "$T/transporte"; return 1; }
 if (TCO_AUDIT_CLI=claude AUDIT_RC=2 tco_audit_once 01 plan "$T/artefacto" sha "$T/veredicto") > "$T/out" 2> "$T/err"; then exit 1; fi
 grep -q 'no se solicita veredicto' "$T/err"
 [ ! -e "$T/transporte" ]
+# [issue 10264, M-1] LISTA BLANCA: solo pasa un ejecutable cuyo basename es EXACTAMENTE codex o codex-root. Un nombre VÁLIDO por
+# gramática que no es Codex (gemini, my-auditor…), una ruta con otro basename o un valor fuera de gramática PARAN: la función da
+# rc 1 con el mensaje y la entrada REAL del gate (tco_audit_once, sin doble de tco_ensure_audit_model) muere SIN tocar el transporte.
+for aud in gemini my-auditor codexx codex-evil codexfalso codex-otro /opt/x/codexfalso /opt/x/codex-root.sh codex-root.sh codexfalso-root codex-root-root 'env X=1 codex' ''; do
+  if TCO_AUDIT_CLI="$aud" tco_ensure_audit_model 01 > "$T/out" 2> "$T/err"; then exit 1; fi
+  grep -q 'Codex es obligatorio como revisor' "$T/err"
+  [ ! -e "$T/auditor" ]
+  rm -f "$T/transporte"
+  if (TCO_AUDIT_CLI="$aud" tco_audit_once 01 plan "$T/artefacto" sha "$T/veredicto") > "$T/out" 2> "$T/err"; then exit 1; fi
+  grep -q 'Codex es obligatorio como revisor' "$T/err"
+  grep -q 'no se solicita veredicto' "$T/err"
+  [ ! -e "$T/transporte" ]
+done
+for aud in codex codex-root /opt/x/codex /x/codex-root; do
+  TCO_AUDIT_CLI="$aud" tco_ensure_audit_model 01 > "$T/out" 2> "$T/err"
+  [ ! -s "$T/err" ]
+  [ ! -e "$T/auditor" ]
+done
+printf 'PASS lista blanca del auditor: gemini/my-auditor y los basename ajenos PARAN (función y entrada real del gate, sin transporte); codex y codex-root pasan\n'
+# [issue 10264, H-1] La guarda de proveedores de lib-modelos.sh (la que corre dentro de tco_modelos_config) es la misma lista blanca:
+# `codex` y `codex-root` (también con ruta) pasan; `codexx`, `codex-evil`, `codex-root.sh`, `codexfalso-root` y `gemini` PARAN con rc 1.
+for aud in codexx codex-evil codex-root.sh codexfalso-root gemini; do
+  rc=0; TCO_AUDIT_MODEL_ARGS=''
+  TCO_AUDIT_CLI="$aud" TCO_AUDIT_TOPOLOGY=distinto tco_modelos_config > "$T/out" 2> "$T/err" || rc=$?
+  [ "$rc" = 1 ]; [ ! -s "$T/out" ]
+  grep -q 'Codex es obligatorio como revisor' "$T/err"
+  [ -z "$TCO_AUDIT_MODEL_ARGS" ]
+done
+for aud in codex codex-root /x/codex /x/codex-root; do
+  TCO_AUDIT_CLI="$aud" TCO_AUDIT_TOPOLOGY=distinto tco_modelos_config > "$T/out" 2> "$T/err"
+done
+TCO_AUDIT_MODEL_ARGS=''
+printf 'PASS lista blanca de la guarda de proveedores: codexx/codex-evil/codex-root.sh/codexfalso-root/gemini PARAN; codex y codex-root (con y sin ruta) pasan\n'
 unset -f incus
-rm "$T/auditor"
+rm -f "$T/auditor"
 TCO_AUDIT_CLI=codex tco_ensure_audit_model 01
 [ ! -e "$T/auditor" ]
 # Función real del doctor, aislada de sus acciones, con doble de transporte por usuario.
@@ -332,7 +379,7 @@ export TCO_LINEAR_INPROGRESS_STATE=00000000-0000-4000-8000-000000000001
 export TCO_LINEAR_INREVIEW_STATE=00000000-0000-4000-8000-000000000002
 unset TCO_SUPABASE_REF
 # Los defaults vacíos se rellenan: el auditor se fija ocupado para esta prueba.
-printf 'TCO_AUDIT_CARRILES=""\nTCO_AUDIT_CLI="claude"\n' > "$T/agents.tmp"
+printf 'TCO_AUDIT_CARRILES=""\nTCO_AUDIT_CLI="codex"\n' > "$T/agents.tmp"
 mkdir -p "$SECRET_DIR"
 cp "$T/agents.tmp" "$SECRET_DIR/agents.conf"
 NEXT=6-1 bash "$CS/actualizar-modelos.sh" --ejecutar > "$T/aplicacion.out"
@@ -340,7 +387,7 @@ cat "$T/aplicacion.out"
 grep -q '^APLICADO 01' "$T/aplicacion.out"
 grep -q '^DIFERIDO 02' "$T/aplicacion.out"
 grep -q 'PANEL 01 claude-sonnet-6-1' "$TEST_LOG"
-grep -q 'PANEL 01 claude-sonnet-6-1 .*:.1' "$TEST_LOG"
+if grep -q 'PANEL 01 claude-sonnet-6-1 .*:.1' "$TEST_LOG"; then echo 'FAIL el panel de auditoría (Codex) no recibe modelo de Claude'; exit 1; fi
 grep -q 'BUS .*MODELOS-claude-opus-6-1-claude-sonnet-6-1' "$TEST_LOG"
 if grep -q 'INCUS ct-02' "$TEST_LOG"; then echo 'FAIL transporte al canal ocupado'; exit 1; fi
 jq -e '.model == "claude-sonnet-6-1"' "$T/canales/ct-01/.claude/settings.json"
@@ -352,3 +399,4 @@ cp "$TCO_MODELOS_REGISTRO" "$T/antes-mal"
 if BAD=grammar bash "$CS/actualizar-modelos.sh" --ejecutar; then exit 1; fi
 cmp "$T/antes-mal" "$TCO_MODELOS_REGISTRO"
 printf 'PASS aplicación: registro, configuración, canal ocioso, ocupado diferido y aviso bus\n'
+bash "$HERE/modelos-por-rol.sh"

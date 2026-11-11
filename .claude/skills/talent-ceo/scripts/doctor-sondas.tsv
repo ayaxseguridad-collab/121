@@ -1,0 +1,38 @@
+# doctor-sondas.tsv — órdenes de las sondas de seguridad del doctor (issue 9559). FUENTE ÚNICA: la leen lib-seguridad.sh
+# (las ejecuta) y instalacion/scripts/fases.py (escribe de ellas las reglas EXACTAS del sudoers). Ni uno ni otro llevan
+# una sola de estas órdenes escrita en su código.
+# Formato: id <TAB> ámbito <TAB> argumento 0 <TAB> argumento 1 … ; cada campo es UN argumento (sin parseo de shell).
+# Ámbitos: canal (una regla por contenedor RUNNING declarado como canal o runner, con su usuario operador),
+#          usuario (una regla por usuario local del perfil distinto del CEO; el propio CEO la ejecuta directo),
+#          propio (la ejecuta el doctor directo: sin regla), const (constante: id, const, valor).
+# Marcadores: {contenedor} {cuser} {hogar} {presupuesto} {raiz}. {raiz} es solo para pruebas (TA_SEG_RAIZ).
+# Restricciones (las vigila la prueba): sudoers compara los argumentos con fnmatch, así que ningún argumento lleva * ? [ ]
+# ni \ ; solo lectura (nada de -delete, -exec, -fprint ni redirecciones).
+#
+# BÚSQUEDA DE LITELLM (la hace SOLO el modo `doctor.sh --seguridad`, cron diario, no el doctor normal):
+# - Profundidad 6 bajo cada hogar y 7 en el canal (que parte de /home, una más) y en las raíces del sistema. LÍMITE
+#   DECLARADO: un entorno a más profundidad NO se ve; p. ej. un proyecto en ~/trabajo/a/b/.venv/lib/python3.12/
+#   site-packages (prof. 8) o un entorno de `uv tool` / `pipx` (~/.local/share/uv/tools/litellm/lib/python3.12/
+#   site-packages/cook.pth, prof. 9). Sí se ve ~/proyecto/.venv/lib/python3.12/site-packages/cook.pth (prof. 6) y
+#   ~/.local/lib/python3.12/site-packages (prof. 5). Medido en el hogar real de esta máquina: prof. 6 = 163-333 s según la carga (241 s con load 9,9; 333 s con load 26),
+#   prof. 7 = 291 s sin contar ficheros, prof. 9 no cabe en ningún presupuesto razonable.
+# - Presupuesto ÚNICO por sujeto (host, cada usuario y cada canal): la constante presupuesto-s, 600 s (decisión del CEO; solo
+#   el cron nocturno con nice e ionice lo paga, el doctor normal no busca). Si se agota, NOVERIF
+#   que dice el sujeto y la raíz.
+# - PODA POR NOMBRE EXACTO, declarada (cada nombre es un ángulo ciego declarado, ninguno es un entorno de Python):
+#   node_modules .git .cache .npm .cargo .rustup .nvm .gradle .m2 .pnpm-store .yarn .bun .deno snap __pycache__
+#   .mypy_cache .pytest_cache Trash .vscode-server (JavaScript, Rust, JVM, cachés y papelera) y, además, containerd y
+#   lost+found: directorios de root que dan «Permiso denegado» a un usuario normal (medido: /opt/containerd). Es la
+#   ÚNICA tolerancia: se declara aquí, por nombre; nunca se tolera por el rc de find. Cualquier otro directorio
+#   ilegible hace NOVERIF con su ruta; aceptar uno más es añadir su nombre aquí, en una edición visible.
+# - El señuelo /tmp/remote_code_loader.lock NO es raíz del find (una raíz inexistente da rc 1): lo comprueba aparte la
+#   fila lock-canal (y el doctor, directo, en el host).
+presupuesto-s	const	600
+node-canal	canal	incus	exec	{contenedor}	--	su	-	{cuser}	-c	node -v
+litellm-canal	canal	incus	exec	{contenedor}	--	su	-	{cuser}	-c	echo INICIO ; timeout {presupuesto} nice -n 19 /usr/bin/find /usr/lib /usr/local/lib /opt /home -xdev -maxdepth 7 '(' -name node_modules -o -name .git -o -name .cache -o -name .npm -o -name .cargo -o -name .rustup -o -name .nvm -o -name .gradle -o -name .m2 -o -name .pnpm-store -o -name .yarn -o -name .bun -o -name .deno -o -name snap -o -name __pycache__ -o -name .mypy_cache -o -name .pytest_cache -o -name Trash -o -name .vscode-server -o -name containerd -o -name lost+found ')' -prune -o '(' -name cook.pth -o -name cook.py -o -name litellm-1.107.0.dist-info -o -name sitecustomize.py ')' -print
+lock-canal	canal	incus	exec	{contenedor}	--	su	-	{cuser}	-c	echo INICIO ; test -e /tmp/remote_code_loader.lock && echo PRESENTE ; test -L /tmp/remote_code_loader.lock && echo PRESENTE ; echo FIN
+panes-canal	canal	incus	exec	{contenedor}	--	su	-	{cuser}	-c	echo INICIO ; tmux list-panes -a -F '#{session_name}|#{session_activity}|#{window_activity}|#{pane_pid}'
+ps-canal	canal	incus	exec	{contenedor}	--	su	-	{cuser}	-c	ps -e -o pid=,ppid=,comm=
+litellm-usuario	usuario	/usr/bin/find	{hogar}	-xdev	-maxdepth	6	(	-name	node_modules	-o	-name	.git	-o	-name	.cache	-o	-name	.npm	-o	-name	.cargo	-o	-name	.rustup	-o	-name	.nvm	-o	-name	.gradle	-o	-name	.m2	-o	-name	.pnpm-store	-o	-name	.yarn	-o	-name	.bun	-o	-name	.deno	-o	-name	snap	-o	-name	__pycache__	-o	-name	.mypy_cache	-o	-name	.pytest_cache	-o	-name	Trash	-o	-name	.vscode-server	-o	-name	containerd	-o	-name	lost+found	)	-prune	-o	(	-name	cook.pth	-o	-name	cook.py	-o	-name	litellm-1.107.0.dist-info	-o	-name	sitecustomize.py	)	-print
+panes-usuario	usuario	tmux	list-panes	-a	-F	#{session_name}|#{session_activity}|#{window_activity}|#{pane_pid}
+litellm-sistema	propio	/usr/bin/find	{raiz}/usr/lib	{raiz}/usr/local/lib	{raiz}/opt	-xdev	-maxdepth	7	(	-name	node_modules	-o	-name	.git	-o	-name	.cache	-o	-name	.npm	-o	-name	.cargo	-o	-name	.rustup	-o	-name	.nvm	-o	-name	.gradle	-o	-name	.m2	-o	-name	.pnpm-store	-o	-name	.yarn	-o	-name	.bun	-o	-name	.deno	-o	-name	snap	-o	-name	__pycache__	-o	-name	.mypy_cache	-o	-name	.pytest_cache	-o	-name	Trash	-o	-name	.vscode-server	-o	-name	containerd	-o	-name	lost+found	)	-prune	-o	(	-name	cook.pth	-o	-name	cook.py	-o	-name	litellm-1.107.0.dist-info	-o	-name	sitecustomize.py	)	-print

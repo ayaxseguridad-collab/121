@@ -1,0 +1,63 @@
+# Notas — `.coderabbit.yaml` de partida para repo Node.js/TypeScript (Next.js + Express)
+
+Fichero: `s2-coderabbit.yaml`. Validado con `coderabbit config validate` (schema v2) → `✔ .coderabbit.yaml is valid against the current CodeRabbit schema.`
+
+## De dónde sale
+
+Punto de partida = plantilla `node-typescript.yaml` del skill `coderabbit-talent`
+(`assets/coderabbit-templates/node-typescript.yaml`), que ya cubre TS/JS genérico
+(React/Next.js/Express/NestJS). Le añadí encima dos bloques que esa plantilla **no**
+trae por defecto pero sí trae `base-talent.yaml` y que un repo nuevo debería tener desde
+el día 1 en vez de descubrir su ausencia más tarde:
+
+- `reviews.pre_merge_checks` — título Conventional Commits, descripción, y dos
+  `custom_checks`: **"No secrets in code"** en `mode: error` (bloqueante real, no solo
+  aviso) y **"Breaking changes documentados"** en `mode: warning`, adaptado al lenguaje
+  de rutas/endpoints Express en vez de RLS/Supabase (eso es específico de otro stack).
+- `reviews.finishing_touches` — `docstrings`, `unit_tests`, `autofix` activos;
+  `fix_ci` y `resolve_merge_conflict` se dejaron fuera a propósito (son features de
+  plan Team+/Enterprise y añaden ruido de features de pago no confirmadas para un repo
+  que recién arranca).
+
+## Decisiones explícitas y por qué
+
+- **`profile: chill`** (nunca `assertive`): empezar asertivo causa abandono del equipo
+  por volumen de ruido en las primeras semanas — es el default recomendado del propio
+  skill para cualquier repo nuevo, no solo para este stack.
+- **`language: es-ES`**: ajustar a `en-US` (o quitar el campo, default `en-US`) si el
+  equipo real del repo opera en inglés — es el único campo que asumí sin dato del
+  usuario porque los ejemplos de la conversación estaban en español.
+- **`enable_prompt_for_ai_agents: true`** — dejarlo siempre así; si más adelante alguien
+  lo pone en `false` para "limpiar" comentarios, cualquier flujo de resolución asistida
+  por agentes (Claude Code, Cursor, etc.) pierde su insumo principal.
+- **`path_instructions` por carpeta** — separa tres perfiles de revisión: tests (sin
+  ruido de `any`/coverage), rutas/endpoints Express + API routes de Next (foco en
+  input validation/authz/rate limiting/manejo de errores) y componentes React/Next
+  (accesibilidad + hooks). Esto evita que CodeRabbit aplique el mismo criterio a un
+  test que a un endpoint público.
+- **`instructions` (nivel reviews)** añade un párrafo específico de Express (CORS,
+  rate limiting, fuga de stack traces) que la plantilla genérica no trae, porque el
+  stack declarado incluye un backend Express real, no solo Next.js.
+- **`tools`**: se mantienen `eslint`/`biome` activos — desactivarlos solo cuando el
+  repo tenga esos linters corriendo localmente como fuente de verdad (evita revisión
+  duplicada). Se sumó `trufflehog` y `osvScanner` (no estaban en la plantilla node-ts
+  base) porque son gratis, no generan ruido de código y cubren secrets históricos +
+  dependencias con CVE conocido — razonable desde el día 1 en cualquier repo nuevo.
+- **`path_filters`**: cubre build outputs de Next (`.next`) y de otros bundlers
+  comunes; si el repo NO usa Svelte/Storybook, esas dos líneas (`.svelte-kit`,
+  `.storybook-out`) son inocuas (no matchean nada) y no hace falta quitarlas.
+- **`chat.integrations.linear.usage: disabled`** queda comentado, no activo — es
+  específico de un flujo de gestión de tareas que este repo nuevo puede no tener
+  todavía; descomentar si el equipo usa Linear/Jira y quiere evitar que el chat de un
+  PR cree issues por su cuenta.
+
+## Qué falta decidir con dato real del repo (no asumido aquí)
+
+- Si es **monorepo** (`apps/web` + `apps/api`, workspaces npm/pnpm/turbo) en vez de un
+  solo `package.json`, migrar a la plantilla `monorepo.yaml` del skill en vez de esta
+  (añade `path_instructions` por paquete y trata cada app como su propio dominio).
+- Confirmar el **plan** de la organización de GitHub (Free/Lite/Pro/Team/Enterprise)
+  antes de asumir cuota de reviews/hora — este YAML no depende del plan, pero el
+  presupuesto de uso sí.
+- Revisar el `.coderabbit.yaml` a las 1-2 semanas contra el ruido real observado y
+  mover `instructions`/`path_instructions` según lo que el equipo decida ignorar.

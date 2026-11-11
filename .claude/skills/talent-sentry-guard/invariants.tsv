@@ -1,0 +1,12 @@
+INV-SG-001	SKILL.md	MUST	\*\*NUNCA\*\* modifica código de producto	limites-duros-codigo
+INV-SG-002	SKILL.md	MUST	\*\*NUNCA\*\* abre PR ni mergea	limites-duros-merge
+INV-SG-003	SKILL.md	MUST	\*\*NUNCA\*\* cierra issues de Linear	limites-duros-cierre
+INV-SG-004	SKILL.md	MUST	\*\*NUNCA\*\* muta	limites-duros-produccion
+INV-SG-005	SKILL.md	MUST	\*\*NUNCA\*\* ignora un grupo en Sentry; resuelve solo con `resolver_ficha.py` y sus tres pruebas verificadas en la misma corrida	limites-duros-resolucion
+INV-SG-006	SKILL.md	MUST	\*\*NUNCA\*\* imprime un token	limites-duros-credenciales
+INV-SG-007	references/04-contrato-de-issue.md	MUST	nunca ignora grupos y marca `Resolved` solo con `resolver_ficha.py` y sus tres pruebas verificadas en la misma corrida	contrato-issue-resolucion-condicionada
+INV-SG-008	SKILL.md	MUST	`resolver_ficha.py` y sus tres pruebas verificadas en la misma corrida	resolucion-tres-pruebas
+INV-SG-009	references/04-contrato-de-issue.md	MUST	Un fallo del PUT no reintenta ni sella	resolucion-sin-reintento
+INV-SG-010	SKILL.md	MUST	\*\*NUNCA\*\* escribe en GitHub	limites-duros-github-solo-lectura
+INV-SG-011	references/05-fuentes-y-consultas.md	MUST	El valor de un `secret` de GitHub jamás sale por ninguna salida	github-secreto-no-sale
+INV-SG-012	references/01-ciclo-y-sellos.md	MUST	El estado LIMPIO es inalcanzable si alguna sección no corrió	parte-limpio-solo-si-todo-corrio

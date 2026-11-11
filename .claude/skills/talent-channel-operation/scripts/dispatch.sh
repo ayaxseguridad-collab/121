@@ -6,7 +6,7 @@
 # conserva la sesión del agente con su modelo bueno: /clear + reset del repo, sin relanzar CLIs).
 # [TAL-2276] --force-reset además resetea el git del carril a origin/main PRE-preflight (tras el gate
 # BD-sync en verde), para no exigir el reset manual cuando el carril arrastra WIP/rama del issue previo.
-# Uso: dispatch.sh [--dry-run] [--force-reset] [--soft] [--no-linear] <carril> <TAL-id>
+# Uso: dispatch.sh [--dry-run] [--force-reset] [--soft] [--no-linear] [--sensible=seguridad|dinero|privacidad] <carril> <TAL-id>
 #      --no-linear: SOLO smoke tests (exige TCO_SMOKE_MODE=yes; guard M1) — no mueve la issue en Linear.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
@@ -52,11 +52,15 @@ tco_dispatch_instance_blocks() { # plantilla
 }
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
   set -euo pipefail
-  DRY=no; FORCE=no; SOFT=no; NOLINEAR=no
+  DRY=no; FORCE=no; SOFT=no; NOLINEAR=no; SENSIBLE=no
   while :; do case "${1:-}" in
     --dry-run) DRY=yes; shift;;
     --force-reset) FORCE=yes; shift;;
     --soft) SOFT=yes; shift;;
+    --sensible=*)
+      SENSIBLE="${1#*=}"
+      case "$SENSIBLE" in seguridad|dinero|privacidad) ;; *) tco_die 'clase sensible inválida: seguridad|dinero|privacidad' ;; esac
+      shift;;
     --no-linear)
       # [v5/B3+M1] flag RESERVADO a smoke: sin TCO_SMOKE_MODE=yes el dispatch MUERE — jamás
       # saltarse la trazabilidad Linear (regla 27) en trabajo real.
@@ -97,6 +101,8 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     "$tmp/instance-prompt.txt" > "$tmp/dev-prompt.txt"
 
   if [ "$DRY" = yes ]; then
+    if [ "$SENSIBLE" = no ]; then tco_info 'CLASE: sensible=no'
+    else tco_info "CLASE: sensible=$SENSIBLE → código con el rol code_sensible"; fi
     tco_say "DRY-RUN dispatch $ISSUE -> $CARRIL ($c) — no se toca ningún carril"
     tco_info "dev:       ${TCO_DEV_CLI:-<define en agents.conf>} ${TCO_DEV_FLAGS:-} ${TCO_DEV_MODEL_ARGS:-}"
     tco_info "auditoría: ${TCO_AUDIT_CLI:-<define en agents.conf>} ${TCO_AUDIT_FLAGS:-} ${TCO_AUDIT_MODEL_ARGS:-}"
@@ -232,6 +238,14 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
   tco_info "[TFM-HYGIENE] $CARRIL: manifiesto presente, idéntico a la fuente, ignorado por git y con árbol limpio"
 
   if [ "$SOFT" != yes ]; then
+    install -d -m 700 "$TCO_RUNS_DIR"
+    clase_file="$TCO_RUNS_DIR/clase-$CARRIL.env"
+    [ ! -L "$clase_file" ] || tco_die 'fichero de clase sensible simbólico'
+    clase_tmp="$(mktemp "$TCO_RUNS_DIR/.clase.XXXXXX")"
+    printf 'CLASE_SENSIBLE=%s\nTS=%s\n' "$SENSIBLE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$clase_tmp"
+    chmod 600 "$clase_tmp"; mv -f "$clase_tmp" "$clase_file"
+    if [ "$SENSIBLE" = no ]; then tco_info 'CLASE: sensible=no'
+    else tco_info "CLASE: sensible=$SENSIBLE → código con el rol code_sensible"; fi
     # [B2] sesión limpia con creación VERIFICADA: el recycle ya esperó la muerte de la sesión; aun así,
     # crear new-session y CONFIRMAR que existe, reintentando ante 'duplicate session' (carrera residual).
     SESS_OK=no
@@ -324,7 +338,7 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     fi
   fi
   tco_ensure_audit_model "$CARRIL" \
-    || tco_die "$CARRIL: modelo del auditor Claude SIN confirmar — no se despacha"
+    || tco_die "$CARRIL: el auditor no es Codex — se PARA y se escala (no se despacha)"
   # Secuencia: BYPASS al arrancar -> /effort xhigh (plan) -> PLAN MODE con shift+tab -> prompt.
   # [Regla 0] El COORDINADOR fija el /effort en cada transición (los agentes NO lo cambian solos):
   # plan=xhigh (aquí); coding=high (el coordinador, tras el GO de plan y ANTES de aprobar);

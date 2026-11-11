@@ -11,10 +11,21 @@ al lanzamiento. Los casos `sonda_*`, `j5_*` con tmux y `vida_remain_local` usan 
 prueba (`-L` propio y TMUX_TMPDIR temporal), cerrado al acabar. Los bloques de lanzamiento son los REALES de dispatch.sh,
 audit-carril.sh y lib.sh, extraídos por ancla de contenido. Los casos `fase_*` prueban que la fase del modelo se guarda y
 se lee con la clave LÓGICA del pane aunque el destino sea el `%N` (`fase_tmux_real`, con tmux REAL) y que todo doble de tmux
-de las pruebas da el `pane_id` con la forma real `%N` (`fase_dobles_pane_id`). Solo se ejecuta dentro del arnés."""
+de las pruebas da el `pane_id` con la forma real `%N` (`fase_dobles_pane_id`). Solo se ejecuta dentro del arnés.
+
+Aislamiento: ningún caso resuelve ni ejecuta un agente REAL del sistema. Los casos que dependían del `/usr/bin:/bin` del sistema
+(`dispatch_shell_del_servidor`, `sonda_shell_del_servidor`, `j5_a_shell_cambiada` y `j5_b_cwd_*`) usan un PATH propio del mundo de
+prueba SIN agentes (el espejo de `aislamiento_agentes.py`, que lleva sus propias listas); cada mundo tiene un entorno en lista
+blanca, un HOME vacío y el tmux real va en un socket propio.
+
+El aislamiento de estas regresiones (sin agentes reales ni credenciales del usuario) solo vale si el proceso se lanza con el
+entorno limpio desde fuera: el arnés del paquete (`tests/run-tests.sh`, la batería de F0 por `clean_environment()` de
+`fases.py`) o el envoltorio de mutantes. La invocación directa sin entorno limpio queda NO SOPORTADA / NO AISLADA."""
 import ast
+import hashlib
 import os
 from pathlib import Path
+import pwd
 import re
 import shlex
 import shutil
@@ -34,13 +45,22 @@ UTILS = ("bash", "sleep", "rm", "cat", "readlink", "pgrep", "true", "mktemp", "m
 # Firma de la orden de la sonda dentro de un pane (su marcador vive en el directorio de estado del despacho).
 SONDA_FIRMA = "talent-channel-operation/sonda/"
 
-for key, value in (("TF_LINEAR_TEAM_KEY", "ABC"), ("TCO_REPO_DIR", "Repo-Neutro"),
-                   ("TCO_REPO_SLUG", "org-neutra/Repo-Neutro"), ("TCO_REPO_STACK", "ninguno"),
-                   ("TCO_ANEXO_FILE", "references/anexo-neutro.md"),
-                   ("TCO_HOST_ENV_REL", "Repo-Neutro/.env.local"),
-                   ("TCO_LINEAR_INPROGRESS_STATE", "00000000-0000-4000-8000-000000000007"),
-                   ("TCO_LINEAR_INREVIEW_STATE", "00000000-0000-4000-8000-000000000008")):
-    os.environ.setdefault(key, value)
+# Los helpers de la guarda viven en un fichero hermano; sin bytecode para no dejar __pycache__ en el paquete.
+sys.dont_write_bytecode = True
+import aislamiento_agentes  # noqa: E402
+
+AGENTES = ("codex", "codex-root", "claude", "claude-root")
+SISTEMA = ("/usr/bin", "/bin")
+# Identidad neutra que exige 00-config.sh. Va al diccionario del mundo: la prueba no escribe nunca en os.environ.
+IDENTIDAD = {"TF_LINEAR_TEAM_KEY": "ABC", "TCO_REPO_DIR": "Repo-Neutro", "TCO_REPO_SLUG": "org-neutra/Repo-Neutro",
+             "TCO_REPO_STACK": "ninguno", "TCO_ANEXO_FILE": "references/anexo-neutro.md",
+             "TCO_HOST_ENV_REL": "Repo-Neutro/.env.local",
+             "TCO_LINEAR_INPROGRESS_STATE": "00000000-0000-4000-8000-000000000007",
+             "TCO_LINEAR_INREVIEW_STATE": "00000000-0000-4000-8000-000000000008"}
+HOST_USER = pwd.getpwuid(os.getuid()).pw_name
+# --- INICIO bloque de la guarda de testigos: lectura permitida del entorno del proceso, SOLO de este nombre ---
+TESTIGO_DIR = os.environ.get("TCO_TESTIGO_DIR")
+# --- FIN bloque de la guarda de testigos ---
 
 FAKE_TMUX = """#!/bin/bash
 S="$FAKE_STATE"; LOG="$S/tmux.log"
@@ -197,7 +217,7 @@ def launcher_text(agent, flags):
     """Texto del lanzador, generado por la función REAL de 02-golden.sh."""
     code = 'eval "$(sed -n "/^tc_launcher_text()/,/^}/p" "$1")"; tc_launcher_text "$2" "$3"'
     result = subprocess.run(["/bin/bash", "-c", code, "fixture", str(GOLDEN), agent, flags],
-                            text=True, capture_output=True, timeout=10)
+                            env=aislamiento_agentes.entorno_minimo(), text=True, capture_output=True, timeout=10)
     assert result.returncode == 0 and result.stdout.startswith("#!"), \
         f"tc_launcher_text no disponible en 02-golden.sh: {result}"
     return result.stdout
@@ -217,7 +237,9 @@ def block_between(path, start_marker, end_markers):
 
 
 class World:
-    """Canal ficticio: PATH remoto cerrado, HOME con el alias que `bash -c` jamás lee, tmux y incus dobles."""
+    """Canal ficticio: PATH remoto cerrado, HOME con el alias que `bash -c` jamás lee, tmux y incus dobles. El entorno de todo lo
+    que la prueba lanza es una LISTA BLANCA (nunca el del proceso): el PATH del host es el shim de incus más el espejo del sistema
+    SIN agentes, y el HOME, el escrow, el HOME del host y los XDG viven vacíos dentro del mundo."""
 
     def __init__(self, root):
         self.root = Path(root)
@@ -227,7 +249,14 @@ class World:
         self.home = self.root / "home"
         self.state = self.root / "state"
         self.cwd = self.root / "cwd"
-        for d in (self.remote, self.extra, self.shim, self.home, self.state, self.cwd):
+        self.home_vacio = self.root / "home-vacio"
+        self.host_home = self.root / "host-home"
+        self.secret = self.root / "secret"
+        self.tmp = self.root / "tmp"
+        xdg = {"XDG_CONFIG_HOME": self.root / "xdg-config", "XDG_DATA_HOME": self.root / "xdg-data",
+               "XDG_STATE_HOME": self.root / "xdg-state"}
+        for d in (self.remote, self.extra, self.shim, self.home, self.state, self.cwd, self.home_vacio, self.host_home,
+                  self.secret, self.tmp, *xdg.values()):
             d.mkdir()
         for utility in UTILS:
             (self.remote / utility).symlink_to(shutil.which(utility))
@@ -238,10 +267,40 @@ class World:
         # La sesión del canal existe (dos panes): la sonda resuelve en ella. Los bloques de lanzamiento la recrean.
         (self.state / "panes").write_text("2\n")
         # TEST_REPO es el directorio del clon en el canal (`-c` de la sesión, de la sonda y del lanzamiento).
-        self.env = dict(os.environ, PATH=f"{self.shim}:/usr/bin:/bin", FAKE_STATE=str(self.state),
-                        FAKE_REMOTE_PATH=str(self.remote), FAKE_HOME=str(self.home), FAKE_CWD=str(self.cwd),
-                        TEST_REPO=str(self.cwd), TCO_PANE_IDENT_WAIT="0", TCO_PANE_LIFE_WAIT="0")
-        self.env.pop("BASH_ENV", None)
+        self.sistema = self.sistema_sin_agentes()
+        # Lista blanca del entorno del mundo (nombres cerrados): la máquina, HOME y escrow dentro del mundo, la identidad
+        # neutra y las variables del arnés. El TCO_TESTIGO_DIR del proceso, si viene, pasa por su nombre exacto.
+        self.env = {"PATH": f"{self.shim}:{self.sistema}", "TERM": "dumb", "LANG": "C.UTF-8", "HOME": str(self.home_vacio),
+                    **{clave: str(ruta) for clave, ruta in xdg.items()},
+                    "HOST_HOME": str(self.host_home), "HOST_USER": HOST_USER, "SECRET_DIR": str(self.secret),
+                    "TCO_HOST_ENV": str(self.host_home / "Repo-Neutro" / ".env.local"), **IDENTIDAD,
+                    "TMPDIR": str(self.tmp), "FAKE_STATE": str(self.state),
+                    "FAKE_REMOTE_PATH": str(self.remote), "FAKE_HOME": str(self.home), "FAKE_CWD": str(self.cwd),
+                    "TEST_REPO": str(self.cwd), "TCO_PANE_IDENT_WAIT": "0", "TCO_PANE_LIFE_WAIT": "0"}
+        # --- INICIO bloque de la guarda de testigos: paso de TCO_TESTIGO_DIR al mundo ---
+        if TESTIGO_DIR:
+            self.env["TCO_TESTIGO_DIR"] = TESTIGO_DIR
+        # --- FIN bloque de la guarda de testigos ---
+        aislamiento_agentes.aserto_entorno(self.env, self.root, completo=True)
+
+    def sistema_sin_agentes(self, sistema=SISTEMA):
+        """Ruta de un PATH de sistema SIN agentes, propio del mundo: un enlace por cada entrada ejecutable de `sistema` (en
+        orden de PATH, inyectable), salvo los agentes, los lanzadores de paquetes de JS y las herramientas que los pueden
+        lanzar. Una vez por mundo y por sistema: una segunda llamada devuelve la misma ruta."""
+        sistema = tuple(str(d) for d in sistema)
+        nombre = "sistema-sin-agentes" if sistema == SISTEMA else "sistema-sin-agentes-" + hashlib.md5(
+            ":".join(sistema).encode()).hexdigest()[:8]
+        return aislamiento_agentes.espejo(self.root, sistema, nombre=nombre)
+
+    def sistema_con_agentes(self):
+        """Espejo del sistema FALSO de las variantes: `sistema-falso-con-agentes` (los cuatro nombres como dobles vivos del
+        mundo) y `utilidades` (solo las de UTILS). Ninguno lleva /usr/bin ni /bin. Devuelve la ruta del espejo."""
+        falso = self.root / "sistema-falso-con-agentes"
+        falso.mkdir()
+        self.launchers(where=falso)
+        self.agents(where=falso, text=AGENT_VIVO)
+        return aislamiento_agentes.espejo(self.root, (str(falso), aislamiento_agentes.utilidades(self.root, UTILS)),
+                                          nombre="sistema-con-agentes-espejo")
 
     def agents(self, where=None, text=AGENT):
         for name in ("claude", "codex"):
@@ -252,7 +311,11 @@ class World:
                  "codex-root": ("codex", "--dangerously-bypass-approvals-and-sandbox")}
         for name, (agent, flags) in specs.items():
             if only is None or name in only:
-                write((where or self.remote) / name, launcher_text(agent, flags))
+                destino = where or self.remote
+                texto = launcher_text(agent, flags)
+                # R8: el texto final y el destino se aseran ANTES de escribir el lanzador (y de cualquier lanzamiento).
+                aislamiento_agentes.aserto_lanzador(name, texto, destino, self.root)
+                write(destino / name, texto)
 
     def tmux_log(self):
         path = self.state / "tmux.log"
@@ -262,6 +325,7 @@ class World:
         driver = self.root / "driver.sh"
         driver.write_text(code)
         env = dict(self.env, **(extra_env or {}))
+        aislamiento_agentes.aserto_entorno(env, self.root, completo=True, inicial=False)
         return subprocess.run(["/bin/bash", str(driver)], env=env, text=True, capture_output=True,
                               timeout=timeout)
 
@@ -275,14 +339,21 @@ tco_modelos_config() {{ :; }}
 '''
 
 
+def bloque_sin_tokens(nombre, texto):
+    """D7: ningún bloque que se extrae de un guion del producto puede cargar los tokens del host."""
+    aislamiento_agentes.aserto_sin_carga_de_tokens(texto, nombre)
+    return texto
+
+
 def dispatch_block():
-    return block_between(OP / "dispatch.sh", "    SESS_OK=no",
-                         ["murió o no existe tras lanzarlo", "no pude iniciar los procesos de agente"])
+    return bloque_sin_tokens("dispatch_block", block_between(
+        OP / "dispatch.sh", "    SESS_OK=no", ["murió o no existe tras lanzarlo", "no pude iniciar los procesos de agente"]))
 
 
 def audit_block():
-    return block_between(OP / "audit-carril.sh", '  sess_res="$(incus exec',
-                         ["murió o no existe tras lanzarlo", "no pude iniciar el proceso de auditoría"])
+    return bloque_sin_tokens("audit_block", block_between(
+        OP / "audit-carril.sh", '  sess_res="$(incus exec',
+        ["murió o no existe tras lanzarlo", "no pude iniciar el proceso de auditoría"]))
 
 
 def lanzamientos(world):
@@ -317,6 +388,10 @@ def check_pane_muerto(mode, result, text_wanted):
 
 
 def mode_dispatch(mode):
+    # La variante `_sistema_con_agentes` corre el MISMO caso con un sistema FALSO que SÍ lleva los cuatro agentes (dobles del
+    # mundo, sin /usr/bin ni /bin): el espejo tiene que quitarlos y el resultado es el mismo.
+    con_agentes = mode.endswith("_sistema_con_agentes")
+    mode = mode.removesuffix("_sistema_con_agentes")
     with tempfile.TemporaryDirectory() as tmp:
         world = World(tmp)
         world.agents()
@@ -374,11 +449,14 @@ def mode_dispatch(mode):
             write(world.remote / "claude", AGENT_MUERE)
         elif mode == "dispatch_shell_del_servidor":
             # H-01 (R9011j3): la shell del servidor tmux fija PATH=/usr/bin:/bin. El pane real no encuentra el lanzador; la
-            # sonda debe ver lo mismo y rechazarlo ANTES de respawn-pane (la base lo autorizaba con su servidor propio).
-            for name in ("claude-root", "codex-root"):
-                assert shutil.which(name, path="/usr/bin:/bin") is None, f"precondición: {name} existe en /usr/bin:/bin"
+            # sonda debe ver lo mismo y rechazarlo ANTES de respawn-pane (la base lo autorizaba con su servidor propio). El PATH
+            # de esa shell es el espejo del sistema SIN agentes: el caso no depende de lo que el sistema tenga instalado.
+            espejo = world.sistema_con_agentes() if con_agentes else world.sistema_sin_agentes()
             world.launchers()
-            env["FAKE_SHELL_PATH"] = "/usr/bin:/bin"
+            env["FAKE_SHELL_PATH"] = espejo
+            # Guarda estática y sonda de resolución ANTES de lanzar nada: lo que el pane vería, con su mismo PATH y entorno.
+            aislamiento_agentes.aserto_estatico_s1(env, espejo)
+            aislamiento_agentes.sonda_s1(dict(world.env, **env), espejo, str(world.home), world.root)
         else:
             raise AssertionError(mode)
         result = world.run(PRELUDE + dispatch_block() + "echo BLOQUE-OK\n", env)
@@ -547,7 +625,7 @@ def identity_world(tmp, two=False):
         binary = world.remote / agent
         shutil.copyfile(shutil.which("python3"), binary)
         binary.chmod(0o755)
-        proc = subprocess.Popen([str(binary), "-c", "import time; time.sleep(60)"], start_new_session=True)
+        proc = subprocess.Popen([str(binary), "-c", "import time; time.sleep(60)"], env=world.env, start_new_session=True)
         procs.append(proc)
         world.env[f"FAKE_PID_{index}"] = str(proc.pid)
     return world, procs
@@ -595,7 +673,7 @@ def decode_transport(command):
     """Decodifica la orden remota como la decodificaría bash: una función `bash` intercepta la llamada y vuelca sus
     argumentos, sin ejecutar el cuerpo. Es el método del doble de montaje (infra-real.py), no shlex."""
     result = subprocess.run(["/bin/bash", "-c", 'bash() { printf "%s\\0" "$@"; }; ' + command],
-                            capture_output=True, timeout=10)
+                            env=aislamiento_agentes.entorno_minimo(), capture_output=True, timeout=10)
     assert result.returncode == 0, result
     return [w.decode() for w in result.stdout.split(b"\0")[:-1]]
 
@@ -644,7 +722,7 @@ def mode_identidad_ajena(mode):
             binary.chmod(0o755)
             sleeper = ["-c", "import time; time.sleep(60)"]
             if mode == "identidad_destino_ajeno_mismo_basename":
-                procs.append(subprocess.Popen([str(binary), *sleeper], start_new_session=True))
+                procs.append(subprocess.Popen([str(binary), *sleeper], env=world.env, start_new_session=True))
                 world.env["FAKE_PID_0"] = str(procs[0].pid)
                 write(world.remote / "claude-root", f'#!/bin/bash\nIS_SANDBOX=1 exec {binary} --x "$@"\n')
                 result = world.run(PRELUDE + '_tco_pane_agent_exes 01 v:.0 claude-root\nexit $?\n')
@@ -652,8 +730,8 @@ def mode_identidad_ajena(mode):
             elif mode == "preflight_dos_destinos_ajenos_comunes":
                 # Dos lanzadores cuyos destinos llamados claude y codex son el MISMO ejecutable ajeno.
                 (foreign / "codex").symlink_to(binary)
-                procs.append(subprocess.Popen([str(foreign / "claude"), *sleeper], start_new_session=True))
-                procs.append(subprocess.Popen([str(foreign / "codex"), *sleeper], start_new_session=True))
+                procs.append(subprocess.Popen([str(foreign / "claude"), *sleeper], env=world.env, start_new_session=True))
+                procs.append(subprocess.Popen([str(foreign / "codex"), *sleeper], env=world.env, start_new_session=True))
                 world.env["FAKE_PID_0"], world.env["FAKE_PID_1"] = (str(p.pid) for p in procs)
                 write(world.remote / "claude-root", f'#!/bin/bash\nIS_SANDBOX=1 exec {foreign}/claude --x "$@"\n')
                 write(world.remote / "codex-root", f'#!/bin/bash\nIS_SANDBOX=1 exec {foreign}/codex --x "$@"\n')
@@ -683,7 +761,7 @@ def mode_identidad_pane(mode):
                 for pid_index, agent in enumerate(("claude", "codex")):
                     (disfraz / agent).symlink_to(shutil.which("sleep"))
                     procs.append(subprocess.Popen([str(disfraz / agent), "120"], executable=str(disfraz / agent),
-                                                  start_new_session=True))
+                                                  env=world.env, start_new_session=True))
                     world.env[f"FAKE_PID_{pid_index}"] = str(procs[-1].pid)
                 code = (PRELUDE + f'TCO_DEV_CLI="PATH={disfraz}:{world.remote} claude-root"; '
                         f'TCO_AUDIT_CLI="PATH={disfraz}:{world.remote} codex-root"; TCO_AUDIT_TOPOLOGY=distinto\n'
@@ -709,7 +787,8 @@ def mode_identidad_pane(mode):
                 for agent in ("claude", "codex"):
                     (world.remote / agent).symlink_to(real)
                 for index in range(2):
-                    procs.append(subprocess.Popen([str(real), "-c", "import time; time.sleep(60)"], start_new_session=True))
+                    procs.append(subprocess.Popen([str(real), "-c", "import time; time.sleep(60)"], env=world.env,
+                                                  start_new_session=True))
                     world.env[f"FAKE_PID_{index}"] = str(procs[index].pid)
                 declared = ("claude", "codex")
                 if mode == "identidad_r04_nombres_declarados":
@@ -727,10 +806,11 @@ def mode_identidad_pane(mode):
 
 
 class RealTmux:
-    """tmux REAL en un servidor PRIVADO de la prueba: socket con nombre propio (`-L`) dentro de un TMUX_TMPDIR temporal, sin
-    `TMUX` heredado; nunca un servidor de la máquina. El `tmux` del PATH remoto es un envoltorio que fuerza ese socket (una
-    orden que ya trae su propio `-L` —la forma antigua de la sonda— se respeta y vive en el mismo directorio temporal). El
-    servidor arranca sin fichero de configuración. `close` mata todos los servidores del directorio y comprueba que no queda
+    """tmux REAL en un servidor PRIVADO de la prueba: socket PROPIO dentro del mundo (`-S <mundo>/tmux.sock`), nunca el servidor
+    por defecto ni uno de la máquina, sin `TMUX` heredado y con un entorno en lista blanca cuyo PATH es el del mundo (los
+    dobles del canal y el espejo del sistema SIN agentes). El `tmux` del PATH remoto es un envoltorio que fuerza ese socket
+    (una orden que ya trae su propio `-L` o `-S` se respeta y vive en el mismo mundo). El servidor arranca sin fichero de
+    configuración (`-f /dev/null`). `close` mata el servidor y todos los del directorio de sockets y comprueba que no queda
     ninguno vivo."""
 
     def __init__(self, world):
@@ -739,22 +819,26 @@ class RealTmux:
         self.world = world
         self.sockets = world.root / "tmux-sockets"
         self.sockets.mkdir()
-        self.sock = f"tco-prueba-{os.getpid()}"
+        self.socket = world.root / "tmux.sock"
         world.env["TMUX_TMPDIR"] = str(self.sockets)
         world.env.pop("TMUX", None)
-        self.env = dict(world.env, PATH=f"{world.remote}:/usr/bin:/bin", HOME=str(world.home))
-        real, sock = shlex.quote(self.real), shlex.quote(self.sock)
+        self.env = dict(world.env, PATH=f"{world.remote}:{world.sistema}", HOME=str(world.home))
+        aislamiento_agentes.aserto_entorno(self.env, world.root, completo=True, inicial=False)
+        real, sock = shlex.quote(self.real), shlex.quote(str(self.socket))
         (world.remote / "tmux").unlink()
         write(world.remote / "tmux", '#!/bin/bash\nunset TMUX\n'
-              f'if [ "${{1:-}}" = -L ]; then exec {real} "$@"; fi\nexec {real} -L {sock} "$@"\n')
+              f'if [ "${{1:-}}" = -L ] || [ "${{1:-}}" = -S ]; then exec {real} "$@"; fi\nexec {real} -S {sock} "$@"\n')
 
     def __call__(self, *args):
-        return subprocess.run([self.real, "-L", self.sock, *args], env=self.env, capture_output=True, text=True,
+        return subprocess.run([self.real, "-S", str(self.socket), *args], env=self.env, capture_output=True, text=True,
                               timeout=15)
 
     def start(self, shell="/bin/bash"):
         result = self("-f", "/dev/null", "new-session", "-d", "-s", "arranque", "-c", str(self.world.cwd), "sleep 600")
         assert result.returncode == 0, f"servidor privado de la prueba: {result}"
+        result = self("display-message", "-p", "#{socket_path}")
+        assert result.returncode == 0, result
+        aislamiento_agentes.aserto_socket_tmux(result.stdout, self.world.root)
         result = self("set-option", "-g", "default-shell", shell)
         assert result.returncode == 0, result
 
@@ -764,6 +848,19 @@ class RealTmux:
         for _ in range(panes - 1):
             result = self("split-window", "-h", "-t", f"{name}:", "-c", str(self.world.cwd), command)
             assert result.returncode == 0, result
+
+    def session_sonda(self, etiqueta, panes=2, rama_shell_normal=False):
+        """La sesión v con la sonda de resolución como PRIMERA orden de sus panes: escribe en el mundo qué resuelven de verdad
+        (command -v de los agentes, node y npx con el PATH real del pane) y se lee ANTES de lanzar nada. Todo tiene que ser un
+        doble del mundo; solo las dos ramas de shell normal admiten (y anotan) un agente del sistema."""
+        ficheros = [self.world.root / f"sonda-pane-{etiqueta}-{pane}.txt" for pane in range(panes)]
+        result = self("new-session", "-d", "-s", "v", "-c", str(self.world.cwd), aislamiento_agentes.orden_sonda(ficheros[0]))
+        assert result.returncode == 0, result
+        for fichero in ficheros[1:]:
+            result = self("split-window", "-h", "-t", "v:", "-c", str(self.world.cwd), aislamiento_agentes.orden_sonda(fichero))
+            assert result.returncode == 0, result
+        # Un fichero de sonda POR PANE: se exigen todos (cada uno con su FIN) antes de seguir.
+        return aislamiento_agentes.leer_sondas(ficheros, self.world.root, rama_shell_normal)
 
     def panes(self, session="v"):
         """Panes REALES de la sesión (índice, id y pid): no deben cambiar por la sonda."""
@@ -778,11 +875,13 @@ class RealTmux:
 
     def close(self):
         self("kill-server")
-        for socket in self.sockets.rglob("*"):
+        sockets = [self.socket, *self.sockets.rglob("*")]
+        for socket in sockets:
             if socket.is_socket():
-                subprocess.run([self.real, "-S", str(socket), "kill-server"], capture_output=True, timeout=10)
-        left = [s for s in self.sockets.rglob("*") if s.is_socket()
-                and subprocess.run([self.real, "-S", str(s), "has-session"], capture_output=True, timeout=10).returncode == 0]
+                subprocess.run([self.real, "-S", str(socket), "kill-server"], env=self.env, capture_output=True, timeout=10)
+        left = [s for s in sockets if s.is_socket()
+                and subprocess.run([self.real, "-S", str(s), "has-session"], env=self.env, capture_output=True,
+                                   timeout=10).returncode == 0]
         assert not left, f"queda algún servidor tmux de la prueba vivo: {left}"
 
 
@@ -867,23 +966,89 @@ def otros_panes(tm, pane_index="1"):
     return [line for line in result.stdout.splitlines() if not line.split("|")[0].endswith(f".{pane_index}")]
 
 
-def mode_sonda_shell_del_servidor():
-    """H-01 (R9011j3), regresión obligatoria con tmux REAL: un servidor YA configurado con una `default-shell` que fija
-    PATH=/usr/bin:/bin. El pane real no encuentra el lanzador (127). La comprobación debe resolver lo mismo que ese pane y
-    rechazar ANTES de lanzar. Control positivo en el MISMO servidor con la shell normal y `remain-on-exit` global en on.
-    Pasa por el relanzamiento real de lib.sh (comprobación, lanzamiento y vida) sobre el pane v:.1."""
+def escribe_shell(world, fichero, espejo, prefijo_pwd=False):
+    """Shell del servidor tmux de la prueba: fija el PATH del espejo del sistema SIN agentes (citado; en la de `j5_b` con el
+    directorio actual delante, que es el objeto del caso) y arranca bash SIN login ni rc con un entorno cerrado: HOME y XDG
+    vacíos dentro del mundo. La guarda estática corre ANTES de que nadie la use."""
+    ruta = ('"$PWD/bin":' if prefijo_pwd else "") + shlex.quote(espejo)
+    write(fichero, "#!/bin/bash\n"
+          f"export PATH={ruta}\n"
+          f'exec /usr/bin/env -i PATH="$PATH" HOME={shlex.quote(str(world.home_vacio))} '
+          f'XDG_CONFIG_HOME={shlex.quote(world.env["XDG_CONFIG_HOME"])} XDG_DATA_HOME={shlex.quote(world.env["XDG_DATA_HOME"])} '
+          'TERM=dumb LANG=C.UTF-8 /bin/bash --noprofile --norc "$@"\n')
+    aislamiento_agentes.aserto_estatico_shell(fichero, espejo, world.root, str(world.home_vacio), world.env["XDG_CONFIG_HOME"],
+                                              world.env["XDG_DATA_HOME"], prefijo_pwd)
+
+
+def mide_resolucion(world, tm, cli, index, etiqueta):
+    """MIDE lo que el pane v:.<index> resuelve para el nombre dado con SU shell, sin ejecutar lo resuelto: un respawn en ese
+    pane con la orden de medida (la ruta que da la resolución y su rc, hacia un fichero del mundo). Devuelve (ruta, rc)."""
+    fichero = world.root / f"resol-{etiqueta}.txt"
+    fichero.unlink(missing_ok=True)
+    orden = aislamiento_agentes.orden_medida(cli, fichero, world.root)
+    tm("set-option", "-w", "-t", "v:", "remain-on-exit", "on")
+    carga = shlex.quote(f"tmux respawn-pane -k -t 'v:.{index}' " + shlex.quote(orden))
+    result = world.run(PRELUDE + f"incus exec fixture -- su - fixture -c {carga}\nexit $?\n")
+    assert result.returncode == 0, result
+    for _ in range(100):
+        lineas = fichero.read_text().splitlines() if fichero.exists() else []
+        if lineas and lineas[-1].startswith("rc="):
+            return (lineas[0] if len(lineas) > 1 else ""), int(lineas[-1][3:])
+        time.sleep(0.1)
+    raise AssertionError(f"la medida de resolución de {cli} no terminó: {lineas}")
+
+
+def comprobacion_previa(world, cli):
+    """Solo la COMPROBACIÓN PREVIA de la librería sobre el pane v:.1 (la sonda de resolución, sin lanzamiento): imprime la
+    ruta del lanzador que acreditó."""
+    return world.run(PRELUDE + "tco_panes_fijar_sesion 01 1 || exit 90\n"
+                     'read -r pane < <(tco_pane_destino v:.1)\n'
+                     'tco_remain_preparar 01 "$pane" || exit 91\n'
+                     f'tco_launchers_ready 01 "$rp" TCO_AUDIT_CLI "$pane" {shlex.quote(cli)} || exit 92\n'
+                     'printf "LANZADOR=%s\\n" "${_TCO_LANZADOR[$pane]-}"\n')
+
+
+def aserta_lanzador_del_mundo(world, cli, ruta):
+    assert ruta and os.path.realpath(ruta) == os.path.realpath(world.remote / cli), \
+        f"la resolución no es el lanzador del mundo: {ruta!r}"
+
+
+def _control_positivo_s2(world, tm, cli):
+    """Control positivo de H-01 en el MISMO servidor, con la shell normal y remain-on-exit global en on. Solo MIDE, no lanza
+    ningún agente: la comprobación previa de la librería autoriza y acredita el lanzador del mundo, y el pane resuelve el
+    nombre a ese lanzador con rc 0."""
+    assert tm("set-option", "-g", "default-shell", "/bin/bash").returncode == 0
+    assert tm("set-option", "-g", "remain-on-exit", "on").returncode == 0
+    tm("kill-session", "-t", "v")
+    tm.session_sonda("2", rama_shell_normal=True)
+    result = comprobacion_previa(world, cli)
+    acreditado = next((l[len("LANZADOR="):] for l in result.stdout.splitlines() if l.startswith("LANZADOR=")), "")
+    assert result.returncode == 0 and not tm.sonda_windows(), f"control: {result} {tm.sonda_windows()}"
+    aserta_lanzador_del_mundo(world, cli, acreditado)
+    ruta, rc = mide_resolucion(world, tm, cli, 1, "s2")
+    assert rc == 0, f"control: el pane no resuelve {cli} (rc {rc})"
+    aserta_lanzador_del_mundo(world, cli, ruta)
+
+
+def mode_sonda_shell_del_servidor(mode=None):
+    """H-01 (R9011j3), regresión obligatoria con tmux REAL: un servidor YA configurado con una `default-shell` que fija un PATH
+    propio del mundo SIN agentes. El pane real no encuentra el lanzador (127). La comprobación debe resolver lo mismo que ese
+    pane y rechazar ANTES de lanzar. Control positivo en el MISMO servidor con la shell normal y `remain-on-exit` global en
+    on (solo mide la resolución: un agente real no se ejecuta en una prueba). Pasa por el relanzamiento real de lib.sh
+    (comprobación, lanzamiento y vida) sobre el pane v:.1. La variante `_sistema_con_agentes` usa un sistema FALSO que SÍ
+    lleva los agentes."""
     with tempfile.TemporaryDirectory() as tmp:
         world = World(tmp)
         world.agents(text=AGENT_VIVO)
         world.launchers()
-        for name in ("codex-root", "codex"):
-            assert shutil.which(name, path="/usr/bin:/bin") is None, f"precondición: {name} existe en /usr/bin:/bin"
+        espejo = world.sistema_con_agentes() if (mode or "").endswith("_sistema_con_agentes") else world.sistema_sin_agentes()
         alterna = world.root / "shell-alterna"
-        write(alterna, '#!/bin/bash\nexport PATH=/usr/bin:/bin\nexec /bin/bash "$@"\n')
+        escribe_shell(world, alterna, espejo)
+        aislamiento_agentes.aserto_r11(_control_positivo_s2, comprobacion_previa)
         tm = RealTmux(world)
         try:
             tm.start(str(alterna))
-            tm.session("v", panes=2)
+            tm.session_sonda("1")
             otros, antes = otros_panes(tm), orden_del_pane(tm)
             result = relanza(world)
             assert otros_panes(tm) == otros, f"la comprobación tocó otro pane: {otros} -> {otros_panes(tm)}"
@@ -892,14 +1057,7 @@ def mode_sonda_shell_del_servidor():
             assert "golden" in result.stdout + result.stderr, result
             real_rc = lanza_real(world, tm, "codex-root", 1)
             assert real_rc == 127, f"precondición: el pane real debía morir con 127 y dio {real_rc}"
-            # Control positivo: misma máquina, mismo servidor, shell normal.
-            assert tm("set-option", "-g", "default-shell", "/bin/bash").returncode == 0
-            assert tm("set-option", "-g", "remain-on-exit", "on").returncode == 0
-            tm("kill-session", "-t", "v")
-            tm.session("v", panes=2)
-            result = relanza(world)
-            assert result.returncode == 0 and not tm.sonda_windows(), f"control: {result} {tm.sonda_windows()}"
-            assert lanza_real(world, tm, "codex-root", 1) == 0, "control: el pane real no arranca el agente"
+            _control_positivo_s2(world, tm, "codex-root")
         finally:
             tm.close()
 
@@ -949,30 +1107,49 @@ def mode_sonda_colgada():
             tm.close()
 
 
-def mode_j5_a_shell_cambiada():
-    """J4-01 A (R9011j4), tmux REAL: la sesión se crea con una shell que fija PATH=/usr/bin:/bin y DESPUÉS se cambia su
-    `default-shell` a /bin/bash. Una ventana nueva usaría la shell nueva; el pane ya creado conserva la suya y muere con
-    127. La comprobación debe resolver lo MISMO que ese pane (fallo cerrado antes de lanzar), no autorizar."""
+def _rama_shell_nueva_s4(world, tm, cli, medida):
+    """Rama de un tmux que relanza el pane con la shell NUEVA. Solo MIDE, no lanza ningún agente: el pane resuelve el nombre
+    al lanzador del mundo y la comprobación previa de la librería autoriza y acredita ese mismo lanzador."""
+    ruta, rc = medida
+    assert rc == 0, f"j5_a: la medida de la rama no resuelve (rc {rc})"
+    aserta_lanzador_del_mundo(world, cli, ruta)
+    fichero = world.root / "sonda-pane-s4-nueva.txt"
+    assert tm("respawn-pane", "-k", "-t", "v:.1", aislamiento_agentes.orden_sonda(fichero)).returncode == 0
+    aislamiento_agentes.leer_sonda(fichero, world.root, rama_shell_normal=True)
+    result = comprobacion_previa(world, cli)
+    acreditado = next((l[len("LANZADOR="):] for l in result.stdout.splitlines() if l.startswith("LANZADOR=")), "")
+    assert result.returncode == 0 and not tm.sonda_windows(), f"j5_a: el pane resuelve el lanzador y la comprobación lo rechaza: {result}"
+    aserta_lanzador_del_mundo(world, cli, acreditado)
+
+
+def mode_j5_a_shell_cambiada(mode=None):
+    """J4-01 A (R9011j4), tmux REAL: la sesión se crea con una shell que fija un PATH propio del mundo SIN agentes y DESPUÉS se
+    cambia su `default-shell` a /bin/bash. Una ventana nueva usaría la shell nueva; el pane ya creado conserva la suya y muere
+    con 127. La comprobación debe resolver lo MISMO que ese pane (fallo cerrado antes de lanzar), no autorizar. Lo que el pane
+    resuelve se MIDE con un respawn y decide la rama: restringida (el caso mide siempre el rechazo previo) o, en un tmux que
+    relanza con la shell nueva, la rama de _rama_shell_nueva_s4."""
     with tempfile.TemporaryDirectory() as tmp:
         world = World(tmp)
         world.agents(text=AGENT_VIVO)
         world.launchers()
+        espejo = world.sistema_con_agentes() if (mode or "").endswith("_sistema_con_agentes") else world.sistema_sin_agentes()
         restringida = world.root / "shell-restringida"
-        write(restringida, '#!/bin/bash\nexport PATH=/usr/bin:/bin\nexec /bin/bash "$@"\n')
+        escribe_shell(world, restringida, espejo)
+        aislamiento_agentes.aserto_r11(_rama_shell_nueva_s4, comprobacion_previa)
         tm = RealTmux(world)
         try:
             tm.start(str(restringida))
-            tm.session("v", panes=2)
+            tm.session_sonda("1")
             assert tm("set-option", "-t", "v", "default-shell", "/bin/bash").returncode == 0
+            medida = mide_resolucion(world, tm, "codex-root", 1, "s4")
+            # La medida va ANTES de tomar los invariantes: su respawn no cuenta como lanzamiento.
             otros, antes = otros_panes(tm), orden_del_pane(tm)
-            result = relanza(world)
-            despues = orden_del_pane(tm)
-            real_rc = lanza_real(world, tm, "codex-root", 1)
-            print(f"j5_a: pane real rc={real_rc}; comprobación rc={result.returncode}")
-            if real_rc == 0:
-                # Un tmux que relanza con la shell NUEVA: lo comprobado debe coincidir (autoriza y arranca).
-                assert result.returncode == 0, f"j5_a: el pane arranca el agente y la comprobación lo rechaza: {result}"
+            print(f"j5_a: el pane resuelve rc={medida[1]}")
+            if medida[1] == 0:
+                _rama_shell_nueva_s4(world, tm, "codex-root", medida)
             else:
+                result = relanza(world)
+                despues = orden_del_pane(tm)
                 check_rechazo_previo("j5_a_shell_cambiada", result, tm, antes, despues=despues)
             assert otros_panes(tm) == otros and not tm.sonda_windows(), "j5_a: se tocó otro pane o quedó una ventana"
         finally:
@@ -982,19 +1159,24 @@ def mode_j5_a_shell_cambiada():
 def mode_j5_b_cwd(mode):
     """J4-01 B (R9011j4), tmux REAL: la shell fija PATH="$PWD/bin:…"; el pane se creó con `-c <repo>` y el cliente corre
     desde <home>, como el `su -` real. Sin lanzadores en <repo>/bin (solo en <home>/bin) la comprobación rechaza ANTES de
-    lanzar; con ellos en <repo>/bin autoriza y el agente arranca: resuelve en <repo> igual que el lanzamiento."""
+    lanzar; con ellos en <repo>/bin autoriza y el agente arranca: resuelve en <repo> igual que el lanzamiento. El resto del PATH
+    es un espejo del sistema SIN agentes, propio del mundo; la variante `_sistema_con_agentes` usa un sistema FALSO que SÍ
+    lleva los agentes."""
+    con_agentes = mode.endswith("_sistema_con_agentes")
+    mode = mode.removesuffix("_sistema_con_agentes")
     with tempfile.TemporaryDirectory() as tmp:
         world = World(tmp)
         bindir = (world.cwd if mode == "j5_b_cwd_con_lanzadores_en_repo" else world.home) / "bin"
         bindir.mkdir()
         world.agents(where=bindir, text=AGENT_VIVO)
         world.launchers(where=bindir)
+        espejo = world.sistema_con_agentes() if con_agentes else world.sistema_sin_agentes()
         shell = world.root / "shell-path-por-directorio"
-        write(shell, '#!/bin/bash\nexport PATH="$PWD/bin:/usr/bin:/bin"\nexec /bin/bash "$@"\n')
+        escribe_shell(world, shell, espejo, prefijo_pwd=True)
         tm = RealTmux(world)
         try:
             tm.start(str(shell))
-            tm.session("v", panes=2)
+            tm.session_sonda("1")
             world.env["FAKE_CWD"] = str(world.home)
             otros, antes = otros_panes(tm), orden_del_pane(tm)
             result = relanza(world)
@@ -1103,6 +1285,52 @@ def mode_j5_identidad_acreditada():
             tm.close()
 
 
+def mode_j5_identidad_acreditada_execve():
+    """Codex de npm: el lanzador hace `exec codex` y `codex` es el enlace al `bin/codex.js` del paquete `@openai/codex`, que
+    hace execve al binario NATIVO. La sonda del relanzamiento acredita codex.js (E:/I: sin cambiar su forma) y el proceso del
+    pane acaba siendo el nativo: el relanzamiento REAL (`tco_codex_relaunch_and_role`, que incluye la identidad tras lanzar)
+    sale con rc 0, y también la lectura desde OTRO proceso (el doctor, --soft) acredita al pane por el nativo que deriva de
+    la ruta acreditada. Control: un proceso de otro inodo, ni codex.js ni el nativo del paquete, NO se acredita."""
+    with tempfile.TemporaryDirectory() as tmp:
+        world = World(tmp)
+        write(world.remote / "uname", "#!/bin/bash\necho x86_64\n")
+        raiz = world.root / "npm/lib/node_modules/@openai/codex"
+        nativo = raiz / "node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex"
+        nativo.parent.mkdir(parents=True)
+        (raiz / "bin").mkdir(parents=True)
+        shutil.copyfile(shutil.which("python3"), nativo)
+        nativo.chmod(0o755)
+        (raiz / "package.json").write_text('{\n  "name": "@openai/codex",\n  "version": "0.166.0"\n}\n')
+        write(raiz / "bin/codex.js", "#!/usr/bin/env node\n// fixture\n")
+        (world.remote / "codex").symlink_to(raiz / "bin/codex.js")
+        # `node` doblado: simula `process.execve(nativo, [nativo, ...args])` de codex.js (el proceso pasa a ser el nativo).
+        write(world.remote / "node", f'#!/bin/bash\nshift\nexec {shlex.quote(str(nativo))} "$@"\n')
+        write(world.remote / "codex-root", "#!/bin/bash\nexec codex -c 'import time; time.sleep(60)'\n")
+        tm = RealTmux(world)
+        try:
+            tm.start()
+            tm.session("v", panes=2)
+            result = relanza(world)
+            assert result.returncode == 0, f"j5_identidad_execve: el relanzamiento con execve no se acredita: {result}"
+            pid = tm("display-message", "-p", "-t", "v:.1", "#{pane_pid}").stdout.strip()
+            world.env["FAKE_PID_1"] = pid
+            lectura = world.run(PRELUDE + '_tco_pane_agent_exes 01 v:.1 codex-root\nexit $?\n')
+            assert lectura.returncode == 0 and first_line(lectura.stdout) == "codex", \
+                f"j5_identidad_execve: el nativo tras execve no se acredita desde otro proceso: {lectura}"
+            # Control: otro fichero (otro inodo, fuera del paquete) en el pane no es el acreditado.
+            otro = world.root / "otro/codex"
+            otro.parent.mkdir()
+            shutil.copyfile(shutil.which("python3"), otro)
+            otro.chmod(0o755)
+            tm("respawn-pane", "-k", "-t", "v:.1", f"{otro} -c 'import time; time.sleep(60)'")
+            time.sleep(0.3)
+            world.env["FAKE_PID_1"] = tm("display-message", "-p", "-t", "v:.1", "#{pane_pid}").stdout.strip()
+            lectura = world.run(PRELUDE + '_tco_pane_agent_exes 01 v:.1 codex-root\nexit $?\n')
+            assert first_line(lectura.stdout) != "codex", f"j5_identidad_execve: se acredita un binario ajeno: {lectura}"
+        finally:
+            tm.close()
+
+
 def mode_j5_binario(mode):
     """El binario cambia ENTRE la sonda y el lanzamiento (bloque real de dispatch.sh): el lanzamiento real no ejecuta otra
     ruta que la comprobada. Symlink: tras la sonda, `claude-root` pasa a apuntar a otro lanzador (v2); se lanza la ruta
@@ -1116,7 +1344,7 @@ def mode_j5_binario(mode):
         if mode == "j5_binario_symlink":
             for version in ("v1", "v2"):
                 (world.root / version).mkdir()
-            write(world.root / "v1" / "claude-root", launcher_text("claude", "--dangerously-skip-permissions"))
+            world.launchers(where=world.root / "v1", only=("claude-root",))
             write(world.root / "v2" / "claude-root", f'#!/bin/bash\necho v2 >> "{log}"\nexit 0\n')
             (world.remote / "claude-root").symlink_to(world.root / "v1" / "claude-root")
             cambio = f'ln -sfn {shlex.quote(str(world.root / "v2" / "claude-root"))} {shlex.quote(str(world.remote / "claude-root"))}'
@@ -1182,7 +1410,7 @@ def mode_h02(mode):
             claude.chmod(0o755)
             sleeper = ["-c", "import time; time.sleep(60)"]
             if mode == "identidad_emite_inodo":
-                procs.append(subprocess.Popen([str(claude), *sleeper], start_new_session=True))
+                procs.append(subprocess.Popen([str(claude), *sleeper], env=world.env, start_new_session=True))
                 world.env["FAKE_PID_0"] = str(procs[0].pid)
                 result = world.run(PRELUDE + '_tco_pane_agent_exes 01 v:.0 claude\nexit $?\n')
                 info = claude.stat()
@@ -1194,7 +1422,7 @@ def mode_h02(mode):
             stats = [(world.remote / agent).stat() for agent in ("claude", "codex")]
             assert (stats[0].st_dev, stats[0].st_ino) == (stats[1].st_dev, stats[1].st_ino), "precondición: enlace duro"
             for index, agent in enumerate(("claude", "codex")):
-                procs.append(subprocess.Popen([str(world.remote / agent), *sleeper], start_new_session=True))
+                procs.append(subprocess.Popen([str(world.remote / agent), *sleeper], env=world.env, start_new_session=True))
                 world.env[f"FAKE_PID_{index}"] = str(procs[-1].pid)
             code = (PRELUDE + 'TCO_DEV_CLI=claude; TCO_AUDIT_CLI=codex; TCO_AUDIT_TOPOLOGY=distinto\n'
                     'tco_pane_identity_preflight 01\nexit $?\n')
@@ -1211,7 +1439,7 @@ def mode_h02(mode):
             shutil.copyfile(claude, world.remote / "codex")
             (world.remote / "codex").chmod(0o755)
             for index, agent in enumerate(("claude", "codex")):
-                procs.append(subprocess.Popen([str(world.remote / agent), *sleeper], start_new_session=True))
+                procs.append(subprocess.Popen([str(world.remote / agent), *sleeper], env=world.env, start_new_session=True))
                 world.env[f"FAKE_PID_{index}"] = str(procs[-1].pid)
             result = world.run(code)
             assert result.returncode == 0 and "AUDITOR: codex " in result.stdout, f"{mode} (control copia): {result}"
@@ -1485,8 +1713,9 @@ def mode_j6_mensajes():
 
 def audit_block_identidad():
     """Bloque REAL de audit-carril.sh hasta la identidad tras lanzar (o, si no existe, hasta la vida)."""
-    return block_between(OP / "audit-carril.sh", '  sess_res="$(incus exec',
-                         ["no es el agente acreditado por la sonda", "murió o no existe tras lanzarlo"])
+    return bloque_sin_tokens("audit_block_identidad", block_between(
+        OP / "audit-carril.sh", '  sess_res="$(incus exec',
+        ["no es el agente acreditado por la sonda", "murió o no existe tras lanzarlo"]))
 
 
 def mode_j6_identidad_lanzada(mode):
@@ -1589,7 +1818,8 @@ def mode_j6_destinos_estaticos():
             fija = min((i for i, l in code if l.lstrip().startswith("tco_pane_id_fijar ")), default=None)
             remain = min((i for i, l in code if l.lstrip().startswith("tco_remain_preparar ")), default=None)
             assert fija is not None and remain is not None and fija < remain, f"{name}: el id estable no se lee antes"
-    body = block_between(OP / "lib.sh", "tco_codex_relaunch_and_role() {", "codex relanzado + update-skip")
+    body = bloque_sin_tokens("relanzamiento_lib", block_between(OP / "lib.sh", "tco_codex_relaunch_and_role() {",
+                                                                "codex relanzado + update-skip"))
     # La lectura del id estable de una sesión que ya existía es tco_panes_fijar_sesion (R9011j7 J7-01).
     assert "tco_panes_fijar_sesion" in body and "tco_pane_id_fijar" not in body, \
         "lib.sh: el relanzamiento no lee el id estable con tco_panes_fijar_sesion (sesión que ya existía)"
@@ -1987,7 +2217,9 @@ def mode_j7_censo():
         resto = l.replace('pane="$(tco_pane_destino "$dest")"', "")
         if re.search(r"\$\{?dest\b", resto) or "$(tco_pane_" in resto:
             malos.append(f"lib.sh:{i + 1}: {l.strip()}")
-    for fn in ("tco_pane_calibration_preflight() {", "tco_ensure_audit_model() {", "_tco_pane_cli_version() {"):
+    # tco_ensure_audit_model() ya no está en el censo: desde 4044e1de no toca ningún pane (el auditor es siempre Codex y la función
+    # solo rechaza un auditor Claude), así que no hay %N fijado que resolver.
+    for fn in ("tco_pane_calibration_preflight() {", "_tco_pane_cli_version() {"):
         s = next(i for i, l in enumerate(lines) if l.startswith(fn))
         e = next(i for i in range(s + 1, len(lines)) if lines[i] == "}")
         texto = "\n".join(l for l in lines[s:e + 1] if not l.lstrip().startswith("#"))
@@ -2441,8 +2673,10 @@ def fase_world(tmp):
     write(world.root / "modelos.conf", FASE_REGISTRO, 0o600)
     (world.root / "panel").mkdir()
     world.env.update(TCO_MODELOS_REGISTRO=str(world.root / "modelos.conf"), SECRET_DIR=str(world.root / "panel"))
-    for key in ("TMUX_SESSION", "TC_CLAUDE_PANE", "TC_CLAUDE_PHASE", "TMUX", "HOST_USER", "HOST_HOME"):
+    # HOST_USER y HOST_HOME se quedan: son del mundo (el aserto del entorno las exige definidas y dentro de él).
+    for key in ("TMUX_SESSION", "TC_CLAUDE_PANE", "TC_CLAUDE_PHASE", "TMUX"):
         world.env.pop(key, None)
+    aislamiento_agentes.aserto_entorno(world.env, world.root, completo=True, inicial=False)
     return world
 
 
@@ -2464,8 +2698,8 @@ def fase_tui_log(world):
 def mode_fase_tmux_real():
     """(a) %N REAL: tmux real con socket propio (`-L`), la sesión del canal con dos panes. Se lee el `%N` de cada pane como
     dispatch.sh (tco_pane_id_fijar + tco_pane_destino) y se recorre el camino hasta tco_modelo_guardar_fase: el gate del
-    despacho (tco_ensure_model por $P_DEV), el cambio por el picker (tco_set_model por $P_DEV) y el auditor Claude
-    (tco_ensure_audit_model, por el `%N` del pane .1). Las teclas van al `%N`; el fichero se escribe con la clave lógica y lo
+    despacho (tco_ensure_model por $P_DEV), el cambio por el picker (tco_set_model por $P_DEV) y la clave de fase del
+    pane .1 (tco_ensure_model por su `%N`; el auditor es siempre Codex y no tiene fase de Claude). Las teclas van al `%N`; el fichero se escribe con la clave lógica y lo
     lee la clave de refresh-claude-auth.sh."""
     with tempfile.TemporaryDirectory() as tmp:
         world = fase_world(tmp)
@@ -2483,7 +2717,7 @@ FASE_ACTIVO=si tco_ensure_model "$CARRIL" "$P_DEV" "$OPUS" || exit 91
 echo "LEE1 $(lee)"
 FASE_ACTIVO=no tco_set_model "$CARRIL" "$P_DEV" "$SONNET" || exit 92
 echo "LEE2 $(lee)"
-TCO_AUDIT_CLI=claude FASE_ACTIVO=si tco_ensure_audit_model "$CARRIL" || exit 93
+FASE_ACTIVO=si tco_ensure_model "$CARRIL" "$P_AUD" "$SONNET" || exit 93
 echo "LEE3 $(TC_CLAUDE_PANE=v:.1 lee)"
 exit 0
 '''
@@ -2545,6 +2779,7 @@ exit 0
         driver = world.root / "driver.sh"
         driver.write_text(code)
         env = dict(world.env, OP=str(OP))
+        aislamiento_agentes.aserto_entorno(env, world.root, completo=True, inicial=False)
         result = subprocess.run(["/bin/bash", str(driver), str(world.root / "panel-v")], env=env, text=True,
                                 capture_output=True, timeout=60)
         text = result.stdout + result.stderr
@@ -2592,6 +2827,7 @@ def mode_fase_negativos():
                           'tco_modelo_fase_canal "$c" "$TCO_CUSER" "$1"'):
                 driver = world.root / "driver.sh"
                 driver.write_text(PRELUDE + FASE_TUI + orden + "\nexit $?\n")
+                aislamiento_agentes.aserto_entorno(world.env, world.root, completo=True, inicial=False)
                 result = subprocess.run(["/bin/bash", str(driver), clave], env=world.env, text=True,
                                         capture_output=True, timeout=30)
                 assert result.returncode != 0, f"fase_negativos/filtro {clave!r}: no falla: {result}"
@@ -2655,7 +2891,8 @@ def mode_fase_dobles_pane_id():
                 malos.append(f"{origen}: pane_id {i!r} sin la forma %N")
 
     def bash(code, env=None, args=()):
-        r = subprocess.run(["/bin/bash", "-c", code, "doble", *args], env=dict(os.environ, **(env or {})), text=True,
+        r = subprocess.run(["/bin/bash", "-c", code, "doble", *args],
+                           env=dict(aislamiento_agentes.entorno_minimo(), **(env or {})), text=True,
                            capture_output=True, timeout=20)
         assert r.returncode == 0, f"fase_dobles_pane_id: el doble no contesta: {r}"
         return r.stdout
@@ -2696,10 +2933,11 @@ def mode_fase_dobles_pane_id():
         shim = Path(tmp) / "tmux"
         write(shim, fase_una(pi, ("new-window) /bin/bash -c",), "pane-identity tmux"))
         mira("pane-identity tmux list-panes", [subprocess.run([str(shim), "list-panes", "-s", "-t", "v", "-F",
-                                               "#{pane_id}|#{pane_current_command}"], text=True, capture_output=True,
-                                              timeout=10).stdout.split("|")[0]])
+                                               "#{pane_id}|#{pane_current_command}"], env=aislamiento_agentes.entorno_minimo(),
+                                              text=True, capture_output=True, timeout=10).stdout.split("|")[0]])
         mira("pane-identity tmux new-window", [subprocess.run([str(shim), "new-window", "-d", "-P", "-F", "#{pane_id}",
-                                               "true"], text=True, capture_output=True, timeout=10).stdout.strip()])
+                                               "true"], env=aislamiento_agentes.entorno_minimo(), text=True,
+                                              capture_output=True, timeout=10).stdout.strip()])
     nodo = fase_funcion(fase_una(pi, ("NODE_AGENT", "display-message"), "pane-identity incus (node)"), "incus")
     mira("pane-identity incus (node)", bash(nodo + f"incus exec fixture -- su - fixture -c \"tmux display-message -p -t "
                                             f"'v:.0' '{PIDE_ID}'\"\n").split()[1:2] or [""])
@@ -2718,7 +2956,8 @@ def mode_fase_dobles_pane_id():
         write(shim, li.replace("SETUP_PLACEHOLDER", ""))
         for t in ("v:0.0", "v:0.1"):
             out = subprocess.run([str(shim), "exec", "fixture", "--", "su", "-", "fixture", "-c",
-                                  f"tmux display-message -p -t '{t}' '{PIDE_ID}'"], env=dict(os.environ, TEST_PID="123"),
+                                  f"tmux display-message -p -t '{t}' '{PIDE_ID}'"],
+                                 env=dict(aislamiento_agentes.entorno_minimo(), TEST_PID="123"),
                                  text=True, capture_output=True, timeout=10).stdout.split()
             mira(f"launcher-identity incus {t}", out[1:2] or [""])
             if out[1:2] and out[1] != "%" + t[-1]:
@@ -2735,9 +2974,50 @@ def mode_fase_dobles_pane_id():
     print("fase_dobles_pane_id: todos los dobles de tmux dan pane_id con la forma %N")
 
 
+def mode_sistema_sin_agentes():
+    """Unitario del espejo del sistema SIN agentes, con un sistema FALSO inyectado (nunca el real): los cuatro agentes y dos
+    nombres de paquetes de agentes (codex-cli y claude-code) no aparecen, una utilidad sí y apunta a la real, un directorio, un
+    enlace roto y un fichero no ejecutable no entran, y en un nombre duplicado gana el primer directorio."""
+    with tempfile.TemporaryDirectory() as tmp:
+        world = World(tmp)
+        assert set(AGENTES) == set(aislamiento_agentes.AGENTES), \
+            f"la lista de agentes de la prueba difiere de la de la guarda: {AGENTES}"
+        falso = world.root / "falso"
+        a, b = falso / "a", falso / "b"
+        a.mkdir(parents=True)
+        b.mkdir()
+        for directorio in (a, b):
+            for nombre in ("codex", "codex-root", "claude", "claude-root", "codex-cli", "claude-code"):
+                write(directorio / nombre, AGENT)
+        (a / "bash").symlink_to(shutil.which("bash"))
+        (a / "herramienta").mkdir()
+        (a / "roto").symlink_to(a / "no-existe")
+        write(a / "datos", "no ejecutable\n", 0o644)
+        write(a / "dup", "#!/bin/bash\necho a\n")
+        write(b / "dup", "#!/bin/bash\necho b\n")
+        ruta = world.sistema_sin_agentes(sistema=(a, b))
+        for nombre in ("codex", "codex-root", "claude", "claude-root"):
+            assert shutil.which(nombre, path=ruta) is None, f"el espejo deja pasar {nombre}"
+        presentes = set(os.listdir(ruta))
+        assert not presentes & {"codex-cli", "claude-code"}, f"el espejo deja pasar un paquete de agentes: {presentes}"
+        assert os.path.realpath(shutil.which("bash", path=ruta)) == os.path.realpath(shutil.which("bash")), "bash"
+        assert not presentes & {"herramienta", "roto", "datos"}, f"entradas que no son ejecutables: {presentes}"
+        assert os.readlink(os.path.join(ruta, "dup")) == str(a / "dup"), "en un duplicado gana el primer directorio"
+        assert world.sistema_sin_agentes(sistema=(a, b)) == ruta, "la segunda llamada cambia la ruta"
+        assert world.sistema_sin_agentes() == world.sistema and ruta != world.sistema
+
+
 def main():
     mode = sys.argv[1]
-    if mode in ("identidad_destino_ajeno_mismo_basename", "identidad_destino_ruta_canonica",
+    # --- INICIO bloque de la guarda de testigos: llamada al helper (aserta el entorno del proceso y, solo si pasa, escribe el
+    # testigo del modo en TCO_TESTIGO_DIR) ---
+    aislamiento_agentes.guarda_proceso(mode, TESTIGO_DIR)
+    # --- FIN bloque de la guarda de testigos ---
+    # Toda llamada a subprocess de esta prueba lleva env= en lista blanca y nada escribe ni copia os.environ.
+    aislamiento_agentes.aserto_ast(__file__)
+    if mode == "sistema_sin_agentes":
+        mode_sistema_sin_agentes()
+    elif mode in ("identidad_destino_ajeno_mismo_basename", "identidad_destino_ruta_canonica",
                 "preflight_dos_destinos_ajenos_comunes", "identidad_transporte_comilla_simple"):
         mode_identidad_ajena(mode)
     elif mode in ("identidad_r01_dos_sleep", "identidad_r05_path_del_pane", "identidad_r04_mismo_binario_real",
@@ -2745,8 +3025,8 @@ def main():
         mode_identidad_pane(mode)
     elif mode == "sonda_tmux_real":
         mode_sonda_tmux_real()
-    elif mode == "sonda_shell_del_servidor":
-        mode_sonda_shell_del_servidor()
+    elif mode in ("sonda_shell_del_servidor", "sonda_shell_del_servidor_sistema_con_agentes"):
+        mode_sonda_shell_del_servidor(mode)
     elif mode == "sonda_sesion_ausente":
         mode_sonda_sesion_ausente()
     elif mode == "sonda_colgada":
@@ -2757,14 +3037,17 @@ def main():
         mode_vida_remain_local()
     elif mode == "j5_orden_estatico":
         mode_j5_orden_estatico()
-    elif mode == "j5_a_shell_cambiada":
-        mode_j5_a_shell_cambiada()
-    elif mode in ("j5_b_cwd_sin_lanzadores_en_repo", "j5_b_cwd_con_lanzadores_en_repo"):
+    elif mode in ("j5_a_shell_cambiada", "j5_a_shell_cambiada_sistema_con_agentes"):
+        mode_j5_a_shell_cambiada(mode)
+    elif mode in ("j5_b_cwd_sin_lanzadores_en_repo", "j5_b_cwd_con_lanzadores_en_repo",
+                  "j5_b_cwd_sin_lanzadores_en_repo_sistema_con_agentes"):
         mode_j5_b_cwd(mode)
     elif mode == "j5_hook_after_new_window":
         mode_j5_hook()
     elif mode == "j5_identidad_acreditada":
         mode_j5_identidad_acreditada()
+    elif mode == "j5_identidad_acreditada_execve":
+        mode_j5_identidad_acreditada_execve()
     elif mode in ("j5_binario_symlink", "j5_binario_rename"):
         mode_j5_binario(mode)
     elif mode in ("j5_marcador_sin_marcador", "j5_marcador_nonce_distinto", "j5_marcador_ruta_relativa",

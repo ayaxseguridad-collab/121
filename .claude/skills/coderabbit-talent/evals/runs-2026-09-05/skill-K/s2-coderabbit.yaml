@@ -1,0 +1,208 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — punto de partida para repo Node.js/TypeScript nuevo (Next.js + Express)
+#
+# Basado en el template `node-typescript.yaml` de la skill coderabbit-talent, con
+# refuerzos de seguridad/pre-merge tomados de `base-talent.yaml`. Pensado para
+# convivir con un backend Express (API/routes/controllers) y un frontend Next.js
+# en el mismo repo (monolito o monorepo simple, sin workspaces — para pnpm/turbo
+# workspaces usar la plantilla `monorepo.yaml` de la skill en su lugar).
+#
+# Antes de commitear: validar con
+#   python3 -c "import yaml; yaml.safe_load(open('.coderabbit.yaml'))"
+
+language: es-ES
+
+tone_instructions: |
+  Sé directo y conciso. Salta los pleasantries.
+  Explica el razonamiento detrás de cada sugerencia en una sola frase.
+  Usa ejemplos de código TS/JS cuando sugieras alternativas concretas.
+  No elogies código que está bien — comenta solo cuando hay algo accionable.
+
+reviews:
+  profile: chill  # empezar conservador; el perfil `assertive` genera abandono
+                  # por ruido en las primeras semanas. Enum vigente: quiet|chill|assertive.
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: false
+  changed_files_summary: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+      - master
+      - develop
+      - staging
+
+  # Slop detection: útil desde el día 1 en un repo nuevo, sobre todo si parte
+  # del código se genera con agentes IA (Copilot/Claude Code/Cursor/Codex).
+  slop_detection:
+    enabled: true
+
+  fail_commit_status: true  # marca el commit status como failed si el review no puede completarse
+
+  path_filters:
+    # Dependencias y artefactos de build
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/out/**"
+    - "!**/.turbo/**"
+    - "!**/coverage/**"
+    # Lockfiles
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/yarn.lock"
+    # Generado / minificado
+    - "!**/*.generated.*"
+    - "!**/*.d.ts"
+    - "!**/*.min.js"
+    - "!**/*.bundle.js"
+    - "!**/__snapshots__/**"
+    - "!**/*.snap"
+    # Assets estáticos
+    - "!**/public/**"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.gif"
+    - "!**/*.svg"
+    - "!**/*.ico"
+    - "!**/*.woff*"
+
+  # Instrucción global: qué NO comentar (reduce ruido desde el arranque)
+  instructions: |
+    Este es un proyecto Node.js/TypeScript (Next.js en el frontend, Express en
+    el backend/API). No comentes sobre:
+    - Orden de imports (lo maneja ESLint/Biome/Prettier).
+    - Longitud de línea, comillas o trailing commas (autoformateado).
+    - Falta de JSDoc en funciones internas no exportadas.
+    - Uso de `any` en archivos de test (**/*.test.ts, **/*.spec.ts).
+
+    Enfoca atención extra en:
+    - Tipos TypeScript incorrectos: casts con `as`, `@ts-ignore`/`@ts-expect-error`
+      sin justificar, `any` en código de producción.
+    - Promesas sin manejar: `await` sin try/catch, `.then` sin `.catch`,
+      promesas "flotantes" (sin await ni .catch) en handlers async.
+    - Middleware de Express: orden de montaje, manejo de errores centralizado
+      (middleware de 4 argumentos `(err, req, res, next)` al final de la cadena),
+      llamadas a `next()` faltantes o duplicadas.
+    - Validación de input en cualquier endpoint expuesto (Express routes o
+      Next.js Route Handlers/Server Actions) con zod/yup/joi antes de tocar
+      la base de datos o servicios externos.
+    - Seguridad HTTP: CORS mal configurado (origin: "*" con credentials),
+      headers de seguridad ausentes (helmet), rate limiting ausente en
+      endpoints públicos o de auth.
+    - SQL/NoSQL injection vía template strings o concatenación sin parametrizar.
+    - Secrets hardcodeados o leídos de config en vez de variables de entorno.
+    - Next.js: SSR/CSR mismatches (acceso a `window`/`document` sin guard),
+      variables de entorno leídas en cliente sin prefijo `NEXT_PUBLIC_`.
+    - React: dependency arrays incompletas en `useEffect`/`useCallback`/`useMemo`,
+      listeners no removidos en cleanup (memory leaks).
+    - Manejo de loading/error states en componentes que hacen fetch.
+
+  path_instructions:
+    - path: "**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/__tests__/**"
+      instructions: |
+        Código de test. No comentes sobre uso de `any` ni sobre coverage.
+        Enfócate solo en: assertions correctas (comparan el valor esperado real,
+        no tautologías), mocks que no se limpian entre tests (afterEach/beforeEach),
+        y tests que dependen del orden de ejecución.
+    - path: "src/server/**,src/routes/**,src/controllers/**,src/api/**,src/app/api/**"
+      instructions: |
+        Endpoints Express y Next.js Route Handlers expuestos a clientes externos.
+        Foco obligatorio en: validación de input, auth/authz antes de tocar datos,
+        rate limiting en rutas sensibles (login, signup, password reset, webhooks),
+        manejo de errores que no filtre stack traces ni detalles internos al cliente,
+        y logs que no incluyan PII ni secretos.
+    - path: "src/middleware/**,src/app.ts,src/server.ts,src/index.ts"
+      instructions: |
+        Configuración global de Express (helmet, cors, rate-limit, body-parser,
+        middleware de errores). Verificar que el middleware de manejo de errores
+        va al final de la cadena y que `cors()` no combina `origin: "*"` con
+        `credentials: true`.
+    - path: "src/components/**,src/app/**,pages/**"
+      instructions: |
+        Componentes React/Next.js. Foco en accesibilidad (alt, aria-label,
+        asociación label/input), dependency arrays de hooks, y prevención de
+        re-renders innecesarios solo si el componente es hot path (no comentar
+        esto en componentes triviales o de bajo tráfico).
+    - path: "**/*.env*,**/config/**"
+      instructions: |
+        Nunca debe haber un valor de credencial real (API key, token, connection
+        string con password) en estos archivos si van al repo. `.env` y
+        `.env.local` deben estar en `.gitignore`; señalar si no lo están.
+
+  tools:
+    eslint:
+      enabled: true
+    biome:
+      enabled: false  # activar solo si el repo usa Biome en vez de ESLint+Prettier
+    prettier:
+      enabled: false  # formatting puro, no interesa flaggearlo en review
+    gitleaks:
+      enabled: true
+    trufflehog:
+      enabled: true
+    osvScanner:
+      enabled: true  # vulnerabilidades conocidas en dependencias npm
+    semgrep:
+      enabled: true
+    github-checks:
+      enabled: true
+      timeout_ms: 90000
+
+  pre_merge_checks:
+    title:
+      mode: warning
+      requirements: |
+        El título del PR debe seguir Conventional Commits:
+        feat|fix|chore|docs|refactor|test|ci(scope): descripción
+    description:
+      mode: warning
+    issue_assessment:
+      mode: warning
+    custom_checks:
+      - mode: "error"
+        name: "No secrets in code"
+        instructions: |
+          El PR NO debe contener secrets, API keys, tokens, private keys ni URLs
+          con credenciales embebidas (connection strings con password incluido).
+          Si se detecta cualquier credencial real: BLOQUEAR merge y pedir rotarla
+          de inmediato.
+      - mode: "warning"
+        name: "Breaking changes documentados"
+        instructions: |
+          Si el PR cambia una firma pública (endpoint REST, función exportada,
+          schema de datos) o elimina un endpoint/función existente, debe incluir
+          una sección "## Breaking changes" en la descripción con: 1) qué rompe,
+          2) plan de migración/despliegue, 3) compatibilidad hacia atrás.
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto
+  mcp:
+    usage: auto
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CLAUDE.md"
+      - "AGENTS.md"
+      - "CONTRIBUTING.md"
+      - "docs/decisions/**"
+      - ".cursorrules"
+      - ".cursor/rules/**"

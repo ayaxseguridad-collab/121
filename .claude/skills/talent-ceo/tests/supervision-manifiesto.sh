@@ -59,7 +59,7 @@ for miembro in talent-channel-operation talent-orchestrator; do
     printf "%s|%s|%s|%s" "${datos[AM_LEDGER]}" "${datos[TF_ROOT]}" "${datos[TF_MANIFEST]}" "${datos[TCO_AUDIT_CLI]}"
   ' prueba "$T/lectores.sh" "$GENHOME/.config/$miembro/agents.conf")"; lector_rc=$?
   assert_eq "lector acepta agents generado de $miembro y sus tres export" \
-    "0|$GEN/ledger/cuentas.json|$GEN|$GEN/manifiestos/ejemplo.conf|claude-root" "$lector_rc|$leidos"
+    "0|$GEN/ledger/cuentas.json|$GEN|$GEN/manifiestos/ejemplo.conf|codex-root" "$lector_rc|$leidos"
 done
 bash -c '
   . "$1"; declare -A datos=(); leer_identidad "$2" datos || exit 1
@@ -82,7 +82,7 @@ cp "$SK/talent-channel-operation/scripts/00-config.sh" "$DESTINO/talent-channel-
 cp "$GEN/instalacion/generado/anexos/talent-channel-operation/anexo-ejemplo.md" "$DESTINO/talent-channel-operation/references/"
 git -C "$PRODUCTO" init -q
 git -C "$PRODUCTO" remote add origin https://github.com/org-example/producto.git
-PKG_HOST_HOME="$GENHOME" bash "$SK/skill-creator/scripts/sync-package.sh" --migrate-identity \
+PKG_HOST_HOME="$GENHOME" bash "$SK/../scripts/paquete/sync-package.sh" --migrate-identity \
   --to "$DESTINO" --authority "$GEN/manifiestos/ejemplo.conf" \
   --approved "$GEN/instalacion/generado/identidad-aprobada.conf" > "$T/migrar.log" 2>&1
 assert_eq 'adjudicacion real del fragmento generado termina sin error' 0 "$?"

@@ -1,0 +1,124 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — Node / TypeScript (React, Next.js, Express, NestJS, etc.)
+# Extiende base-talent.yaml con enfoque en TS/JS.
+#
+# last_verified: 2026-09-22
+
+early_access: false
+enable_free_tier: true
+
+language: es-ES
+
+tone_instructions: |
+  Sé directo y conciso. Salta los pleasantries.
+  Explica el razonamiento detrás de cada sugerencia en una sola frase.
+  Usa ejemplos de código TS/JS cuando sugieras alternativas.
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  sequence_diagrams: false
+  changed_files_summary: true
+  enable_prompt_for_ai_agents: true  # NUNCA false: lo depende el comando `resolve` del skill.
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: [main, master, develop, staging]
+
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/.nuxt/**"
+    - "!**/.svelte-kit/**"
+    - "!**/coverage/**"
+    - "!**/.turbo/**"
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/yarn.lock"
+    - "!**/*.min.js"
+    - "!**/*.bundle.js"
+    - "!**/*.d.ts"  # Type declarations generadas
+    - "!**/__snapshots__/**"
+    - "!**/*.snap"
+    - "!**/public/**"  # Assets estáticos
+    - "!**/.storybook-out/**"
+
+  instructions: |
+    Este es un proyecto Node/TypeScript. No comentes sobre:
+    - Orden de imports (ESLint/Biome lo maneja)
+    - Longitud de líneas o trailing commas (Prettier/Biome)
+    - Falta de JSDoc en funciones internas
+    - Uso de `any` en archivos de test (**/*.test.ts, **/*.spec.ts)
+
+    Enfoca atención extra en:
+    - Tipos TypeScript incorrectos (casts innecesarios con `as`, `@ts-ignore`, `any` en código prod)
+    - useEffect / useCallback dependency arrays incompletas en React
+    - Memory leaks por listeners no removidos en cleanup
+    - Promise rejections no manejadas (await sin try/catch, .then sin .catch)
+    - SQL injection via template strings sin parametrización
+    - SSR/CSR mismatches en Next.js (acceso a window/document sin check)
+    - Variables de entorno leídas en cliente sin prefijo NEXT_PUBLIC_ / VITE_
+    - Manejo de loading/error states en componentes que hacen fetch
+
+  path_instructions:
+    - path: "**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/__tests__/**"
+      instructions: |
+        Código de test. No comentes sobre uso de `any` ni sobre coverage.
+        Enfócate solo en: assertions correctas (comparar valores esperados reales,
+        no tautologías), mocks que no se limpian entre tests, y tests que dependen de orden.
+    - path: "**/api/**,**/routes/**,**/controllers/**,**/server/**"
+      instructions: |
+        Endpoints expuestos al usuario. Foco obligatorio en:
+        validación de input (zod/yup/joi), rate limiting, auth/authz,
+        manejo de errores que no filtre stack traces, y logs que no incluyan PII o secretos.
+    - path: "**/components/**,**/pages/**,**/app/**"
+      instructions: |
+        Componentes React. Foco en accesibilidad (alt, aria-label, tabIndex),
+        dependency arrays de hooks, y prevención de re-renders innecesarios
+        solo si es código caliente (no comentes esto en componentes triviales).
+
+  tools:
+    biome:
+      enabled: true
+    eslint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    zizmor: { enabled: true }      # Analizador estático de workflows de GitHub Actions.
+    presidio: { enabled: true }    # PII de alta señal en ficheros cambiados.
+    reactDoctor: { enabled: true } # Seguridad/performance/correctness/accesibilidad en código React.
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    autofix:
+      enabled: true
+
+  labeling_instructions:
+    - label: "breaking-change"
+      instructions: "Aplica cuando el PR rompe un tipo exportado, una API pública o cambia una prop requerida."
+
+chat:
+  auto_reply: true
+  # integrations.linear.usage default es "auto" (activo en repos privados).
+  # Descomentar para que el chat de un PR NUNCA cree issues de Linear fuera
+  # del flujo de talent-issue-craft (CLAUDE.md regla 21):
+  # integrations:
+  #   linear:
+  #     usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto

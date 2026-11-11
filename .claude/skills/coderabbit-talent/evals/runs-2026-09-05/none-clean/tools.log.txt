@@ -1,0 +1,24 @@
+=== tools.log started 2026-09-05T20:34:27-06:00 ===
+cmd: gh auth status -> checked token validity
+cmd: gh pr view 2182 --repo ejemplo/repo --json ... -> fetched PR metadata
+cmd: gh api repos/.../pulls/2182/comments --paginate -> saved review-comments.json
+cmd: gh api repos/.../issues/2182/comments --paginate -> saved issue-comments.json
+cmd: gh api .../pulls/2182/comments --paginate --slurp ->  comments
+cmd: gh api .../pulls/2182/comments --paginate -> 3 review comments retrieved
+cmd: gh api .../issues/2182/comments --paginate -> 6 issue-level comments
+cmd: jq extract coderabbitai issue comments -> coderabbit-issue-comments.md
+cmd: gh api .../pulls/2182/reviews --paginate -> 5 reviews
+cmd: gh api graphql reviewThreads for PR 2182 -> saved review-threads.json
+cmd: coderabbit --version && coderabbit --help -> captured top-level CLI help
+cmd: coderabbit review --help / pullrequest --help / config --help -> captured subcommand flags
+cmd: coderabbit doctor -> captured CLI installation/readiness diagnostics
+cmd: wrote draft s2-coderabbit.yaml
+cmd: coderabbit config validate s2-coderabbit.yaml -> see result above
+cmd: sanity-check validator with bogus_top_level_field -> confirmed validator rejects unknown fields (file removed after check)
+cmd: wrote s2-notas.md
+cmd: wrote s1-triage.md (full triage of PR 2182 CodeRabbit comments)
+cmd: coderabbit stats --help / usage --help -> confirmed no --type flag anywhere in current CLI surface
+cmd: wrote s3-diagnostico.md
+=== VERIFICACION FINAL 2026-09-05T20:39:54-06:00 ===
+confirmacion: no se abrio ni leyo nada bajo .claude/skills/** ni /tmp/cr-evals/skill-* en esta sesion
+confirmacion: no se ejecuto 'coderabbit review' contra un PR real ni se comento en ningun PR

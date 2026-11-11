@@ -1,0 +1,11 @@
+# node-suelos.tsv — suelo de parche de Node por mayor para el golden (02-golden.sh, paso [5/9]).
+# UN solo sitio: el script lee este fichero; no hay otra copia de los suelos.
+# Formato: mayor<TAB>suelo (X.Y.Z, con la misma mayor). Las líneas que empiezan por # y las vacías se ignoran.
+# Una mayor que NO figure aquí hace FALLAR el golden: no se asume nada de lo que no se conoce.
+# Fuente: aviso de seguridad de Node.js del 21-oct-2026 (CVE-2026-111497, Brotli, gravedad alta, y bypass de
+#   hostname de TLS, gravedad alta): https://nodejs.org/en/blog/vulnerability/october-2026-security-releases
+# Verificado: 2026-10-22. Versiones arregladas: 24.22.1, 22.23.4 y 26.12.1.
+# Para subir un suelo con el próximo aviso: edita su fila (y la fecha de arriba). Nunca bajarlo.
+24	24.22.1
+22	22.23.4
+26	26.12.1

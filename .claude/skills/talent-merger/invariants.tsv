@@ -4,7 +4,7 @@ INV-ME-003	SKILL.md	MUST	headRefOid	M4-1162-worktree-api
 INV-ME-004	references/01-rol-y-fronteras.md	MUST	MERGED	flock-nota-merged
 INV-ME-005	references/07-gotchas.md	MUST	cr-host\.lock	h2-mutex-cr-host-1170x1142
 INV-ME-006	SKILL.md	MUST	self-report	TAL-1596-no-self-report
-INV-ME-007	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-ME-007	SKILL.md	MUST	scripts/paquete/package\.manifest	paquete-D3-puntero-manifiesto
 INV-ME-008	references/01-rol-y-fronteras.md	MUST	Preaviso de draft	reconciliacion-tal3394-homonimo-reservado-flock
 INV-ME-009	SKILL.md	MUST	excepción trazada	TAL-3569-r4-waiver-excepcion-trazada
 INV-ME-010	SKILL.md	MUST	no-convergencia	TAL-3569-r9-rama-no-convergencia
@@ -410,3 +410,40 @@ INV-ME-409	references/08-gates-locales.md	MUST	MISMA tupla sigue siendo válida	
 INV-ME-410	references/08-gates-locales.md	MUST	fallo accidental, no un actor con el mismo UID	contrato-evidencia-modelo-de-amenaza
 INV-ME-411	references/08-gates-locales.md	MUST	un proceso con el mismo UID puede borrar o fabricar marcadores	contrato-evidencia-riesgo-residual
 INV-ME-412	references/08-gates-locales.md	MUST	un identificador de intento recibido del llamador permitiría invalidar evidencia previa; no se implementa en 1\.7\.2	contrato-evidencia-mejora-diferida
+INV-ME-413	SKILL.md	MUST	^### 8-bis · Destilado de findings \(analítico, reintentable, no bloqueante\)	destilado-8bis-no-bloqueante
+INV-ME-414	SKILL.md	MUST	nunca escribe `gotchas\.md`	destilado-nunca-escribe-gotchas
+INV-ME-415	SKILL.md	MUST	`\.claude/\.distill-pending\.json`	destilado-pendiente-reintentable
+INV-ME-416	references/05-canales-de-refactorizacion.md	MUST	^# Métrica refacto-vs-bounce	metrica-refacto-vs-bounce-comando
+INV-ME-417	scripts/distill-findings.sh	MUST_NOT	--sources	destilado-sin-fuentes-agregadas
+INV-ME-418	scripts/distill-findings.sh	MUST	mv -T	destilado-persist-atomico
+INV-ME-419	scripts/distill-findings.sh	MUST	^# Códigos de salida: 0 ok · 2 uso inválido	destilado-codigos-de-salida-documentados
+INV-ME-420	references/06-migraciones-y-slots.md	MUST	Paso 0a y Paso 2b del anexo	proc-m13-cuota-ensayo-doctrina-ref06
+INV-ME-421	references/06-migraciones-y-slots.md	MUST	migraciones aplicadas, verificación pendiente	proc-m13-cuota-relectura-429-ref06
+INV-ME-422	references/07-gotchas.md	MUST	Paso 0a del anexo PROC-M13 sondea	proc-m13-cuota-gotcha-sondeo
+INV-ME-423	references/07-gotchas.md	MUST	Paso 2b ensaya el lote ENTERO	proc-m13-cuota-gotcha-ensayo
+INV-ME-424	references/proc-m13.selftest.sh	MUST	^echo "== T37:	proc-m13-selftest-t37-bloque
+INV-ME-425	references/proc-m13.selftest.sh	MUST	T37a \(S-B\)	proc-m13-selftest-t37-cuota-59
+INV-ME-426	references/proc-m13.selftest.sh	MUST	T37d \(S-C\)	proc-m13-selftest-t37-ledger-final-429
+INV-ME-427	references/proc-m13.selftest.sh	MUST	T37g \(S-A\)	proc-m13-selftest-t37-lote-a-medias
+INV-ME-428	references/proc-m13.selftest.sh	MUST	T37m: migraciones independientes se funden SIN renumerar	proc-m13-selftest-t37-independientes-sin-renumerar
+INV-ME-429	references/proc-m13.selftest.sh	MUST	T37n: una lectura FALLIDA del \.sql	proc-m13-selftest-t37-lectura-fallida-aborta-lote
+INV-ME-500	scripts/cad-lib.sh	MUST	sin-mapa.*return 3	caducidad-gate-sin-mapa-caduca
+INV-ME-501	scripts/cad-lib.sh	MUST	JAMÁS se conserva	caducidad-sin-mapa-nunca-se-conserva-documentado
+INV-ME-502	scripts/caducidad.sh	MUST	fail-closed: lo no medible no se conserva	caducidad-lo-no-medible-caduca
+INV-ME-503	scripts/caducidad.sh	MUST	SIN-MAPA\(caduca\):	caducidad-informa-gates-sin-mapa
+INV-ME-504	scripts/caducidad.sh	MUST	UNIVERSAL tocado -> CADUCAN TODOS	caducidad-insumo-universal-caducan-todos
+INV-ME-505	scripts/lib-estacion.sh	MUST	PRECOND: falta %s	estacion-parametro-sin-valor-nombra-la-variable
+INV-ME-506	scripts/lib-estacion.sh	MUST_NOT	/home/	estacion-sin-rutas-de-casa
+INV-ME-507	scripts/abrir-ventana.sh	MUST_NOT	\$\{DRY	ventana-sin-dry-que-salte-controles
+INV-ME-508	scripts/abrir-ventana.sh	MUST_NOT	\$\{CEO_APPS_SOLO	ventana-sin-exencion-autodeclarada
+INV-ME-509	scripts/abrir-ventana.sh	MUST	falta o no es legible el fichero de congelamiento	ventana-congelamiento-ausente-rechaza
+INV-ME-510	scripts/abrir-ventana.sh	MUST	RECHAZO: mergeable_state=	ventana-mergeable-distinto-de-clean-rechaza
+INV-ME-511	scripts/abrir-ventana.sh	MUST	--paginate	ventana-censo-l8-todas-las-paginas
+INV-ME-512	scripts/abrir-ventana.sh	MUST	merge-tree --write-tree	ventana-censo-l8-por-merge-tree
+INV-ME-513	scripts/abrir-ventana.sh	MUST_NOT	-C "\$clon" checkout	ventana-clon-nunca-hace-checkout
+INV-ME-514	scripts/abrir-ventana.sh	MUST	no-evaluable	ventana-pr-no-evaluable-cuenta-como-conflicto
+INV-ME-515	scripts/abrir-ventana.sh	MUST	no puede ser el clon con el que se corren las suites	ventana-clon-propio-de-la-estacion
+INV-ME-516	scripts/abrir-ventana.sh	MUST	SOLO_CHEQUEO=1: cerrojo PASARÍA \(no sello\)	ventana-solo-chequeo-no-sella
+INV-ME-517	scripts/abrir-ventana.sh	MUST	hook de otro usuario o escribible por grupo/otros	ventana-hooks-solo-del-usuario-y-sin-escritura-ajena
+INV-ME-518	tests/run-tests.sh	MUST	doble ejecución	pruebas-sin-doble-ejecucion
+INV-ME-519	tests/test-abrir-ventana.sh	MUST	t_mutante rechazo-por-caducidad	ventana-la-caducidad-nunca-rechaza-mutante

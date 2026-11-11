@@ -1,0 +1,283 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — Example Stack base template (v3 — state-of-the-art 2026-09)
+#
+# GENERADO-DE: coderabbit-talent skill. Mantener en sync con el template.
+# Si se edita en un repo concreto, dejar comentarios "# LOCAL: <razón>" en
+# las líneas divergentes para facilitar re-aplicación.
+#
+# Filosofía:
+# - Español por default (Example Stack opera en ES).
+# - profile chill como default (el perfil assertive causa abandono por ruido
+#   en las primeras semanas; el consumidor puede override).
+# - Linters locales (ESLint/Biome/Ruff) se mantienen activos en CR por ahora
+#   porque muchos repos no tienen aún esas herramientas locales como fuente
+#   de verdad. Si el repo instala linters locales, desactivarlos aquí.
+# - Tools SAST (gitleaks, trufflehog, semgrep, opengrep, osvScanner, trivy,
+#   checkov, ast-grep, zizmor, presidio) cubren security + misconfig +
+#   dependencies + PII + workflows de GitHub Actions.
+# - Las migraciones SQL SÍ entran a review (sin exclusión de path_filters):
+#   son código con impacto en producción como cualquier otro (ABC-5174/D3).
+#
+# Ver: https://docs.coderabbit.ai/reference/configuration
+#
+# last_verified: 2026-09-22
+
+# Feature flags globales del producto CodeRabbit (no del repo) — valores
+# explícitos aunque coincidan con el default, para que quede documentado
+# qué se decidió y no qué se heredó en silencio.
+early_access: false      # No activar features en fase early access sin decisión previa.
+enable_free_tier: true   # Deja los checks gratuitos disponibles a colaboradores sin plan pago.
+
+language: es-ES
+
+# tone_instructions tiene un límite duro de 250 caracteres en el schema v2
+# (top-level, no bajo reviews:) — coderabbit config validate lo rechaza si
+# se excede. El resto del tono/estilo detallado va en reviews.instructions,
+# que no tiene ese límite.
+tone_instructions: |
+  Sé directo y conciso. Explica el razonamiento en una frase. Usa ejemplos
+  de código en las sugerencias. No elogies código que ya está bien.
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: false
+  changed_files_summary: true
+  # NUNCA poner enable_prompt_for_ai_agents: false — el comando `resolve`
+  # del skill (references/commands.md) depende de este bloque en cada
+  # comentario inline para que un agente pueda actuar sobre el finding.
+  enable_prompt_for_ai_agents: true
+  abort_on_close: true  # Si el PR se cierra/mergea a mitad de review, no la termines.
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+      - master
+      - develop
+      - staging
+
+  # Paths excluidos globalmente del review
+  path_filters:
+    # Dependencias y artefactos de build
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/.nuxt/**"
+    - "!**/coverage/**"
+    - "!**/.turbo/**"
+    - "!**/target/**"
+    - "!**/vendor/**"
+    - "!**/__pycache__/**"
+    - "!**/.venv/**"
+    - "!**/venv/**"
+    # Lockfiles
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/yarn.lock"
+    - "!**/Cargo.lock"
+    - "!**/poetry.lock"
+    - "!**/go.sum"
+    # Archivos generados
+    - "!**/*.generated.*"
+    - "!**/*.gen.go"
+    - "!**/*.gen.*"
+    - "!**/*.pb.*"
+    - "!**/*.g.dart"
+    - "!**/*.d.ts"
+    - "!**/generated/**"
+    - "!**/__generated__/**"
+    # Minified / bundled
+    - "!**/*.min.js"
+    - "!**/*.min.css"
+    - "!**/*.bundle.js"
+    # Assets binarios
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.gif"
+    - "!**/*.svg"
+    - "!**/*.ico"
+    - "!**/*.pdf"
+    - "!**/*.mp4"
+    - "!**/*.woff*"
+    # Snapshots de tests (cambian frecuentemente)
+    - "!**/__snapshots__/**"
+    - "!**/*.snap"
+    # Migraciones de ORMs autogeneradas (Alembic/Django) — SIN excluir
+    # migraciones SQL de Supabase u otras hechas a mano: esas SÍ entran a
+    # review (ABC-5174/D3; CLAUDE.md regla 16 amendment Fábrica v2).
+    - "!**/migrations/versions/**"
+
+  # Instrucción global: qué NO comentar
+  instructions: |
+    No comentes sobre:
+    - Orden de imports (lo maneja el linter automáticamente)
+    - Longitud de líneas (lo maneja Prettier/Black)
+    - Falta de JSDoc/docstrings en funciones internas no exportadas
+    - Naming de variables internas (nombres como i, j, tmp en scopes pequeños está bien)
+    - Uso de `any` en código de prueba (tests/**) — está permitido
+    - Estilo de comillas o trailing commas (autoformateado)
+
+    Enfoca atención extra en:
+    - Manejo completo de errores (try/catch, error boundaries, resultado Err)
+    - Vulnerabilidades de seguridad (inyección SQL/NoSQL/command, XSS, SSRF, secretos hardcodeados)
+    - Performance en queries de base de datos y loops sobre datasets potencialmente grandes
+    - Validación de input en endpoints expuestos al usuario (APIs, forms, webhooks)
+    - Race conditions en código concurrente
+    - Manejo correcto de tipos nullable / optional
+
+  # Tools SAST y linters habilitados por default.
+  # Notas:
+  # - eslint y biome se dejan ACTIVOS por ahora; muchos repos no tienen
+  #   estas herramientas locales todavía. Cuando un repo las tenga, en su
+  #   .coderabbit.yaml local poner enabled: false para evitar duplicación.
+  # - languagetool con categorías ruidosas deshabilitadas (TYPOS, TYPOGRAPHY
+  #   y CASING generan mucho ruido en docs técnicas bilingües).
+  tools:
+    # Seguridad / secrets
+    gitleaks: { enabled: true }    # Nombre de la clave preservado; el motor es Betterleaks desde 2026-03-19.
+    trufflehog: { enabled: true }
+    semgrep: { enabled: true }
+    opengrep: { enabled: true }
+    osvScanner: { enabled: true }
+    trivy: { enabled: true }
+    checkov: { enabled: true }
+    zizmor: { enabled: true }      # Analizador estático de workflows de GitHub Actions.
+    presidio: { enabled: true }    # PII de alta señal (tarjetas, SSN, wallets, teléfonos) en ficheros cambiados.
+    # AST patterns
+    ast-grep: { essential_rules: true }
+    # Lenguaje natural (prosa en docs/PR descriptions)
+    languagetool:
+      enabled: true
+      level: "default"
+      disabled_categories:
+        - "TYPOS"
+        - "TYPOGRAPHY"
+        - "CASING"
+    # Docs
+    markdownlint: { enabled: true }
+    # YAML / Actions
+    yamllint: { enabled: true }
+    actionlint: { enabled: true }
+    # Shell / Docker
+    shellcheck: { enabled: true }
+    hadolint: { enabled: true }
+    # Lenguajes (activos por ahora — desactivar en repos con linters locales)
+    eslint: { enabled: true }
+    biome: { enabled: true }
+    ruff: { enabled: true }
+    # GitHub checks: solo admite la clave enabled en el schema v2
+    github-checks:
+      enabled: true
+
+  # Pre-merge checks — activos por default con custom_check "No secrets" en
+  # modo error (seguridad crítica no negociable).
+  pre_merge_checks:
+    title:
+      mode: warning
+      requirements: |
+        PR title debe seguir Conventional Commits:
+        feat|fix|chore|docs|refactor|test|ci(scope): descripción
+    description:
+      mode: warning
+    issue_assessment:
+      mode: warning
+    custom_checks:
+      - mode: "error"
+        name: "No secrets in code"
+        instructions: |
+          El PR NO debe contener secrets, API keys, tokens, private keys
+          ni URLs con credenciales embebidas. Patrones a detectar (no exhaustivo,
+          representados con placeholders para evitar falsos positivos de secret
+          scanners al propagar este template a otros repos): <stripe-live-key>,
+          <stripe-publishable-key>, <slack-bot-token>, <slack-user-token>,
+          <github-token>, <aws-access-key>, <google-api-key>,
+          <private-key-header>, private_key=<secret>, api_key=<secret>,
+          jwt_secret=<secret>, postgres://<user>:<pass>@<host>,
+          redis://:<pass>@<host>.
+          Si se detecta cualquier credencial real: BLOQUEAR merge y pedir rotar
+          la credencial inmediatamente.
+      - mode: "warning"
+        name: "Breaking changes documentados"
+        instructions: |
+          Si el PR modifica schema de datos, elimina endpoints públicos, o cambia
+          firmas públicas de funciones exportadas, debe incluir sección
+          "## Breaking changes" en la descripción del PR con: 1) qué rompe,
+          2) plan de migración, 3) compatibilidad hacia atrás.
+      # Ejemplo de custom_check para repos que instalan/editan skills de
+      # agentes (Claude Code, Cursor, Codex): pide una razón explícita antes
+      # de tocar contratos de skill (SKILL.md, scripts/, references/).
+      - mode: "warning"
+        name: "Cambios en skills de agentes justificados"
+        instructions: |
+          Si el PR toca `.claude/skills/**`, verifica que la descripción explique
+          QUÉ contrato cambia (nombre de script, forma de salida JSON, nombre de
+          reference) y POR QUÉ. Un cambio de contrato sin nota rompe a los
+          consumidores del skill (otros skills, hooks, agentes) en silencio.
+
+  # Recetas personalizadas de finishing touches (opt-in, activas por default
+  # salvo `simplify`). fix_ci y resolve_merge_conflict requieren plan Team+.
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    simplify:
+      enabled: false  # Puede reescribir código intencionalmente verboso; opt-in por PR.
+    autofix:
+      enabled: true
+    fix_ci:
+      enabled: true
+    resolve_merge_conflict:
+      enabled: true
+
+  # Solo sugiere labels de esta lista (informado además por PRs previos).
+  labeling_instructions:
+    - label: "security"
+      instructions: "Aplica cuando el PR toca autenticación, autorización, RLS, secrets o dependencias con CVE."
+    - label: "breaking-change"
+      instructions: "Aplica cuando el PR rompe un contrato público (API, schema, forma de salida de un script)."
+
+# Al mencionar @coderabbitai, responde automáticamente
+# cuando el contexto lo permite
+chat:
+  auto_reply: true
+  # integrations.linear.usage default es "auto" (activo en repos privados).
+  # Descomentar para que el chat de un PR NUNCA cree issues de Linear fuera
+  # del flujo de talent-issue-craft (CLAUDE.md regla 21):
+  # integrations:
+  #   linear:
+  #     usage: disabled
+
+# Knowledge base: persiste learnings del repo a lo largo del tiempo.
+# code_guidelines añadido para que CR lea las convenciones del repo desde
+# los archivos documentados.
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto
+  code_guidelines:
+    enabled: true
+    # CLAUDE.md, AGENTS.md, .cursorrules y .cursor/rules/* se auto-detectan: NO listarlos.
+    # Forma objeto {files, applyTo}: un string plano solo gobierna su propio directorio
+    # (una guía en docs/ no afectaría a src/). Ver references/yaml-reference.md.
+    filePatterns:
+      - files: "docs/decisions/**/*.md"
+        applyTo: "src/**,supabase/**,scripts/**"
+      - files: "docs/explanation/**/*.md"
+        applyTo: "src/**"
+      - files: "docs/coding-standards/**/*.md"
+        applyTo: "src/**,scripts/**"

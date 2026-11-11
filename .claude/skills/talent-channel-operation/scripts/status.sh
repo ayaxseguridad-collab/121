@@ -10,7 +10,12 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     c="$(tco_container "$nn")"
     st="$(incus list -f csv -c s "^$c\$" 2>/dev/null | head -1)"
     act="$(tco_cap_pane "$nn" "$(tco_pane_dev)" 2>/dev/null | grep -v '^$' | tail -1 | tr -s ' ' | cut -c1-60)"
-    printf '  %s [%s] dev: %s\n' "$c" "${st:-?}" "${act:-(sin sesión)}"
+    # Columna behavior (SANO | UNKNOWN | PROGRESO-ESTANCADO); SOLO avisa y no cambia el rc del censo.
+    beh=''
+    if [ "${TCO_BEHAVIOR_WATCH:-1}" != 0 ]; then
+      beh="$(bash "$HERE/behavior-watch.sh" "$nn" 2>/dev/null || true)"; beh="${beh#behavior: }"; beh="${beh%% ·*}"
+    fi
+    printf '  %s [%s] dev: %s%s\n' "$c" "${st:-?}" "${act:-(sin sesión)}" "${beh:+ · behavior: $beh}"
   done
   tco_say "Carriles de auditoría (solo reportan)"
   for nn in $TCO_AUDIT_CARRILES; do

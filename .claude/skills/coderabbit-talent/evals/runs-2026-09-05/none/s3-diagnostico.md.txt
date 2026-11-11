@@ -1,0 +1,151 @@
+# Diagnóstico — tres problemas de CodeRabbit en la misma sesión
+
+Contexto verificado en esta misma máquina: CLI de CodeRabbit instalado, versión **0.7.6**
+(`coderabbit --version`). Los tres síntomas son independientes entre sí — no comparten causa raíz — pero
+es común que aparezcan juntos porque suelen dispararse por la misma secuencia de trabajo (push → CI/gate
+→ script interno heredado).
+
+---
+
+## (1) `git push` se rechaza con un mensaje sobre un sentinel de CodeRabbit
+
+### Qué está pasando
+
+No es CodeRabbit el que rechaza el push directamente — es un **hook de pre-push local** (`.githooks/pre-push`,
+o el que tenga instalado tu repo) que exige, para el SHA exacto que estás empujando, un **sentinel**
+(un archivo que certifica que ya corriste el gate de CodeRabbit) y no encuentra uno vigente. Es un
+patrón habitual cuando el repo tiene un gate "CLI de CodeRabbit obligatorio antes de push": el hook no
+ejecuta la review por ti, solo valida que exista la prueba de que ya se corrió.
+
+Motivos típicos por los que el sentinel no está:
+
+- No corriste el script de review local (`coderabbit review`, o el wrapper del repo que lo invoca)
+  antes de este push.
+- Hiciste un commit nuevo **después** de generar el sentinel — cada commit nuevo invalida el sentinel
+  del SHA anterior (el sentinel está atado al SHA, y en variantes más estrictas también a la rama de
+  destino, no solo al contenido).
+- El sentinel expiró (algunos gates le ponen TTL) o se generó sobre un working tree con cambios sin
+  commitear que luego se commitearon distinto.
+
+### Cómo resolverlo
+
+1. Corre el script de review local del repo (habitualmente algo como `bash scripts/cr-review.sh` o
+   `coderabbit review --committed` — el nombre exacto depende de cómo esté cableado el gate en tu
+   repo). Si queda limpio, debería generar el sentinel que el hook busca.
+2. Vuelve a intentar el `git push`.
+3. Si el CLI no está disponible o no puedes correr la review en este momento, la salida de emergencia
+   es `git push --no-verify` — pero eso **salta el gate a propósito** y queda visible en el reflog/log
+   de auditoría; úsalo solo si tienes autorización para saltarte el control, no como default.
+4. Si el sentinel se genera pero el push sigue rechazado, verifica que estás empujando el **mismo SHA**
+   sobre el que corriste la review (un `git commit --amend`, un rebase, o un commit adicional después de
+   generar el sentinel invalida la prueba — hay que re-generarla).
+
+**No es un veredicto de código** — es un control de proceso ("¿corriste la review?"), independiente de
+si el código en sí tiene o no problemas.
+
+---
+
+## (2) El status `CodeRabbit` del PR está en `FAILURE`
+
+### Qué está pasando
+
+Esto casi siempre **no significa que la review encontró bugs y reprobó tu código** — significa que
+CodeRabbit **agotó tu cuota de reviews** (rate limit / Fair Usage Policy) y, en vez de publicar un
+status neutral, publicó el commit-status con `state: failure`. Es un comportamiento documentado y
+reportado por la comunidad: el check genérico `CodeRabbit` puede degradar a failure por rate limit, y
+un gate que lo trata como "review reprobada" queda bloqueando merges por una razón de infraestructura,
+no de calidad de código.
+
+Cómo confirmar que es esto y no un hallazgo real:
+
+- Abre los "Details" del check o el comentario más reciente de CodeRabbit en el PR — si dice algo del
+  estilo "Rate limit exceeded" / "Review limit reached" / "Next review available in: N minutes", es
+  esto.
+- Pide la cuota sin gastarla: comenta `@coderabbitai rate limit` en el PR.
+
+### Cómo resolverlo
+
+1. **No lo trates como un bug de código a arreglar** — no hay comentarios de review reales que
+   resolver en este caso.
+2. Espera la ventana indicada por el rate limit (el bot suele decir cuánto falta).
+3. Pasada la ventana, **el re-review no llega solo**: dispáralo con un commit nuevo o comentando
+   `@coderabbitai review`.
+4. Si esto pasa seguido, es la Fair Usage Policy espaciando reviews por volumen sostenido de tu cuenta
+   en la ventana rolling de 7 días — mitígalo con batching de pushes (evita el goteo de muchos pushes
+   pequeños seguidos, que cada uno dispara un review event y varios se "superseden" entre sí sin dar
+   feedback útil pero sí consumiendo cuota), bajando `auto_pause_after_reviewed_commits` en el
+   `.coderabbit.yaml`, o usando `@coderabbitai pause` cuando sepas que vas a hacer una ráfaga de commits.
+5. Si un gate/CI del equipo bloquea merges leyendo literalmente el status `CodeRabbit`, considera que
+   ese gate debería distinguir "failure por rate limit" de "failure por hallazgo real" (mirando el texto
+   del status/comentario), o apoyarse en el check dedicado de rate limit de CodeRabbit en vez del status
+   genérico, si tu plan lo expone — ese check está diseñado para no bloquear ramas protegidas
+   precisamente por este motivo.
+
+---
+
+## (3) Un script interno falla con `unknown option '--type'` al invocar el CLI de CodeRabbit
+
+### Qué está pasando — **confirmado en vivo contra el binario instalado en esta máquina**
+
+La flag `--type` (usada como `coderabbit review --type committed` en versiones viejas del CLI) **fue
+retirada en la versión 0.7.0**. Verifiqué el `--help` real del binario 0.7.6 instalado aquí:
+
+```
+Options:
+  --light                  Run a lighter review with reduced context work
+  --show-prompts           Print AI prompts without starting a new review
+  --agent                  Emit structured findings for agent workflows
+  --use-credits            Use usage credits if this review exceeds included limits
+  --committed              Review only committed changes
+  --uncommitted            Review staged changes and tracked edits
+  --include-untracked      Also review files that have not been added to Git
+  ...
+```
+
+`--type` no aparece en absoluto. El reemplazo funcional son las flags nuevas: `--committed`,
+`--uncommitted`, `--include-untracked`.
+
+Un detalle importante que suele confundir a quien lo debuggea: **el comportamiento no es idéntico entre
+subcomandos**.
+
+- `coderabbit config validate --type committed` sí falla explícitamente con
+  `error: unknown option '--type'` — el validador de config es estricto con flags desconocidas.
+- Pero `coderabbit review --type committed` (el comando real, no el validador) **no aborta ni avisa**:
+  ignora la flag desconocida en silencio y **amplía el alcance del review** a todos los cambios
+  trackeados (comprometidos + staged + sin stagear) en vez de limitarlo a lo committeado como pretendía
+  el script.
+
+Esto significa que el mensaje de error `unknown option '--type'` que reporta el equipo probablemente
+viene de que el script interno corre `coderabbit config validate ... --type ...` en algún punto (o de
+una versión del CLI donde sí valida esa flag en `review` también) — mientras que si el fallo fuera
+silencioso (review de más alcance del esperado sin error visible), la señal sería otra: reviews que
+tardan más o cubren archivos que el script no esperaba tocar, no un mensaje de error.
+
+### Cómo resolverlo
+
+1. Localiza en el script interno dónde se pasa `--type <valor>` al CLI de CodeRabbit.
+2. Reemplázalo según el valor que traía:
+   - `--type committed` → `--committed`
+   - `--type uncommitted` (o equivalente) → `--uncommitted`
+   - Si necesitaba incluir archivos sin trackear → añade `--include-untracked`
+3. Antes de fijar cualquier flag en un script, corre `coderabbit review --help` (o
+   `coderabbit config validate --help`) **contra el binario realmente instalado en esa máquina/CI** —
+   la versión pineada puede no coincidir con la que tienes en tu entorno local, y el comportamiento de
+   flags retiradas cambió entre 0.6.x (donde `--type` todavía funcionaba) y 0.7.0+ (donde ya no existe).
+4. Si el script fija una versión del CLI distinta a la que estás probando localmente (pin en un
+   Dockerfile, un script de bootstrap, una variable de entorno tipo `CR_CLI_VERSION`), verifica ese pin
+   antes de asumir que el fix aplica igual en todos los entornos — es común tener el CLI en una versión
+   distinta en local vs. en la máquina/contenedor donde corre el gate real.
+
+---
+
+## Resumen — un problema, tres capas distintas
+
+| # | Capa | Es un veredicto de código? | Acción |
+|---|---|---|---|
+| 1 | Proceso local (hook de git) | No | Correr el review local para generar el sentinel, luego reintentar el push |
+| 2 | Cuota/infraestructura del vendor | No | Esperar la ventana de rate limit y re-disparar el review manualmente |
+| 3 | Compatibilidad de flags del CLI | No | Actualizar el script a las flags vigentes (`--committed`/`--uncommitted`/`--include-untracked`) y verificar `--help` contra el binario real antes de fijar flags |
+
+Ninguno de los tres es "CodeRabbit encontró un bug en tu código" — los tres son fricción operativa
+(gate local, cuota, compatibilidad de CLI) que se puede resolver sin tocar la lógica de negocio del PR.

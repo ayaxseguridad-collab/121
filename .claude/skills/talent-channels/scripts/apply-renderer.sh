@@ -22,10 +22,57 @@ tc_renderer_ctx_root() {
   here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   root="${TC_RENDERER_CTX_ROOT:-$here/../../talent-context}"
   local f
-  for f in scripts/install-statusline.sh scripts/lib.sh assets/statusline-ctx.sh assets/claude-min-version; do
+  for f in scripts/install-statusline.sh scripts/lib.sh assets/statusline-ctx.sh assets/claude-min-version scripts/install-compact-vivo.sh hooks/compact-vivo.sh; do
     [ -r "$root/$f" ] || { printf 'ERROR: falta %s/%s (skill talent-context ausente — fail-closed)\n' "$root" "$f" >&2; return 1; }
   done
   printf '%s' "$(cd "$root" && pwd)"
+}
+
+# Parámetros del canal declarados en perfil; el golden aún no tiene fila propia.
+tc_compact_parametros() (
+  local c="$1" root="$2" f row rc encontrados=0 ventana=200000 pct=60 sensibles=no
+  [ "$c" != "${GOLDEN:-golden}" ] || { printf '200000 60 no\n'; return 0; }
+  # shellcheck source=/dev/null
+  . "$root/../talent-ceo/scripts/lib-perfil.sh" || return 1
+  # shellcheck source=/dev/null
+  . "$(dirname "${BASH_SOURCE[0]}")/lib-perfil-attr3.sh" || return 1
+  if f="$(perfil_path 2>&1)"; then
+    perfil_validate "$f" || return 1
+    while IFS= read -r row; do
+      perfil_campos "$row"
+      [ "${PERFIL_CAMPOS[3]}" = "$c" ] || continue
+      encontrados=$((encontrados+1))
+      ventana="$(perfil_attr3 "${PERFIL_CAMPOS[5]}" compact_ventana)" || return 1
+      pct="$(perfil_attr3 "${PERFIL_CAMPOS[5]}" compact_pct)" || return 1
+      rc=0; sensibles="$(perfil_attr3 "${PERFIL_CAMPOS[5]}" datos_sensibles)" || rc=$?
+      case "$rc" in 0) ;; 1) sensibles=no ;; *) return 1 ;; esac
+    done < <(perfil_rows canal "$f")
+    [ "$encontrados" = 1 ] || { echo 'compact-vivo: canal ausente o duplicado en perfil' >&2; return 1; }
+  else
+    # Sin perfil en instalaciones antiguas: defaults sellados; override roto cierra.
+    [ -z "$f" ] || { printf '%s\n' "$f" >&2; return 1; }
+    [ -z "${TA_PERFIL:-}" ] && [ ! -e "${SECRET_DIR:-/nonexistent}/perfil.tsv" ] || return 1
+  fi
+  [[ "$ventana" =~ ^[0-9]+$ && "$pct" =~ ^[0-9]+$ ]] || return 1
+  case "$sensibles" in si|no) ;; *) return 1 ;; esac
+  printf '%s %s %s\n' "$ventana" "$pct" "$sensibles"
+)
+
+# Mismo aplicador para aplicar y comprobar, con configuración intacta en --check.
+# Los únicos ficheros temporales son la copia del programa, retirada al terminar.
+tc_compact_settings() {
+  local c="$1" mode="${2:-}" root valores ventana pct sensibles flags
+  root="$(tc_renderer_ctx_root)" || return 1
+  valores="$(tc_compact_parametros "$c" "$root")" || return 1
+  read -r ventana pct sensibles <<< "$valores"
+  case "$mode" in ''|--check) ;; *) return 1 ;; esac
+  printf -v flags '%q ' --puesto canal --ventana "$ventana" --pct "$pct" --datos-sensibles "$sensibles"
+  ( set -o pipefail
+    tar -C "$root" -cf - scripts/install-compact-vivo.sh hooks/compact-vivo.sh assets/claude-min-version \
+      | incus exec "$c" -- su - "$CUSER" -c 'd="$(mktemp -d)" || exit 1
+          tar -xf - -C "$d" || { rm -rf "$d"; exit 1; }
+          bash "$d/scripts/install-compact-vivo.sh" '"$flags$mode"'; rc=$?
+          rm -rf "$d"; exit $rc' )
 }
 
 # Capa 1 — settings.json: tui=default + statusLine. $1=contenedor [$2=--force]. Imprime ESTADO=… ; rc del instalador
@@ -42,6 +89,9 @@ tc_renderer_settings() {
           tar -xf - -C "$d" || { rm -rf "$d"; exit 1; }
           bash "$d/scripts/install-statusline.sh" '"$flags"'; rc=$?
           rm -rf "$d"; exit $rc' )
+  local renderer_rc=$?
+  [ "$renderer_rc" = 0 ] || return "$renderer_rc"
+  tc_compact_settings "$c"
 }
 
 # Capas 2 y 3 — export en bashrc (guard propio) + alternate-screen off en tmux.conf. $1=contenedor. Imprime ESTADO=… .

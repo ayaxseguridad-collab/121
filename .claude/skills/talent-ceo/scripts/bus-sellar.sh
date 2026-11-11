@@ -21,6 +21,11 @@
 #         `maquina` es `-` · declara `usuario=` y el usuario real del proceso no coincide
 #   3 = MARCADOR REPETIDO (ya sellado antes)
 #
+# ── DOS GUARDAS DE HONESTIDAD (la salida estándar y los rc no cambian) ─────────────────────────
+# (a) AVISO DE HORA, por stderr y sin bloquear: si el marcador acaba en `-HHMM` válido (HH < 24, MM < 60) y
+#     difiere de la hora MEDIDA en más de 5 min, avisa. La hora tecleada es narrativa; la del sello es la medida.
+# (b) `--src` es una guarda de identidad: fichero regular, existente y NO vacío (rc 2 si no). Su contenido NO se escribe.
+#
 # ── DOS DECISIONES QUE PARECEN DETALLE Y NO LO SON ─────────────────────────────────────────────
 # (1) `src == bus` se decide por IDENTIDAD (`-ef`, dispositivo+inodo), no comparando cadenas: con
 #     comparación textual se evade con ruta relativa, `..`, symlink o hardlink — cuatro puertas.
@@ -44,7 +49,7 @@ while [ $# -gt 0 ]; do
     --src) _exige_valor $# "$1"; src="${2-}";      shift 2 ;;
     --nota) _exige_valor $# "$1"; nota="${2-}";     shift 2 ;;
     --rol) _exige_valor $# "$1"; rol="${2-}";       shift 2 ;;
-    --help)     sed -n '2,29p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    --help)     sed -n '2,34p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "bus-sellar: argumento desconocido: $1" >&2; exit 2 ;;
   esac
 done
@@ -252,6 +257,13 @@ if [ -n "$src" ]; then
   if bus_es_el_bus "$src" "$bus"; then
     echo "bus: PRECOND: --src ES el bus (identidad por inodo, no por nombre): $src" >&2; exit 2
   fi
+  # La forma se comprueba DESPUES de la identidad: un alias del bus conserva su mensaje de identidad
+  # aunque el bus esté vacío. `--src` no se lee ni se escribe: es una guarda, y una guarda que acepta
+  # una ruta inexistente, un directorio o un fichero vacío no guarda nada. Se comprueba antes de
+  # tomar el lock, así que el bus no cambia en ningún rechazo.
+  [ -e "$src" ] || { echo "bus: PRECOND: --src no existe: $src" >&2; exit 2; }
+  [ -f "$src" ] || { echo "bus: PRECOND: --src no es un fichero regular: $src" >&2; exit 2; }
+  [ -s "$src" ] || { echo "bus: PRECOND: --src está vacío: $src; un sello sin cuerpo no acredita nada" >&2; exit 2; }
 fi
 
 dir="$(bus_dir_estado)"
@@ -307,6 +319,33 @@ case "$ahora" in
   *) echo "bus: PRECOND: no se pudo medir la hora; un sello sin marca temporal no se escribe" >&2
      exit 2 ;;
 esac
+
+# ── AVISO DE MARCADOR ADELANTADO O ATRASADO: la hora del marcador es narrativa, la del sello es medida ──
+# Tres veces se nombró un marcador con una hora extrapolada del relay y luego se midió otra: el marcador
+# es lo que se CITA, y uno con una hora que el reloj desmiente contradice su propia estampa. NO bloquea
+# (hay marcadores que citan legítimamente otra hora, p. ej. un banco sellado más tarde): avisa por
+# STDERR, que es lo que faltaba, sin tocar la salida estándar. `-HHMM` solo cuenta con hora y minuto
+# válidos (`-8548` no es una hora). La diferencia es circular: 23:59 y 00:02 distan 3 min, no 1437.
+# `LC_ALL=C` local por la misma razón que en `_sin_saltos`: el glob de dígitos no debe depender del idioma.
+_aviso_hora(){   # <marcador> <hora medida AAAA-MM-DDTHH:MM:SSZ>
+  local LC_ALL=C hhmm hh mm rh rn dif
+  case "$1" in
+    *-[0-9][0-9][0-9][0-9]) ;;
+    *) return 0 ;;
+  esac
+  hhmm="${1##*-}"; hh="${hhmm:0:2}"; mm="${hhmm:2:2}"
+  [ "$((10#$hh))" -lt 24 ] && [ "$((10#$mm))" -lt 60 ] || return 0
+  rh="${2:11:2}"; rn="${2:14:2}"
+  dif=$(( (10#$hh * 60 + 10#$mm) - (10#$rh * 60 + 10#$rn) ))
+  [ "$dif" -ge 0 ] || dif=$(( -dif ))
+  [ "$dif" -le 720 ] || dif=$(( 1440 - dif ))
+  if [ "$dif" -gt 5 ]; then
+    printf 'bus: AVISO: el marcador dice %s y el reloj mide %s%s (%s min de diferencia); la hora del sello la mide este script y manda sobre la del marcador\n' \
+      "$hhmm" "$rh" "$rn" "$dif" >&2
+  fi
+  return 0
+}
+_aviso_hora "$marcador" "$ahora"
 if [ -n "$nota" ]; then
   printf '%s [rol: %s] [%s] %s\n' "$ahora" "$rol" "$estampa" "$nota" >> "$bus" || { echo "bus: fallo al escribir" >&2; exit 2; }
 else

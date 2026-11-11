@@ -1,0 +1,93 @@
+{
+  "$schema": "internal — patterned after skill-creator eval-driven flow (SKILL.md \"Evaluación (eval-driven development)\") y stripe-skill/evals/evals.json",
+  "skill": "coderabbit-talent",
+  "version": "v3",
+  "created": "2026-09-05",
+  "purpose": "ABC-5478: reescritura v3 de coderabbit-talent (planes Essentials/Team/Advanced, CLI 0.7.x, schema v2 vivo, gate real de la casa, baja de SonarQube). Estos escenarios se corren CIEGOS por subagentes del coordinador (con-skill vs sin-skill, y v2 vs v3) — NO los ejecuta el agente que escribe el skill. El resultado esperado de cada escenario es verificable por grep/salida, no por juicio subjetivo.",
+  "how_to_run": "El harness (coordinador, fuera de este bloque) lanza un subagente por (escenario x condición), le entrega SOLO `prompt` + los ficheros de `files_needed` que aplican a esa condición (sin-skill: ninguno; con-skill v2: snapshot congelado de v2; con-skill v3: el skill en `.claude/skills/coderabbit-talent/` de esta rama), recoge la respuesta/artefacto producido, y evalúa cada entrada de `expected` de forma mecánica (grep, rc de comando, parseo). Resultado: `results-<fecha>.md` con una fila por (escenario, condición, criterio, pass/fail).",
+  "scenarios": [
+    {
+      "id": "triage-pr-2182",
+      "title": "Triage de un PR real con comentarios de CodeRabbit",
+      "gap_this_exercises": "Sin el skill, un agente no sabe que existe fetch_cr_comments.sh, no distingue los dos ejes de taxonomía vigentes de la matriz heredada, y no produce un informe de triage con secciones fijas (falsos positivos tipificados, plan de fixes, riesgos residuales).",
+      "prompt": "Hazme el triage de los comentarios de CodeRabbit en el PR #2182 de ejemplo/repo. Para cada comentario bloqueante di si es válido o falso positivo (con razón tipificada) y da un plan de fixes por fichero.",
+      "files_needed": [
+        "scripts/fetch_cr_comments.sh",
+        "references/comment-taxonomy.md",
+        "references/commands.md"
+      ],
+      "blind": true,
+      "expected": [
+        {
+          "id": "uses_fetch_script_not_hallucinated",
+          "pass_if": "La transcripción del agente invoca `fetch_cr_comments.sh ejemplo/repo 2182` (o el equivalente `gh api graphql` que el script encapsula) ANTES de listar comentarios — verificable con grep de `fetch_cr_comments` o `reviewThreads` en la transcripción de herramientas. Un agente que fabula comentarios sin consultar el PR real falla este criterio."
+        },
+        {
+          "id": "report_has_fixed_sections",
+          "pass_if": "El informe final contiene, en este orden o equivalente, las secciones: hallazgos válidos por severidad, falsos positivos con razón tipificada (asunción incorrecta / convención del repo / ya cubierto / fuera del alcance del diff), plan de fixes por fichero, riesgos residuales — verificable con grep -i de los 4 encabezados sobre el texto de salida."
+        },
+        {
+          "id": "distinguishes_committable_vs_ai_prompt",
+          "pass_if": "El informe distingue explícitamente un finding con `is_committable: true` (sugerencia aplicable directo) de uno que solo trae `has_ai_prompt: true` (requiere que un agente actúe) — no los trata como intercambiables."
+        }
+      ]
+    },
+    {
+      "id": "new-node-ts-repo-yaml",
+      "title": "Configurar un repo Node/TS nuevo con un .coderabbit.yaml válido",
+      "gap_this_exercises": "Sin el skill (o con v2), el yaml generado usa tools inexistentes (`prettier`, `bandit`), `github-checks.timeout_ms` (clave muerta), o `pre_merge_checks.docstrings: true` (sintaxis inválida) — todo lo cual falla `coderabbit config validate` o queda ignorado en silencio por el producto real.",
+      "prompt": "Voy a dar de alta CodeRabbit en un repo Node.js/TypeScript nuevo (Next.js + Express). Dame un `.coderabbit.yaml` de partida razonable para este stack.",
+      "files_needed": [
+        "scripts/detect_project_type.sh",
+        "assets/coderabbit-templates/node-typescript.yaml",
+        "references/yaml-reference.md"
+      ],
+      "blind": true,
+      "expected": [
+        {
+          "id": "yaml_parses",
+          "pass_if": "`python3 -c \"import yaml; yaml.safe_load(open('<fichero>'))\"` termina con rc 0 sobre el yaml producido."
+        },
+        {
+          "id": "yaml_validates_against_schema",
+          "pass_if": "`coderabbit config validate <fichero>` (no consume cuota de review) termina con rc 0 y el mensaje 'is valid against the current CodeRabbit schema' — no 'invalid' ni 'Could not load'."
+        },
+        {
+          "id": "no_dead_or_nonexistent_keys",
+          "pass_if": "`grep -Ec 'bandit|prettier|kubelinter|dotnet_format|timeout_ms' <fichero>` → 0. Ninguna de esas claves existe en el schema v2 vigente."
+        },
+        {
+          "id": "tone_instructions_under_limit",
+          "pass_if": "Si el yaml define `tone_instructions`, su valor tiene ≤250 caracteres (límite duro del schema v2, top-level) — verificable con el mismo `coderabbit config validate` (rechaza con 'must contain at most 250 characters' si se excede)."
+        }
+      ]
+    },
+    {
+      "id": "diagnose-blocked-push-and-rate-limit",
+      "title": "Diagnóstico: push bloqueado por el hook / status FAILURE por rate limit / unknown option --type",
+      "gap_this_exercises": "Sin el skill, un agente conflacionará tres síntomas distintos (gate local del repo, rate limit del producto CodeRabbit, y una flag CLI retirada en 0.7.0) en un único diagnóstico erróneo, o tratará un status `CodeRabbit=FAILURE` por rate limit como un veredicto real de la review.",
+      "prompt": "Tengo tres problemas en la misma sesión: (1) `git push` se rechaza con un mensaje sobre un sentinel de CodeRabbit; (2) el status `CodeRabbit` del PR está en FAILURE; (3) un script interno del equipo falla con `unknown option '--type'` al invocar el CLI de CodeRabbit. ¿Qué está pasando en cada caso y cómo lo resuelvo?",
+      "files_needed": [
+        "references/troubleshooting.md",
+        "references/gate-cli-del-repo.md",
+        "references/cli-review.md",
+        "references/rate-limits.md"
+      ],
+      "blind": true,
+      "expected": [
+        {
+          "id": "distinguishes_three_root_causes",
+          "pass_if": "La respuesta trata los tres síntomas como causas INDEPENDIENTES (gate local del repo / rate limit del producto / flag CLI retirada), no como una única causa raíz compartida."
+        },
+        {
+          "id": "failure_status_not_treated_as_verdict",
+          "pass_if": "Para el síntoma (2), la respuesta dice explícitamente que un status `CodeRabbit=FAILURE` puede deberse a rate limit y NO es necesariamente un veredicto de review bloqueante — no recomienda 'arreglar el código para que pase la review' como única vía."
+        },
+        {
+          "id": "flags_type_option_as_removed",
+          "pass_if": "Para el síntoma (3), la respuesta identifica que `--type` fue retirada en CLI ≥0.7.0 (ignorada en silencio en algunas versiones, error explícito en otras) y remite a `coderabbit review --help` del binario instalado como fuente de verdad de las flags vigentes — no sugiere volver a pinear una versión antigua como única solución."
+        }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/00-config.sh"
 # shellcheck source=/dev/null
 . "$HERE/lib.sh"
+# shellcheck source=/dev/null
+. "$HERE/apply-renderer.sh"
 
 # Seam de test: TC_VERIFY_SCOPE=identity permite al arnés de test correr SOLO la sección de
 # identidad/perfil (TAL-2630) sin los checks de infra, para poder obtener exit 0 en sandbox.
@@ -98,6 +100,7 @@ for y in $(seq 1 "${COUNT:-0}"); do
   # [TAL-8038] Renderer CLÁSICO + barra ctx (3 capas + versión mínima): sin esto el pane puede caer en pantalla alternada
   # (PLAN/handoff no capturables) y ningún pane emite `ctx: NN%` (compact-60 ciego). Aplicación: apply-renderer.sh.
   chk "$ch renderer: settings .tui=default + statusLine statusline-ctx.sh" 'incus exec "$1" -- jq -s -e "length == 1 and (.[0] | type == \"object\") and (.[0] | $3)" /home/"$2"/.claude/settings.json' "$ch" "$CUSER" "$RENDERER_JQ"
+  chk_fn "$ch compact vivo: hooks, ventana y lista conforme" tc_compact_settings "$ch" --check
   chk "$ch renderer: export CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1 en bashrc" 'incus exec "$1" -- grep -q "^export CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1" /home/"$2"/.bashrc' "$ch" "$CUSER"
   chk "$ch renderer: tmux.conf alternate-screen off" 'incus exec "$1" -- grep -qx "set -g alternate-screen off" /home/"$2"/.tmux.conf' "$ch" "$CUSER"
   if [ -r "$RENDERER_MIN" ]; then

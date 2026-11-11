@@ -23,7 +23,7 @@ Activa `boot.autostart` en los canales con escalonado real (prioridad decrecient
 
 Genera en `~HOST/.local/bin` desde `assets/launcher-*.tmpl`:
 
-- `v <XY>` → tmux con 2 paneles (Claude `claude-root` izq | Codex `codex-root` der), en el repo. Re-acopla si la sesión existe (no duplica). `LEFT_CMD`/`RIGHT_CMD` overridables.
+- `v <XY>` → tmux con 2 paneles (Claude `claude-root` izq | auditor der: el lanzador declarado en `agents.conf` (`TCO_AUDIT_CLI`), `codex` con su sandbox si no hay declaración), en el repo. Re-acopla si la sesión existe (no duplica). `LEFT_CMD`/`RIGHT_CMD` overridables.
   El launcher añade a Claude el identificador del registro del usuario lanzador: dev según
   `TC_CLAUDE_PHASE` (por defecto `coding`), auditor según `audit`. Otro proveedor conserva su orden.
   `refresh-claude-auth.sh --restart` recupera la fase del panel en `~/.claude/tf-phase-<pane>.json`,
@@ -56,8 +56,8 @@ de la fábrica (Mergeador / coordinadores) bajo la Torre, sus sesiones viven en 
 en el HOST (no dentro de un canal). El lanzador canónico es
 `.claude/skills/talent-orchestrator/scripts/torre-resume.sh <actor> --cwd <pwd-exacto>`
 (detección de la sesión viva por `mtime==ahora`, UUID validado, lanzamiento shell-safe con
-bypass; `--list`/`--uuid`/`--dry-run`), junto a `torre-sweep.sh` / `torre-relay.sh` /
-`torre-compact.sh` para la operación. Receta manual (fallback; los aliases NO están en
+bypass; `--list`/`--uuid`/`--dry-run`), junto a `torre-sweep.sh` / `torre-relay.sh` para la operación. El compact vivo se instala
+con talent-context/scripts/install-compact-vivo.sh; banco por hooks y lectura obligatoria. Receta manual (fallback; los aliases NO están en
 `install-launchers.sh` — se invocan por ruta del repo):
 
 ```bash
@@ -121,7 +121,7 @@ responde — no arranca en un modelo agotado), y `codex --version` coincide con 
 
 ### Mantenimiento periódico de binarios en TODA la flota (mandato del lead)
 
-Actualizar Claude Code y Codex es tarea **periódica de flota**, no un acto puntual por canal:
+Actualizar Claude Code, Codex y Node es tarea **periódica de flota**, no un acto puntual por canal:
 
 1. **Codex: `npm install -g @openai/codex` como ROOT** — el auto-update lanzado como no-root
    **crashea con exit 243** (histórico verificado); instalar/actualizar siempre como root dentro
@@ -149,6 +149,30 @@ Actualizar Claude Code y Codex es tarea **periódica de flota**, no un acto punt
    pidió o donde algo falló. Un canal "parcheado a mano" diverge en silencio y el fallo reaparece,
    irreproducible, en el siguiente canal — o renace con cada clon si el golden quedó fuera de la
    tanda (lección del arranque CRM 2026-07-22).
+9. **Node al parche más reciente de su mayor (host, golden, canales y runner)**: el suelo de parche vive en
+   `assets/node-suelos.tsv` y sube con cada aviso de seguridad de Node; una instancia ya montada queda por debajo
+   cuando el suelo sube, y el doctor lo marca. Se sube con una operación propia, de dos pasos y con confirmación
+   (`$PKG` es la carpeta del paquete): primero el plan, que no escribe nada y termina con `CONFIRMACION=<código>`;
+   después la ejecución con ese código:
+
+   ```bash
+   bash "$PKG/skills/talent-channels/scripts/node-al-dia.sh" --plan
+   sudo bash "$PKG/skills/talent-channels/scripts/node-al-dia.sh" --ejecutar "$CODIGO"
+   ```
+
+   Sube al parche más reciente de la MISMA mayor (nunca cambia de mayor ni baja) desde el repositorio de
+   NodeSource que apt ya tiene configurado y autentica, golden primero, y comprueba el suelo al terminar. Un canal
+   con tmux, claude o codex vivos, o con un proceso con el directorio actual dentro del motor, se SALTA, se nombra y
+   el resultado final no es 0: ninguna sesión se para sola, y se repite después de cerrarla. El host no pasa por esa
+   guarda (el operador corre dentro de una sesión) y apt no reinicia servicios. Una mayor sin suelo (la 18 de apt)
+   no se toca: instálala con el procedimiento de NodeSource de `EMPIEZA-AQUI.md`. Los pozos de cuentas no están
+   cubiertos. El paquete anterior no se borra y se declara. Los procesos de Node ya arrancados siguen con el binario
+   anterior hasta que se reinicien. La identidad de la instancia (golden, máquina, usuario) sale de
+   `instalacion/estado/contexto.conf` del paquete y de las respuestas que cita, no del entorno (`sudo` lo limpia).
+   En una instancia sin ese fichero, el entorno con los tres valores (`sudo env GOLDEN=golden-<proyecto>
+   MACHINE_NUM=<n> CUSER=<usuario> bash …` con las mismas dos órdenes de arriba); si falta algo, termina con rc 2 y
+   dice qué falta. La golden y el runner de la instancia son obligatorios: si no existen, rc 1. `apt-get update` se
+   limita al fichero de fuentes de NodeSource, de modo que un repositorio ajeno roto no impide subir Node.
 
 ## Gestión de context window (compact)
 
@@ -311,7 +335,7 @@ despierta a un waiter arbitrario; para el objetivo real (no saturar el host) bas
 
 `scripts/status.sh` — foto rápida: contenedores, tailnet, GPU (off por defecto), sesiones tmux.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
 
 La generación de lanzadores guarda la selección de sesión en
 `~/.config/talent-channels/panel.conf`, con permiso 0600. La carga de configuración

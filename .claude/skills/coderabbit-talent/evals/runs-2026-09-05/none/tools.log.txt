@@ -1,0 +1,16 @@
+2026-09-05T20:09:28-06:00 | gh auth status | logged in as example-reviewer, scopes read:org/repo/workflow
+2026-09-05T20:09:28-06:00 | gh pr view 2182 --repo ejemplo/repo --json title,number,state,url,headRefName,baseRefName | PR MERGED, title 'feat(portal): ABC-5258 encuestas...+ABC-5064 quiz M1 Vibe Agents (tren)'
+2026-09-05T20:15:35-06:00 | gh api repos/.../pulls/2182/comments (inline review comments) | 3 total, 2 from coderabbitai (1 finding + 1 auto-reply about resolve/approve)
+2026-09-05T20:15:35-06:00 | gh api repos/.../issues/2182/comments (top-level) | 6 total, 1 from coderabbitai (walkthrough/summary, 'No actionable comments in recent review')
+2026-09-05T20:15:35-06:00 | gh api repos/.../pulls/2182/reviews | 5 total, 4 coderabbitai: CHANGES_REQUESTED(1 actionable)->DISMISSED->COMMENTED->APPROVED
+2026-09-05T20:15:35-06:00 | gh pr diff 2182 (full + filtered to migration file) | confirmed quiz seed sql has es-only content (title empty en/pt-BR, description/questions/options missing en/pt-BR keys)
+2026-09-05T20:15:35-06:00 | grep precedent migrations 20271303000000_abc4993_seed_quiz_modulo1_vibe_marketer.sql + older vibecoder quiz seeds | same 'SOLO ES' pattern documented in-file, established convention, 3+ occurrences
+2026-09-05T20:15:35-06:00 | gh api graphql (review threads resolution status) | FAILED: network DNS resolution to api.github.com down mid-session (curl 28), retried 3x, gave up — not blocking, sufficient data already gathered
+2026-09-05T20:15:35-06:00 | which coderabbit && coderabbit --version | 0.7.6 installed locally
+2026-09-05T20:15:35-06:00 | coderabbit review --help | confirmed --type NOT listed (retired 0.7.0); flags are --committed/--uncommitted/--include-untracked, matches skill reference troubleshooting.md #6
+2026-09-05T20:15:35-06:00 | coderabbit config validate --help | reviewed for task 3 grounding (strict flag validation vs review's silent-ignore behavior)
+2026-09-05T20:17:34-06:00 | coderabbit config validate s2-coderabbit.yaml | FAILED: network timeout fetching schema (api/network connectivity down mid-session, same DNS issue seen earlier with api.github.com); could not confirm live schema validation, yaml built from skill's verified templates (base-talent.yaml + node-typescript.yaml, last_verified 2026-09-05) and cross-checked structurally by hand
+2026-09-05T20:18:54-06:00 | Write s1-triage.md | triage completo: 1 comentario bloqueante (Major, i18n quiz seed) clasificado como falso positivo (patron SOLO-ES establecido, 3+ ocurrencias precedentes), plan de fixes por fichero
+2026-09-05T20:18:54-06:00 | Write s2-coderabbit.yaml | .coderabbit.yaml schema v2 para Next.js+Express nuevo, combinando templates base-talent.yaml+node-typescript.yaml del skill coderabbit-talent
+2026-09-05T20:18:54-06:00 | Write s2-notas.md | notas de decisiones + intento fallido de coderabbit config validate (timeout de red) + verificacion de sintaxis YAML con python
+2026-09-05T20:18:54-06:00 | Write s3-diagnostico.md | diagnostico de 3 problemas independientes: sentinel gate pre-push, status FAILURE por rate limit, --type retirada en CLI 0.7.0 (confirmado en vivo con coderabbit review --help 0.7.6)

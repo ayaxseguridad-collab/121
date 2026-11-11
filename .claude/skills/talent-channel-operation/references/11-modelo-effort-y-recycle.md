@@ -16,6 +16,7 @@ procedimientos de reciclaje/desatasco de un carril.
   - [7c. Despacho escalonado 2-en-2 bajo cuenta cargada](#7c-despacho-escalonado-2-en-2-bajo-cuenta-cargada-t8)
 - [8. Protocolo 529 (error server-side)](#8-protocolo-529-error-server-side)
 - [9. Compact-60 (protocolo del lead, en cascada)](#9-compact-60-protocolo-del-lead-en-cascada)
+- [10. Activo-sin-progreso (behavior-watch)](#10-activo-sin-progreso-behavior-watch)
 
 ## 1. El modelo es un gate operativo
 
@@ -32,22 +33,18 @@ Tabla modo → modelo/effort (Regla 0 ampliada — **modelo-por-fase**, TAL-2675
 | Plan (Fase A, re-plan tras NO-GO) | Opus vigente (`TCO_PLAN_MODEL`, desde el registro) | `xhigh` |
 | Coding (Fases B/C) | **`Sonnet vigente`** (ahorro de cuota — decisión del lead 2026-07-13, conservada por la regla 0 vigente) | `high` |
 | Fallback — code-gate NO converge en **5 rondas** sobre el mismo fix | sube ESE fix a **Opus vigente** | `high` |
-| Auditoría (pane .1) | Sonnet vigente si el CLI auditor es Claude; el modelo de su proveedor en otro caso | según `TCO_AUDIT_EFFORT_CMD` |
+| Coding sensible (seguridad, dinero, privacidad) | **Opus vigente**, rol `code_sensible` | `high` |
+| Auditoría (pane .1) | Sol vigente de Codex, otro proveedor que plan y código | `medium`, desde `AUDIT_EFFORT` |
 
 El coordinador conmuta el modelo del dev en el GO de plan → coding (Opus vigente→Sonnet vigente) y en el fallback de
 la 5ª ronda (Sonnet vigente→Opus vigente, ESE fix), con la coreografía de §6 y el contrato de rondas de §5. **NUNCA**
 se baja de fase a mitad de un mismo tramo (plan sigue en Opus vigente hasta el GO; coding sigue en Sonnet vigente
 hasta el fallback o el cierre del encargo). **`/effort max` PROHIBIDO** en todos los modos.
 
-**Auditable en la entrega, OBLIGATORIO-POR-DISCIPLINA (NO machine-enforced)**: git no graba qué
-modelo ejecutó cada fase — el coordinador declara el modelo REAL de Plan/Coding/Fallback en la
-sección "Modelo por fase" del HANDOFF (`docs/templates/handoff-pr-draft.md`) al validar la entrega
-(regla 13, `references/02` §4). `scripts/verify-handoff.sh` **NO** lo valida (ruling del lead: el
-hard-enforce fail-closed se intentó y se revirtió por blast-radius — HANDOFF v1 existentes, sin
-test versionado, refs del Mergeador desalineadas); la auditabilidad hoy depende ÚNICAMENTE de la
-disciplina del coordinador — **ningún documento del Mergeador instruye todavía revisar este campo**
-(un HANDOFF puede omitirlo y pasar `verify-handoff.sh` limpio sin esa revisión). Cerrar esa brecha
-(instrucción al Mergeador + hard-enforce fail-closed) es **follow-up → TAL-2683**.
+**Auditable en la entrega**: el coordinador declara en «Decisiones y porqués» del HANDOFF
+`Auditoría: independiente (otro proveedor)`. La auditoría degradada con el mismo proveedor se retiró en la 2.0
+(ley del lead del 7-nov): con un auditor que no sea Codex el despacho se PARA y se escala;
+no se añaden IDs de modelo ni un bloque `model_per_phase` al HANDOFF.
 
 ## 2. Verificar y forzar el modelo
 
@@ -81,10 +78,10 @@ tco_verify_model_effect <carril> <pane> <modelo> <submit_uuid> [max_s]  # AUTORI
 sirvió REALMENTE el turno que siguió al switch — el `uuid` es un argumento OBLIGATORIO (nunca "el
 último assistant", que podía ser el turno anterior al switch).
 
-**Panel NUEVO** — el registro genera `TCO_DEV_MODEL_ARGS` y, para auditor Claude,
-`TCO_AUDIT_MODEL_ARGS` con el identificador completo Sonnet vigente. `dispatch.sh` los añade al
-lanzar y verifica ambos paneles. `audit-gate.sh` vuelve a comprobar el auditor antes de pedir
-un veredicto; si difiere, lo cambia o se detiene. El doctor comprueba también ese panel.
+**Panel NUEVO** — el registro genera `TCO_DEV_MODEL_ARGS` desde el rol de código y
+`TCO_AUDIT_MODEL_ARGS` desde el rol auditor; para Codex pasa Sol vigente y esfuerzo medio.
+`dispatch.sh` los añade al lanzar y verifica ambos paneles. Para Claude, `audit-gate.sh`
+comprueba el modelo antes del veredicto; para Codex el nuevo ID entra en el próximo lanzamiento.
 
 El resolutor genera `OPUS_PICKER_ALIAS` y `SONNET_PICKER_ALIAS` junto al par de modelos.
 El selector exige la familia en la primera columna y la versión correspondiente; la fila
@@ -190,8 +187,8 @@ distingue es **¿hay dispatch detrás?**:
 
 **Por qué conservar y no matar:** un canal aparcado sin trabajo **CONSERVA la sesión tmux
 levantada con dev idle** — un pane **SIN-PANE** (sesión muerta/contenedor caído) es
-**indistinguible de un contenedor caído** para el supervisor de flota (`talent-coordination` ref
-09 §Supervisor de flota), y matar la sesión por "estar libre" borra esa distinción exactamente
+**indistinguible de un contenedor caído** para el supervisor de flota (`talent-channel-operation`
+§Reglas duras, barrido obligatorio), y matar la sesión por "estar libre" borra esa distinción exactamente
 cuando no hay nada urgente que la fuerce. Caso real: SIN-PANE en ch46/ch41 confundido con
 contenedor caído, 23-ago-2026.
 
@@ -292,7 +289,7 @@ está abierto. La secuencia limpia para fijar el modelo-por-fase + `high` en el 
 1. **Aprobar** el plan (opción 1) → el dev entra en bypass y arranca a codear en el modelo/effort
    vigentes (si era Opus vigente/`xhigh`, el primer tramo corre caro — es el burst conocido).
 2. **Escape** para interrumpir → el dev queda **INTERRUPTED/idle** (NO reanuda solo).
-3. **[TAL-3619]** `model="$(tco_model_for_phase coding)" && [ -n "$model" ] && tco_set_model "$carril" "$pane" "$model" || exit 1` — internamente abre el picker
+3. **[issue 3619]** `model="$(tco_model_for_phase coding "$carril")" && [ -n "$model" ] && tco_set_model "$carril" "$pane" "$model" || exit 1` — internamente abre el picker
    (`/model` SIN argumento), localiza y envía el DÍGITO (`tco_model_picker_pick`), confirma **UN**
    `1` SOLO si aparece el diálogo ("Yes, switch…"/"full history gets re-read"), y **verifica el
    modelo activo por el PICKER** (marca de activo, `tco_model_is`) — nunca por el eco de un
@@ -556,7 +553,7 @@ verificación de identidad y la purga de TaskList stale del post-resume — runb
 sesión sigue corriendo durante y después del compact — no re-lanzarlo "porque se perdió". Al volver
 del compact, **re-pollear** los bg pendientes (estado/resultado) como primer paso del regreso.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
 
 La versión visible se deriva con `tco_modelo_version_visible`: componentes numéricos de uno o dos
 dígitos contiguos después de la familia, hasta el primer sufijo. El ID completo se conserva.
@@ -566,3 +563,53 @@ no completan una versión. El auditor de otro proveedor conserva sus argumentos 
 `actualizar-modelos.sh` informa la versión del CLI instalada y la que resolvió el registro.
 La actualización del propio CLI es responsabilidad de su actualizador; esta orden no consulta
 catálogos ni instala el CLI.
+
+## 10. Activo-sin-progreso (behavior-watch)
+
+Toda la vigilancia anterior detecta el pane INMÓVIL; un canal `busy` que no produce nada pasa todos
+esos filtros como sano. `scripts/behavior-watch.sh <canal-NN> [--report-only]` mide por
+ARTEFACTOS, nunca por pantalla, y **SOLO AVISA**: nunca recycle, kill, nudge ni `send-keys`. Qué hacer
+con un canal alertado sigue siendo decisión del coordinador con los procedimientos de este documento.
+
+**El token: PROGRESO-ESTANCADO (rc 22)** = P1 + P2 + las TRES condiciones a la vez (ninguna fuente sola
+dispara):
+
+| Pieza | Qué mide | Fuente |
+|---|---|---|
+| P1 | sesión `busy` (`tco_session_liveness_from`); idle → SANO rc 1, ningún token vota. La corroboración de turno en vuelo es SOLO estructural (`tco_transcript_pending_tool_from`: un `tool_use` sin su `tool_result`, por tipo de registro, `isSidechain` e ids): el texto de un mensaje de usuario no cambia el veredicto | `sessions/<pid>.json` + transcript |
+| P2 | run vigente: `$TCO_RUNS_DIR/*/state.json` del canal (el de mtime más reciente), fase fuera de `TC_PHASE_TERMINAL`, y si trae `pr`, estado REAL por `gh` con `TC_GH_TIMEOUT` (OPEN vigente; MERGED/CLOSED no). Nunca locks ni `approvals/*.ok` | `tco_active_run_for` |
+| (1) | bytes del transcript sin cambio ≥ `TC_STALL_WINDOW` (1800 s): el principal MÁS los de sus subagentes (`<sid>/subagents/*.jsonl`); una lectura fallida de los subagentes (directorio que existe y no se lee o no se recorre, `find` con rc ≠ 0) deja (1) no medible: nunca cuenta como 0 bytes. «Sin subagentes» solo vale si la AUSENCIA se prueba: el ancestro más cercano que existe (`<sid>` o el proyecto) tiene que ser recorrible (un `<sid>` sin permiso esconde su `subagents`); un `subagents` enlazado se sigue, y un enlace (en `subagents` o en `<sid>`) cuyo destino no se alcanza, o una entrada `*.jsonl` que no es un fichero regular, deja (1) no medible | `_tco_carril_transcript` + `_bw_subagent_bytes` |
+| (2) | HEAD y `git status --porcelain` del clon sin cambio en la ventana | `_tco_carril_git` |
+| (3) | descendientes de `claude` (sin el propio `claude`: su TUI gasta CPU busy): ninguno, o ticks de CPU (`/proc/<pid>/stat` 14-15) sin avance entre dos ticks; un `pgrep -P` que FALLA (rc ≥ 2, no el rc 1 de «sin hijos»), en cualquier nivel del árbol, deja (3) no medible, y también un hijo vivo cuyo `stat` no se lee tras tres lecturas (solo un hijo que ya no existe deja de contar), y también si el proceso de `claude` ya no existe al terminar la lectura | `tco_children_cpu_ticks` |
+
+**Regla de ausencia (UNKNOWN, rc 2, nunca sella)**: P1 o P2 no medibles (sesión ilegible, un
+`state.json` sin `carril`/`phase` válidos que podría ser de este canal, `gh` que falla o no responde a
+tiempo), o una condición no medible cuando las demás ya son verdaderas. Una fuente ilegible de un
+token que ya es falso por otra condición no cambia el veredicto.
+
+**Ventanas por tick**: el estado (`$TCO_BEHAVIOR_DIR/<canal>.state`, FUERA de `$TCO_RUNS_DIR`) guarda
+la última observación de cada reloj y desde cuándo no cambia. El primer tick abre las ventanas y no
+vota. Medir, leer el bus y persistir van bajo el mismo `flock`; una observación más vieja que la
+persistida no escribe. **Aviso por transición**: el marcador `VIGIA-PROGRESO-ESTANCADO-<canal>-<epoch>`
+se fija bajo el candado y se sella fuera con `bus-sellar.sh`; solo rc 0, o rc 3 del MISMO marcador,
+pasan a `avisado`; rc 2 (p. ej. sin `TA_ROL`/`TA_BUS` en el entorno de quien ejecuta el tick) deja la
+transición `pendiente` y se reintenta en cada tick. `--report-only` da
+la línea con todas las señales sin escribir, sin mover el cursor del bus (`--peek`), sin sellar y sin crear el directorio de estado ni el candado cuando faltan.
+
+**Quién escribe `state.json`**: SOLO `scripts/run-state-write.sh <ISSUE> <carril> <phase>`, llamado por el helper de tramo del coordinador al EMPEZAR (`active`) y al CERRAR
+(`done|cancelled|superseded|bounced|delivered`). Escribe exactamente `{carril, phase, ts}` de forma
+atómica (temporal validado con `jq -e` antes del rename; una issue nueva se construye completa en un staging oculto `runs/.stg.*` y se publica con un único rename de directorio, así que el censo nunca ve un directorio a medias) y es fail-soft (rc 0 siempre). Sin esa
+llamada P2 da `no_state` y el canal sale SANO: la adopción en los coordinadores es un paso de
+despliegue posterior a la fusión. El escritor NO conserva `pr`, `reason` ni `sha` que el coordinador haya
+anotado a mano: sin `pr`, P2 no consulta el PR.
+
+**Límites medidos, no ocultos** (el selftest los deja en casos con nombre):
+
+- una espera legítima con el turno bloqueado (un `tool_use` en vuelo sin hijos que gasten CPU, p. ej.
+  esperar un gate remoto) vota PROGRESO-ESTANCADO pasada la ventana (`L-ESPERA`);
+- (ya NO es un límite) un subagente escribe en su propio `<sesión>/subagents/*.jsonl` (medido con el
+  CLI 2.1.280); la condición (1) suma esos bytes, así que un subagente trabajando no vota (`N-SUBAGENTE`).
+
+Por eso es un AVISO y no una acción: se contrasta con `--report-only` y con las cuatro señales EN VIVO de
+§3 (PROC-08) antes de reciclar. **LOOP (rc 20) y RUNTIME-EXCESIVO (rc 21) no existen en este detector**: quedan
+para la 2.1 (`PENDIENTE-2.1.md`).

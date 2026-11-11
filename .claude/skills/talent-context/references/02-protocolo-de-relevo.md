@@ -1,5 +1,12 @@
 # Protocolo de Relevo — Complete Reference
 
+> Camino por defecto: compact vivo (`07-compact-vivo.md`), autocompact al 60 % de
+> 200K tokens (CEO/PM 300K), banco construido por hooks y lectura obligatoria de estado.md.
+> La coreografía manual de esta referencia se conserva como modo degradado SIN hooks.
+> La barra ctx: mide la ventana completa del modelo; con ventana fijada el watcher avisa
+> de RETRASO, pues el autocompact debió disparar antes. No decide el compact vivo.
+
+
 Cubre los 3 pasos del relevo (regreso → `/compact` → puntero), la plantilla del fichero de regreso
 (standalone y flota), y el envío scriptado (no automático) del `/compact` bajo tmux.
 
@@ -108,7 +115,7 @@ En flota, el regreso se pide al pane y el actor lo **escribe en un fichero** (Wr
 viewport del TUI en pantalla alternada pierde los handoffs largos), con la pantalla como respaldo.
 Para no confundir un handoff viejo con el actual, se delimita con un **nonce único por ejecución**, se
 exige un `mtime` no anterior a la petición y se extrae SOLO el último bloque con ese nonce exacto
-(implementación de referencia: `talent-orchestrator` `scripts/torre-compact.sh` + `lib-torre.sh`
+(implementación de referencia: `talent-orchestrator` `scripts/lib-torre.sh`
 `torc_torre_read_handoff_file` / `torc_torre_collect_handoff` / `torc_torre_extract_handoff`).
 
 ```text

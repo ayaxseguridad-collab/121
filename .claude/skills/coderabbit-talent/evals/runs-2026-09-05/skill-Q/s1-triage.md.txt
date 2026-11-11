@@ -1,0 +1,107 @@
+# Triage CodeRabbit — PR #2182 (ejemplo/repo)
+
+`feat(portal): ABC-5258 encuestas por formación Next con día del directo + ABC-5064 quiz M1 Vibe Agents (tren)` — MERGED (`main`).
+
+Método: `bash scripts/fetch_cr_comments.sh ejemplo/repo 2182 --sources all`
+(GraphQL review threads + issue comments + review bodies del App). Salida cruda:
+`/tmp/cr-evals/runs/skill-Q/pr2182_raw.jsonl` (3 entradas: 1 review thread inline + 1 issue comment
+walkthrough + 1 review body). No se disparó ningún `coderabbit review` nuevo — solo lectura de lo ya
+publicado.
+
+## Inventario de lo que CodeRabbit publicó en este PR
+
+| Fuente | thread_id | Categoría · Severidad | Resuelto |
+|---|---|---|---|
+| Review thread inline | `PRRT_kwDOSUMvGs6ewPoc` | 🎯 Functional Correctness · 🟠 Major (+ badge propio "🏗️ Heavy lift") | `isResolved: true` |
+| Walkthrough (issue comment) | — (no es thread) | Resumen + Pre-merge checks (7 ✅ / 2 ❌ warning) | N/A |
+| Review body | — (no es thread) | "Actionable comments posted: 1" (referencia al mismo thread de arriba) | N/A |
+
+Solo hay **un** comentario de review accionable (inline, con thread propio) en todo el PR. Los otros
+dos son el walkthrough y el resumen de la corrida — no son threads resolubles por GraphQL (§8 de
+`references/comment-taxonomy.md`).
+
+## Comentario bloqueante #1 — i18n vacío en el seed del quiz
+
+- **Archivo/línea**: `supabase/migrations/20271331000000_abc5064_seed_quiz_modulo1_vibe_agents.sql:42-43`
+- **Etiqueta de CR**: 🎯 Functional Correctness · 🟠 Major
+- **Qué dice**: el `title`/`description`/preguntas/opciones/explicaciones del quiz solo llevan `es`;
+  `en` y `pt-BR` quedan como `""`. Cita la instrucción de ruta del repo: "Campos i18n editoriales deben
+  usar `jsonb {"es","en","pt-BR"}`" (viene de `path_instructions` de `supabase/migrations/**`).
+- **¿Cruza con la política "solo bloqueantes" de CLAUDE.md regla 16?** Categoría/severidad
+  (Functional Correctness · Major) sí encaja en principio con "bug funcional"; por eso amerita triage
+  real y no descartarlo a ojo.
+
+### Veredicto: **falso positivo — tipo "Convención del repo"**
+
+Evidencia (leída del código real, no solo del snippet citado por CR):
+
+1. El propio encabezado de la migración documenta el patrón a propósito:
+   > "Patrón talent-quiz-builder ... 20 single_choice × 4 opciones (1 correcta + explicación),
+   > **SOLO ES**, pass_pct 100 ..." (`supabase/migrations/20271331000000_...sql:2-3`)
+2. Es un patrón **repetido**, no un descuido puntual: la migración hermana
+   `supabase/migrations/20271303000000_abc4993_seed_quiz_modulo1_vibe_marketer.sql` (ABC-4993, mismo
+   tren de exámenes de módulo) usa **exactamente** el mismo shape:
+   `{"es":"Examen Módulo 1","en":"","pt-BR":""}` para el título, y `description`/preguntas/opciones
+   solo con clave `es` — y a su vez se declara "réplica M1/M2 vibe-coder-next", o sea, es la tercera
+   vez que se repite el mismo patrón en el repo.
+3. Esto corresponde al tipo tipificado en `references/comment-taxonomy.md` §10: *"Convención del
+   repo — CR sugiere un patrón ajeno donde el repo ya tiene una convención documentada"*. La regla
+   general de `jsonb {es,en,pt-BR}` de la ruta `supabase/migrations/**` es correcta como default, pero
+   el dominio "quizzes de módulo" tiene una excepción de producto documentada y replicada (los
+   exámenes de módulo son ES-only por decisión de producto del skill `talent-quiz-builder`, no un
+   olvido).
+4. Consistente con esto, el thread **ya aparece `isResolved: true`** en GitHub — el equipo lo cerró
+   sin fix, coherente con este análisis.
+
+**No se requiere ninguna acción de código.** Si se quiere evitar que CR vuelva a levantarlo en
+migraciones futuras de este mismo patrón, la mitigación correcta (per `comment-taxonomy.md` §5) es
+ajustar `.coderabbit.yaml` — un `path_instructions` específico para
+`supabase/migrations/**seed_quiz_modulo*` que documente la excepción ES-only de quizzes de módulo —
+en vez de responder el mismo argumento a mano en cada PR nuevo del tren de exámenes.
+
+## Hallazgos NO bloqueantes del walkthrough (no son threads, se documentan por completitud)
+
+Estos dos "pre-merge checks" fallaron en el walkthrough del App, pero **no son comentarios de review
+con thread propio** — no aparecen en `fetch_cr_comments.sh` y no tienen `resolveReviewThread`
+individual (comment-taxonomy.md §8). Se listan porque uno de los dos toca justo la categoría
+"breaking change no documentado" de la regla 16 de CLAUDE.md:
+
+- **"Breaking Changes Documentados" (⚠️ Warning)**: el pre-merge check exige textualmente una sección
+  `## Breaking changes` en la descripción del PR, y el body del PR no trae ese encabezado exacto.
+  **Verificado contra el body real del PR** (`gh pr view 2182 --json body`): la sección `## Migraciones`
+  sí documenta el cambio de firma de `get_pending_surveys_for_user` (DROP+CREATE, `p_program_id`
+  opcional, fallback `PGRST202`, compatibilidad `NULL`) con el mismo nivel de detalle que pide el
+  check — solo bajo un encabezado distinto al que el check busca literalmente. **Falso positivo tipo
+  "ya cubierto"**: el contenido exigido existe, solo no bajo el heading exacto que el checker
+  reconoce. No bloqueaba merge (era `warning`, no `error`) y el PR ya está mergeado.
+- **"Docstring Coverage" (⚠️ Warning, 50% vs umbral 80%)**: el diff toca
+  `tests/unit/portal/pending-surveys.test.ts`, que trae `beforeEach(...)`/`describe(...)` (confirmado
+  leyendo el archivo). Esto coincide con el patrón conocido y documentado en `SKILL.md` (Critical
+  Gotcha #11) y en `references/troubleshooting.md` §15: `pre_merge_checks.docstrings` no tiene
+  path-scoping propio y cuenta callbacks de test como "funciones sin JSDoc". No se puede afirmar con
+  certeza al 100% que sea la única causa del 50% (el check analizó "4 funciones en 5 ficheros" y no
+  desglosa cuáles), pero es consistente con el falso-positivo tipificado "ya cubierto por convención
+  de tests" (comment-taxonomy.md §10) más que con deuda real de documentación.
+
+## Plan de fixes por fichero
+
+**Ninguno requerido para este PR** (ya mergeado, el único hallazgo accionable es falso positivo y el
+thread ya está resuelto). Para reducir ruido futuro del mismo patrón:
+
+- `.coderabbit.yaml` (repo raíz) — añadir un `reviews.path_instructions` para
+  `supabase/migrations/**seed_quiz_modulo*` (o instrucción específica del dominio "quizzes de módulo")
+  que documente la excepción ES-only de `talent-quiz-builder`, para que CR deje de re-levantar el
+  mismo Major en cada migración de examen de módulo nuevo (ABC-4993, ABC-5064 y las que sigan).
+- Ninguna acción sobre `supabase/migrations/20271331000000_abc5064_seed_quiz_modulo1_vibe_agents.sql`
+  ni sobre `20271303000000_abc4993_seed_quiz_modulo1_vibe_marketer.sql`.
+
+## Riesgos residuales
+
+- El pre-merge check "Breaking Changes Documentados" seguirá marcando warning en PRs futuros que
+  documenten breaking changes fuera del heading exacto `## Breaking changes` — es un falso positivo de
+  formato, no de contenido, y no bloquea merge (modo `warning`). Aceptable dejarlo así salvo que el
+  equipo quiera adoptar el heading literal en la plantilla de PR.
+- "Docstring Coverage" seguirá generando ruido en PRs que solo tocan/añaden tests, por el gotcha
+  documentado de `pre_merge_checks.docstrings` sin path-scoping propio — mitigación posible: bajar el
+  check a `mode: off` global y compensar con `instructions:` conversacionales, o aceptar el ruido
+  (impacto: cosmético, no bloqueante).

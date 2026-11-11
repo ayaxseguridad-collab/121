@@ -1,7 +1,7 @@
 
 
 <!-- fabrica:inicio -->
-# Anexo por repo — migracion-crm (talent-coordination)
+# Anexo por repo — migracion-crm (talent-channel-operation)
 
 Lectura obligatoria antes de operar este repositorio. El estado vivo del destino
 y las APIs son la fuente de verdad; ante divergencia, parar y escalar al lead.
@@ -92,35 +92,8 @@ Ensayo E2E y primer encargo de producción: exigir la evidencia durable de F8.
 Credenciales: solo nombres en el escrow; exigir check-F3 y acreditación de F7.
 Git de los canales: nombre `{channel}`, correo `{channel}@channels.invalid`.
 Topología y usuarios: el TSV del perfil manda sobre esta descripción.
-
-## Lectura del perfil y operación del CEO
-
-Perfil autoritativo: `/home/gt/talent-factory/manifiestos/migracion-crm.perfil.tsv`. Tras adjudicar, su copia vive en
-`manifiestos/migracion-crm.perfil.tsv` del producto. El descubrimiento normal
-de lib-perfil.sh debe encontrar exactamente uno; más de uno falla cerrado.
-Validar con `bash /home/gt/talent-factory/skills/talent-ceo/scripts/lib-perfil.sh --check /home/gt/talent-factory/manifiestos/migracion-crm.perfil.tsv`.
-El escrow de perfiles es opcional; no inventar un fallo por su ausencia.
-
-| Tipo | Censo inicial |
-|---|---|
-| `maquina` | 1 |
-| `ceo` | 1 |
-| `torre` | 1 |
-| `estacion` | 1 |
-| `canal` | 1 |
-| `runner` | 1 |
-| `pm` | 0 |
-| `bus` | 1 |
-| `cron` | 1 |
-
-Los IDs son únicos globalmente. La columna tipo clasifica el actor;
-contenedor es un identificador opaco. No deducir roles por prefijos.
-Usuarios por rol y sesiones: consultar el TSV; cada actor que sella tiene
-usuario distinto de cualquier otra fila de su máquina. Los canales comparten
-`migracion-crm-incus`, operador Incus del host, también declarado para el runner.
+Canales y runners comparten el operador Incus `migracion-crm-incus` del host.
 Dentro de los canales se usa `vivecoder`; dentro del runner se usa `runner`.
-PM no aplica: no se solicitó este rol y no hay fila pm; no deducirla de CEO.
-No hay satélites ni tablas adicionales adjudicadas en este perfil.
 Runner local adjudicado: `runner-migracion-crm`, contenedor `runner-migracion-crm` en `maquina-1`
 (host `gt-Default-string`, según `manifiestos/runner-identity.map`).
 Operador Incus del host: `migracion-crm-incus`; usuario sin privilegios del
@@ -138,18 +111,34 @@ bash /home/gt/talent-factory/scripts/seal-suite.sh "$PR" "$SHA" origin/main "$RU
 PR, SHA y RUNGROUP corresponden al handoff validado; seal-suite agrega receipts
 y publica `local-gates`. Exigir éxito de todos los gates; no usar --no-post al entregar.
 
-### Cron y bus
+## Operación de los canales
 
-Fila CRON: dueño CEO, minutos `07,22,37,52`. Se leen del perfil;
-este documento no instala tareas ni autoriza copiarlo al crontab.
-Fila BUS: `/home/gt/migracion-crm/bus`; lectores declarados en el TSV: CEO, C1, M1 y los
-actores ORQ/PM si se solicitan. Los comandos usan flock mediante sus rutas
-de runtime; ningún atributo lock del perfil configura ese bloqueo.
-Los lectores declarados no acreditan permisos: bus-leer.sh usa su argumento
-lector y un cursor propio, sin imponer una ACL desde el perfil.
-Cursor y permisos del bus: los crea F6 y los acredita el doctor en F7 antes de operar.
-No escribir credenciales ni PII en el bus.
-Leer ledger `/home/gt/talent-factory/ledger/cuentas.json`: coordinator_host `gt-Default-string`.
-Pozos y cuentas: consultar ledger y check-F3; habilitada_fabrica no prueba login.
+`TCO_ANEXO_FILE=references/anexo-migracion-crm.md` selecciona este overlay.
+`TCO_POSTMERGE_CMD=true` es inerte: el canal no aplica a producción.
+No inyectar el token del apply en canales de producción.
+Auditoría: dev `claude-root`, auditor `claude-root`; confirmar rol y
+topología `mismo-adversarial` con agents.conf antes de operar.
+Los estados In Progress/In Review de §1 coinciden con la identidad adjudicada.
+
+### Clasificación de destructivas
+
+No aplica la clasificación SQL: no hay base de datos gestionada.
+Las acciones destructivas en otras superficies siguen requiriendo GO del lead.
+
+### Calidad pgTAP — stop-audit y pre-reseed
+
+pgTAP y pre-reseed SQL no aplican: stack ninguno, sin base de datos gestionada.
+Los tests de producto deben verificar resultados y efectos y fallar ante noop/restore.
+
+### Entrega y auditoría de sistema
+
+La entrega termina con gates locales verdes, GO de código ligado al SHA,
+sentinel draft, HANDOFF validado y estado In Review; no espera CI remoto.
+Commit nuevo obliga a reemitir sentinel y bloque machine-readable.
+El canal no ejecuta cr-review.sh ni usa --no-verify como vía de entrega.
+`TCO_SHAOK_EXEMPT_PATHS`: sin excepciones adjudicadas; no aplica un índice
+compartido exento porque esta instalación no declara ninguno.
+Auditoría Playwright no aplica al montaje inicial: no hay flujos adjudicados;
+no lanzar el carril sin definirlos en el cuestionario.
 Nunca volcar el entorno ni ficheros de credenciales; comprobar únicamente nombres y presencia.
 <!-- fabrica:fin -->

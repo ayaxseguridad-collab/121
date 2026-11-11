@@ -6,9 +6,7 @@
 #    proceso, dejando el pane en un shell; el binario se mantiene root-managed en la última estable.
 check_for_update_on_startup = false
 #
-# 1b) [TAL-CEO-CODEX-MODELO-SOL-MEDIUM] Fijado por config, no a mano por el coordinador: el
-#     auditor arranca SIEMPRE en gpt-5.6-sol con reasoning medium en todo canal nuevo.
-model = "gpt-5.6-sol"
+# El lanzador pasa el modelo y el esfuerzo del auditor desde el registro del usuario.
 model_reasoning_effort = "medium"
 #
 # 2) Siembra la confianza del repo del carril (evita el prompt "trust directory" en cada arranque).
