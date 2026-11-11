@@ -82,7 +82,7 @@ Terminología: **«canal»** es el término canónico; **«carril» es sinónimo
 |---|---|
 | Anexo | el anexo adjudicado (`TCO_ANEXO_FILE`) |
 | Required check (fuente: `scripts/setup-branch-protection.sh`) | **`local-gates`** (único; TAL-2286/TAL-2288 — sustituye a los 6 contextos de Actions: `validar-flujo-pr` · `validar-build` · `db-guards` · `e2e-ola3` · `integration` · `e2e-pagos`; inventario check→gate en el anexo §2 y en `docs/runbooks/local-gates.md`) |
-| Runners de gates | vibe-channel-85..88 (blackvamp, perfil RUNNER minimal — ref 08 §2) |
+| Runners de gates | vibe-channel-85..88 (identidad A, perfil RUNNER minimal — ref 08 §2) |
 | Pools por estación (M1-M5) — **OBJETIVO, pendiente de cableado** (ver ref 08 §2/§5) | M1/M2 → host · M3 → black-omega (`omega.tailnet.example`) · M4 → pendiente de reubicar · M5 → black-alpha (`alpha.tailnet.example`). Ley de flota: SOLO host+Alpha+Delta(`delta.tailnet.example`)+Omega — `vibecoder-01/02` PROHIBIDOS; **`black-fenix` = IA local, NO tocar**. `seal-suite.sh` sigue hardcodeado a `--runner-user runner --runner-repo /home/runner/repo` (fix = hijo 6 de TAL-5160, fuera de alcance aquí) — esta fila describe el DESTINO, no el comportamiento actual del script |
 | Post-merge | **Si trae migraciones**: PROC-M13 (apply Management API) + PROC-M15 (advisors) + ledger. **Sin migraciones**: verificar Done + liberar el slot, sin apply (ref 02 §8) |
 
@@ -374,6 +374,30 @@ y talent-factory #7):
       MISMO turno**: con apply escalado/manual (otras fábricas, GO pendiente) el body lleva
       `refs TAL-N` + label `apply-pendiente` y el Done se produce tras confirmar el apply
       (anexo §4 — TAL-2643: `closes` ahí = Done FALSO)
+
+### 8-bis · Destilado de findings (analítico, reintentable, no bloqueante)
+
+Después del paso 8, **fuera del gate de Done**: el Mergeador cruza entre PR los findings
+`critical|major` de CodeRabbit (ledger del CLI e hilos inline del App) y emite CANDIDATOS a
+gotcha. Es analítico y reintentable; un fallo suyo es **no bloqueante**: no retiene el Done, no
+libera ni retiene el slot y nunca se convierte en bounce.
+
+- [ ] `bash talent-merger/scripts/distill-findings.sh --limit <N> --markdown` (`--limit` es
+      obligatorio; `--since <ISO>`, `--pr <n>` y `--dry-run` acotan o ensayan). Escribe
+      `.claude/.gotcha-candidates.jsonl` (un candidato por línea: `candidate_key` estable,
+      `count` = vehículos distintos —PR; la rama si no resuelve—, `waived`, `sugerencia_regla`) y
+      avanza `.claude/.distill-watermark.json` SOLO después de persistir. El fragmento markdown
+      (cabecera `### [fecha] título reducido`) sale por stdout.
+- [ ] Si falla (rc 3 entrada inválida · 4 persist · 5 lectura externa), deja
+      `.claude/.distill-pending.json` con un código enumerado y se **reintenta en el siguiente
+      merge**; el watermark no se mueve.
+
+Reglas del paso: **nunca escribe `gotchas.md`** ni memoria alguna (promover un candidato es decisión
+humana: la regla de mejora continua pide 3 vehículos distintos); ninguna salida lleva texto crudo
+(se sanean rama y título; el cuerpo del finding no se persiste); la ventana es la que retiene el
+ledger del CLI (`CR_REVIEW_HISTORY_RETENTION`, 20 por rama: subirla es decisión de la estación).
+La métrica refacto-vs-bounce de `references/05-canales-de-refactorizacion.md` §1 sale de los
+tokens del flock, no de este paso.
 
 ## Reglas duras (invariantes)
 
@@ -731,13 +755,11 @@ solo a destructivas (GO del lead). En ruta A los gates se verifican por `gh api`
 
 ## Paquete de fábrica
 
-Este skill es miembro del **paquete de skills de fábrica** (16): linear-skill · skill-creator · talent-buzz ·
-talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-coordination ·
-talent-issue-craft · talent-llm-local · talent-memoria · talent-merger · talent-orchestrator · talent-pm · talent-prd · talent-repo-onboarding. El paquete viaja JUNTO y
+Este skill es miembro del **paquete de skills de fábrica** (13): coderabbit-talent · linear-skill · talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-docs-skill · talent-issue-craft · talent-medidor · talent-merger · talent-orchestrator · talent-pm · talent-sentry-guard. El paquete viaja JUNTO y
 **motor-primero**: canónico en el repo motor `talent-factory` (`skills/`), propagado como núcleo
-a los repos de producto con `skill-creator/scripts/sync-package.sh` (overlays por repo intactos)
-y validado con `skill-creator/scripts/validate-package.sh` + `<skill>/invariants.tsv`.
-Manifiesto: `skill-creator/assets/package.manifest` · doctrina y ratchet (D6): `skill-creator/references/09-paquete-de-fabrica.md`.
+a los repos de producto con `scripts/paquete/sync-package.sh` (overlays por repo intactos)
+y validado con `scripts/paquete/validate-package.sh` + `<skill>/invariants.tsv`.
+Manifiesto: `scripts/paquete/package.manifest` · doctrina y ratchet (D6): `scripts/paquete/PAQUETE.md`.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
 Nunca vuelques el entorno ni ficheros de credenciales; comprueba únicamente nombres y presencia.

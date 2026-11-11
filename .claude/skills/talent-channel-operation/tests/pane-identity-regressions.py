@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -10,6 +11,9 @@ import time
 
 scripts = Path(__file__).resolve().parent.parent / "scripts"
 mode = sys.argv[1]
+# Codex de npm (execve al binario nativo): los casos que se aceptan y los que no (el mutante lo es de `npm_escape`).
+NPM_ACEPTADOS = ("npm_execve", "npm_spawn", "npm_arm64", "npm_vendor", "npm_escape_mutante")
+NPM_MODES = NPM_ACEPTADOS + ("npm_escape", "npm_name", "npm_arch")
 
 
 def tmux_shim(root):
@@ -108,6 +112,66 @@ with tempfile.TemporaryDirectory() as tmp:
             script.parent.mkdir()
             script.write_text('import ctypes, time\nctypes.CDLL(None).prctl(15, b"codex", 0, 0, 0)\ntime.sleep(60)\n')
         args = [str(actual), str(script)]
+    elif mode in NPM_MODES:
+        # Codex instalado con npm (@openai/codex): el lanzador declarado es el enlace `/usr/bin/codex` → `<raíz>/bin/codex.js`
+        # (`#!/usr/bin/env node`), y con `process.execve` el proceso del pane es el binario NATIVO del paquete de la
+        # plataforma, sin node. Árbol falso en un temporal; `uname -m` doblado (la prueba no depende de la máquina).
+        caso = mode[:-len("_mutante")] if mode.endswith("_mutante") else mode
+        raiz = root / "npm/lib/node_modules/@openai/codex"
+        (raiz / "bin").mkdir(parents=True)
+        js = raiz / "bin/codex.js"
+        triple, paquete, arquitectura = "x86_64-unknown-linux-musl", "@openai/codex-linux-x64", "x86_64"
+        if caso == "npm_arm64":
+            triple, paquete, arquitectura = "aarch64-unknown-linux-musl", "@openai/codex-linux-arm64", "aarch64"
+        if caso == "npm_arch":
+            arquitectura = "riscv64"
+        nativo = raiz / "vendor" / triple / "bin/codex" if caso == "npm_vendor" \
+            else raiz / "node_modules" / paquete / "vendor" / triple / "bin/codex"
+        nativo.parent.mkdir(parents=True)
+        (raiz / "package.json").write_text(
+            '{\n  "name": "%s",\n  "version": "0.166.0"\n}\n' % ("otro/paquete" if caso == "npm_name" else "@openai/codex"))
+        if caso == "npm_escape":
+            # El candidato es un enlace que SALE de la raíz del paquete: su real queda fuera y no se acredita.
+            actual = root / "fuera/codex"
+            actual.parent.mkdir()
+            shutil.copyfile(shutil.which("python3"), actual)
+            actual.chmod(0o755)
+            nativo.symlink_to(actual)
+        else:
+            shutil.copyfile(shutil.which("python3"), nativo)
+            nativo.chmod(0o755)
+            actual = nativo
+        # codex.js: un script de fixture. En `spawn` es Python válido (node + codex.js, y el nativo como proceso hijo).
+        js.write_text('#!/usr/bin/env node\nimport subprocess, sys, time\n'
+                      'subprocess.Popen([sys.argv[1], "-c", "import time; time.sleep(60)"])\ntime.sleep(60)\n'
+                      if caso == "npm_spawn" else '#!/usr/bin/env node\n// fixture\n')
+        js.chmod(0o755)
+        declared.unlink()
+        declared.symlink_to(js)
+        args = [str(actual), "-c", "import time; time.sleep(60)"]
+        if caso == "npm_spawn":
+            actual = Path(shutil.which("python3"))
+            args = [str(actual), str(js), str(nativo)]
+        uname = root / "shim-uname"
+        uname.mkdir()
+        (uname / "uname").write_text('#!/bin/bash\nif [ "${1:-}" = -m ]; then echo %s; else exec /usr/bin/uname "$@"; fi\n'
+                                     % arquitectura)
+        (uname / "uname").chmod(0o755)
+    libs = scripts
+    if mode.endswith("_mutante"):
+        # MUTANTE LITERAL de lib.sh en una copia: se quita la contención en la raíz del paquete (una línea, anclada por la
+        # de antes y la de después, únicas en el fichero). El caso del enlace que se escapa tiene que ponerse ROJO: con el
+        # mutante el binario de fuera SÍ se acredita (rc 0), y solo esa contención lo rechaza.
+        texto = (scripts / "lib.sh").read_text()
+        antes = '    real="$(readlink -e -- "$cand")" || continue\n'
+        linea = '    case "$real" in "$raiz"/?*) ;; *) continue ;; esac\n'
+        despues = '    [ -f "$real" ] && [ -x "$real" ] || continue\n'
+        assert texto.count(antes) == 1 and texto.count(despues) == 1 and texto.count(antes + linea + despues) == 1, \
+            "anclas del mutante ausentes o repetidas en lib.sh"
+        libs = root / "mutante/scripts"
+        shutil.copytree(scripts, libs)
+        (libs / "lib.sh").write_text(texto.replace(antes + linea + despues, antes + despues))
+        assert (libs / "lib.sh").read_text() != texto and linea not in (libs / "lib.sh").read_text()
     dev = subprocess.Popen(["sleep", "60"], executable="/bin/sleep", start_new_session=True)
     audit = subprocess.Popen(args, executable=actual, start_new_session=True)
     try:
@@ -129,6 +193,8 @@ with tempfile.TemporaryDirectory() as tmp:
                            TCO_HOST_ENV_REL="Repo-Neutro/.env.local")
             for key, value in neutral.items():
                 env.setdefault(key, value)
+        if mode in NPM_MODES:
+            env["PATH"] = f"{root / 'shim-uname'}:{env['PATH']}"
         transport = '''
 tco_container() { echo fixture; }
 incus() {
@@ -151,7 +217,7 @@ incus() {
 '''
         if mode == "empty_pane":
             env["TEST_AUD"] = ""
-        code = f'. {shlex.quote(str(scripts / "00-config.sh"))}; . {shlex.quote(str(scripts / "lib.sh"))}\n' + transport
+        code = f'. {shlex.quote(str(libs / "00-config.sh"))}; . {shlex.quote(str(libs / "lib.sh"))}\n' + transport
         code += 'TCO_DEV_CLI=/bin/sleep; TCO_AUDIT_CLI="$TEST_DECL_CLI"; TCO_PANE_IDENT_WAIT=0; TCO_AUDIT_TOPOLOGY=distinto\n'
         if mode in ("vanished_stat", "vanished_exe", "unreadable_stat", "unreadable_exe"):
             # Dobles heredados por el shell remoto; ningún PID ajeno se modifica.
@@ -207,9 +273,14 @@ _tco_pane_agent_exes() {
             code += "echo READY_PREFLIGHT; tco_pane_identity_preflight 01\n"
         result = subprocess.run(["bash", "-c", code], env=env, text=True,
                                 capture_output=True, timeout=10)
-        expected = 0 if mode in ("legitimate", "interpreter", "vanished_stat", "vanished_exe", "retry_dev", "retry_audit", "capture_interpreter") else 1
+        expected = 0 if mode in ("legitimate", "interpreter", "vanished_stat", "vanished_exe", "retry_dev", "retry_audit", "capture_interpreter") + NPM_ACEPTADOS else 1
         assert "READY_PREFLIGHT" in result.stdout, f"{mode}: no llegó al preflight: {result.stderr}"
         assert result.returncode == expected, f"{mode}: esperado rc={expected}: {result}"
+        if mode in NPM_MODES:
+            # Aceptado: el auditor es codex; rechazado: el preflight dice que el pane NO ejecuta codex.
+            # `expected` es un rc: 0 = aceptado (el auditor es codex), 1 = rechazado.
+            assert ("AUDITOR: codex " in result.stdout) == (expected == 0), f"{mode}: {result}"
+            assert expected == 0 or "NO ejecuta 'codex'" in result.stderr, f"{mode}: {result}"
         if mode in ("retry_dev", "retry_audit", "never_dev", "never_audit", "wrong_after_retry"):
             assert (root / "counter").read_text().strip() == "3", result
         if mode in ("never_dev", "never_audit"):
@@ -225,3 +296,9 @@ _tco_pane_agent_exes() {
         for process in (dev, audit):
             process.kill()
             process.wait()
+        if mode in NPM_MODES:
+            # El fixture `spawn` deja un hijo (el nativo) en el grupo de la sesión del auditor.
+            try:
+                os.killpg(audit.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass

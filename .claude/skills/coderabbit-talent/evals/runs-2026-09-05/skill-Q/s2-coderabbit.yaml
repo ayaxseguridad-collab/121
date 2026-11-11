@@ -1,0 +1,168 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — punto de partida para repo Node.js/TypeScript nuevo
+# (Next.js frontend + Express backend, mismo repo o monorepo simple).
+#
+# Base: plantilla node-typescript.yaml del skill coderabbit-talent, con
+# pre_merge_checks / finishing_touches de base-talent.yaml incorporados
+# (node-typescript.yaml no los trae por defecto). Ajustar tras las primeras
+# 1-2 semanas de uso segun el ruido real que se observe (empezar en chill,
+# nunca en assertive).
+#
+# last_verified: 2026-09-05
+
+early_access: false
+enable_free_tier: true
+
+language: es-ES
+
+tone_instructions: |
+  Se directo y conciso. Salta los pleasantries.
+  Explica el razonamiento detras de cada sugerencia en una sola frase.
+  Usa ejemplos de codigo TS/JS cuando sugieras alternativas.
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: false
+  changed_files_summary: true
+  # NUNCA poner esto en false: el paso "resolve" de un triage con agentes
+  # depende del bloque "Prompt for AI Agents" en cada comentario inline.
+  enable_prompt_for_ai_agents: true
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: [main, master, develop, staging]
+
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/.nuxt/**"
+    - "!**/.svelte-kit/**"
+    - "!**/coverage/**"
+    - "!**/.turbo/**"
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/yarn.lock"
+    - "!**/*.min.js"
+    - "!**/*.bundle.js"
+    - "!**/*.d.ts"
+    - "!**/__snapshots__/**"
+    - "!**/*.snap"
+    - "!**/public/**"
+    - "!**/.storybook-out/**"
+
+  instructions: |
+    Proyecto Node/TypeScript (Next.js + Express). No comentes sobre:
+    - Orden de imports (ESLint/Biome lo maneja)
+    - Longitud de linea o trailing commas (Prettier/Biome)
+    - Falta de JSDoc en funciones internas no exportadas
+    - Uso de `any` en archivos de test (**/*.test.ts, **/*.spec.ts)
+
+    Enfoca atencion extra en:
+    - Tipos TypeScript incorrectos (casts con `as`, `@ts-ignore`, `any` en codigo de produccion)
+    - useEffect/useCallback con dependency arrays incompletas en componentes React/Next.js
+    - Memory leaks por listeners o timers no removidos en cleanup
+    - Promise rejections no manejadas (await sin try/catch, .then sin .catch)
+    - SQL/NoSQL injection via template strings sin parametrizar
+    - SSR/CSR mismatches en Next.js (acceso a window/document sin guard)
+    - Variables de entorno leidas en cliente sin el prefijo publico del framework (NEXT_PUBLIC_/VITE_)
+    - En el backend Express: middlewares de auth/authz faltantes, CORS mal configurado,
+      falta de rate limiting en rutas publicas, manejo de errores que filtra stack traces al cliente
+
+  path_instructions:
+    - path: "**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx,**/__tests__/**"
+      instructions: |
+        Codigo de test. No comentes sobre uso de `any` ni sobre coverage.
+        Enfocate solo en: assertions correctas (comparar valores esperados reales,
+        no tautologias), mocks que no se limpian entre tests, y tests que dependen de orden.
+    - path: "**/api/**,**/routes/**,**/controllers/**,**/middleware/**,**/server/**"
+      instructions: |
+        Endpoints Express/Next API routes expuestos al usuario. Foco obligatorio en:
+        validacion de input (zod/yup/joi), rate limiting, auth/authz, manejo de errores
+        que no filtre stack traces ni datos internos, y logs que no incluyan PII o secretos.
+    - path: "**/components/**,**/pages/**,**/app/**"
+      instructions: |
+        Componentes React/Next.js. Foco en accesibilidad (alt, aria-label, tabIndex),
+        dependency arrays de hooks, y prevencion de re-renders innecesarios solo si
+        es codigo caliente (no comentar esto en componentes triviales).
+
+  tools:
+    biome: { enabled: true }
+    eslint: { enabled: true }
+    gitleaks: { enabled: true }
+    trufflehog: { enabled: true }
+    osvScanner: { enabled: true }
+    zizmor: { enabled: true }       # Analizador estatico de workflows de GitHub Actions.
+    presidio: { enabled: true }     # PII de alta senal en ficheros cambiados.
+    reactDoctor: { enabled: true }  # Seguridad/performance/correctness/accesibilidad en React.
+    markdownlint: { enabled: true }
+    yamllint: { enabled: true }
+    actionlint: { enabled: true }
+    github-checks:
+      enabled: true
+
+  pre_merge_checks:
+    title:
+      mode: warning
+      requirements: |
+        El titulo del PR debe seguir Conventional Commits:
+        feat|fix|chore|docs|refactor|test|ci(scope): descripcion
+    description:
+      mode: warning
+    issue_assessment:
+      mode: warning
+    custom_checks:
+      - mode: "error"
+        name: "No secrets in code"
+        instructions: |
+          El PR NO debe contener secrets, API keys, tokens, private keys ni URLs
+          con credenciales embebidas (claves de proveedores cloud, tokens de bots,
+          claves privadas, cadenas de conexion con usuario:password). Si se detecta
+          una credencial real: BLOQUEAR merge y pedir rotarla de inmediato.
+      - mode: "warning"
+        name: "Breaking changes documentados"
+        instructions: |
+          Si el PR cambia el contrato de una API/endpoint Express, elimina o
+          renombra una ruta publica, o cambia una firma de funcion exportada
+          usada fuera del modulo, debe incluir seccion "## Breaking changes"
+          en la descripcion del PR con: 1) que rompe, 2) plan de migracion,
+          3) compatibilidad hacia atras.
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    autofix:
+      enabled: true
+
+  labeling_instructions:
+    - label: "breaking-change"
+      instructions: "Aplica cuando el PR rompe un tipo exportado, una API publica o cambia una prop/ruta requerida."
+    - label: "security"
+      instructions: "Aplica cuando el PR toca autenticacion, autorizacion, secrets o dependencias con CVE."
+
+chat:
+  auto_reply: true
+  # Descomentar para que el chat de un PR nunca cree issues de gestion de
+  # tareas (Jira/Linear) fuera del flujo de trabajo propio del equipo:
+  # integrations:
+  #   linear:
+  #     usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto
+  code_guidelines:
+    enabled: true

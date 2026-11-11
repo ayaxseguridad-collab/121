@@ -24,7 +24,7 @@ ROOT="$(cd "$HERE/.." && pwd)"
 SK="$(cd "$ROOT/.." && pwd)"
 PKG="$(cd "$SK/.." && pwd)"
 
-TOTAL_ESPERADO=605
+TOTAL_ESPERADO=620
 PASS=0; FAIL=0; SKIP=0; SKIPPED=''
 ok()   { PASS=$((PASS+1)); printf '  ok   %s\n' "$1"; }
 bad()  { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
@@ -154,6 +154,46 @@ CAP_MENU='  Do you want to proceed?
    2. No
 
  Esc to cancel · ctx: 42%'
+
+# Paquete mínimo: copia de guardas reales y un fichero ordinario; tres miembros sintéticos.
+# No se altera ninguna identidad ni registro del fixture original.
+FXPK="$T/talent-factory"
+fx_paquete() {
+  local rel amb _motivo m
+  rm -rf "${FXPK:?}"
+  mkdir -p "$FXPK/scripts/paquete" "$FXPK/instalacion"
+  cp "$PKG/scripts/paquete/lib-package.sh" "$FXPK/scripts/paquete/"
+  printf 'version=1.7.2\nmin_invariants=1\nmember=talent-ceo\nmember=talent-channel-operation\nmember=talent-orchestrator\noverlay=talent-channel-operation:scripts/repo-identity.conf\noverlay=talent-orchestrator:scripts/repo-identity.conf\n' > "$FXPK/scripts/paquete/package.manifest"
+  for m in talent-ceo talent-channel-operation talent-orchestrator; do
+    mkdir -p "$FXSK/$m" "$FXPK/skills/$m"
+    printf '# Miembro de ejemplo\n' > "$FXSK/$m/SKILL.md"
+    cp "$FXSK/$m/SKILL.md" "$FXPK/skills/$m/SKILL.md"
+  done
+  mkdir -p "$FXPK/skills/talent-ceo/references" "$FXSK/talent-ceo/references"
+  printf 'Núcleo de ejemplo\n' > "$FXPK/skills/talent-ceo/references/nucleo.txt"
+  cp "$FXPK/skills/talent-ceo/references/nucleo.txt" "$FXSK/talent-ceo/references/nucleo.txt"
+  while IFS=$'\t' read -r rel amb _motivo; do
+    case "$rel" in ''|'#'*) continue ;; esac
+    mkdir -p "$FXPK/$(dirname "$rel")"
+    cp "$PKG/$rel" "$FXPK/$rel"
+    if [ "$amb" = ambos ]; then
+      mkdir -p "$FXSK/$(dirname "${rel#skills/}")"
+      cp "$FXPK/$rel" "$FXSK/${rel#skills/}"
+    fi
+  done < "$ROOT/scripts/doctor-guardas.tsv"
+  (
+    cd "$FXPK" || exit 1
+    sha256sum skills/talent-ceo/references/nucleo.txt
+    while IFS=$'\t' read -r rel amb _motivo; do
+      case "$rel" in ''|'#'*) continue ;; esac
+      sha256sum "$rel"
+    done < "$ROOT/scripts/doctor-guardas.tsv"
+  ) > "$FXPK/instalacion/NUCLEO.sha256"
+  mkdir -p "$T/scripts/paquete"
+  cp "$FXPK/scripts/paquete/package.manifest" "$T/scripts/paquete/package.manifest"
+  (cd "$T" && python3 -m zipfile -c publicado.zip talent-factory)
+}
+
 fx_nuevo() {
   rm -rf "${FX:?}" "${RUN:?}" "${T:?}/tok" "${T:?}/home" "${T:?}/secret" "${T:?}/tmp"
   mkdir -p "$FX/tmux" "$RUN" "$T/tok" "$T/home/ejemplo" "$T/secret" "$T/tmp"
@@ -178,6 +218,7 @@ fx_nuevo() {
   printf 'daemon\nnobody\nbin\n' > "$FX/sudo-allow"
   printf 'LINEAR_API_KEY=CANARIO-NO-DEBE-SALIR\n' > "$T/tok/.env.local"; chmod 600 "$T/tok/.env.local"
   printf 'LINEAR_API_KEY=CANARIO-NO-DEBE-SALIR\n' > "$T/home/ejemplo/.env.local"; chmod 600 "$T/home/ejemplo/.env.local"
+  fx_paquete
 }
 TOK="$T/tok/.env.local"
 
@@ -188,7 +229,7 @@ dr() {
   snapshot_antes="$(hash_estado)" || READONLY_FAIL=$((READONLY_FAIL+1))
   OUT="$(env -i PATH="$FXBIN:/usr/bin:/bin" HOME="$T/home" HOST_HOME="$T/home" SECRET_DIR="$T/secret" TMPDIR="$T/tmp" \
     XDG_RUNTIME_DIR="$RUN" SHIM_HOME_ROOT="$RUN/homes" TA_PERFIL="$FXP" TA_BUS="$FXBUS" FX="$FX" SHIM_ME="$ME" TCO_AUDIT_CLI=codex TCO_HOST_ENV="$TOK" \
-    LC_ALL=C "$@" bash "$DOC" 2>&1)"; RC=$?
+    LC_ALL=C TA_PAQUETE="$FXPK" TA_PAQUETE_PUBLICADO="$T/publicado.zip" "$@" bash "$DOC" 2>&1)"; RC=$?
   if [ -n "${TF_REMEDIACIONES_LOG:-}" ]; then
     printf '%s\n' "$OUT" | jq -cRs --argjson rc "$RC" '{fase:"F7",rc:$rc,salida:.}' >> "$TF_REMEDIACIONES_LOG"
   fi
@@ -227,9 +268,9 @@ fx_nuevo
 h0="$(hash_estado)"; dr; h1="$(hash_estado)"
 assert_eq "verde: rc 0" 0 "$RC"
 assert_eq "verde: ni FALLA ni NOVERIF" "0" "$(printf '%s\n' "$OUT" | grep -cE '^(FALLA|NOVERIF)')"
-assert_eq "verde: una linea OK por comprobacion (34)" 34 "$(nok)"
+assert_eq "verde: una linea OK por comprobacion (39)" 39 "$(nok)"
 assert_eq "verde: PUERTA ABIERTA es la ultima linea" "PUERTA ABIERTA" "$(printf '%s\n' "$OUT" | tail -n1)"
-assert_eq "verde: RESUMEN cuadra" "RESUMEN ok=34 falla=0 noverif=0" "$(printf '%s\n' "$OUT" | grep '^RESUMEN')"
+assert_eq "verde: RESUMEN cuadra" "RESUMEN ok=39 falla=0 noverif=0" "$(printf '%s\n' "$OUT" | grep '^RESUMEN')"
 assert_eq "verde: SOLO LECTURA (hash del arbol de estado y del bus identico)" "$h0" "$h1"
 assert_eq "verde: no imprime el contenido del fichero de tokens" "0" "$(printf '%s\n' "$OUT" | grep -c 'CANARIO')"
 
@@ -285,11 +326,11 @@ fx_nuevo; sed -i 's/^302 301 claude/302 999 claude/' "$FX/ps.txt"; dr
 solo "claude que NO desciende del pane (otro padre) no cuenta" torre
 fx_nuevo; rm -f "$FX/tmux/nobody/ses-est.exists"; dr; assert_eq 'estación ausente: consulta no verificable' '1|1' "$RC|$(nnov)"
 fx_nuevo; printf 'daemon\nbin\n' > "$FX/sudo-allow"; dr
-assert_eq "usuario de otra torre sin sudo permitido: NOVERIF (no verde, no FALLA)" "1|1|" "$RC|$(nnov)|$(cats)"
+assert_eq "usuario de otra torre sin sudo permitido: NOVERIF torre y modelos-rol" "1|2|" "$RC|$(nnov)|$(cats)"
 fx_nuevo; perfil_verde | sed 's/^torre\ttorre-uno\tmaq-mando/torre\ttorre-uno\tmaq-otra/; s/^maquina\tmaq-mando\tmaq-mando\t-\t-\t\(.*\)$/maquina\tmaq-mando\tmaq-mando\t-\t-\t\1\nmaquina\tmaq-otra\tmaq-otra\t-\t-\tip=192.0.2.11/' > "$FXP"; dr
 assert_eq "torre de OTRA maquina: NOVERIF = fallo, rc 1" "1|1|" "$RC|$(nnov)|$(cats)"
 fx_nuevo; perfil_verde | sed 's/usuario=daemon/usuario=nadie-inexistente-xyz/' > "$FXP"; dr
-solo "usuario del SO inexistente: FALLA firme de torre" torre
+assert_eq "usuario inexistente: FALLA torre y registro no verificable" '1|torre|1' "$RC|$(cats)|$(nnov)"
 
 # ═══ C4 · renderer y ctx ═══════════════════════════════════════════════════════════════════════
 printf '== C4: alternate_on y ctx (nunca se asume 0) ==\n'
@@ -349,6 +390,15 @@ fx_nuevo; rm -f "$FX/aud-pid.cont-canal-1"; : > "$FX/aud-pid.cont-canal-1"; dr
 assert_eq 'sin pane de auditoría: identidad no comprobable' '1|1' "$RC|$(printf '%s\n' "$OUT" | grep -c '^NOVERIF auditor')"
 fx_nuevo; dr TCO_AUDIT_CLI=; solo "TCO_AUDIT_CLI vacio: no hay referencia" auditor
 fx_nuevo; dr TCO_AUDIT_CLI=/opt/bin/codex; assert_eq "TCO_AUDIT_CLI con ruta: se compara el binario" 0 "$RC"
+# [issue 10264, H-1] LISTA BLANCA del doctor: `$bin` sale de la declaración sin ruta y sin UN `-root` (doctor.sh:739) y el binario REAL
+# del pane .1 tiene que ser exactamente `$bin` (doctor.sh:747-750) ANTES del case; aquí el pane ejecuta ese mismo nombre, así que solo
+# decide la lista blanca: un auditor bueno (codex, codex-root, con ruta) da OK y un nombre que no es Codex da FALLA del auditor.
+for par in codexx:codexx codex-evil:codex-evil codex-root.sh:codex-root.sh codexfalso-root:codexfalso gemini:gemini; do
+  fx_nuevo; printf '501 1 bash\n502 501 %s\n' "${par#*:}" > "$FX/aud-ps.cont-canal-1"; dr TCO_AUDIT_CLI="${par%%:*}"
+  solo "H-1 doctor: auditor declarado '${par%%:*}' (el pane ejecuta '${par#*:}') no es Codex" auditor
+done
+fx_nuevo; dr TCO_AUDIT_CLI=codex-root; assert_eq "H-1 doctor: auditor declarado codex-root (el pane ejecuta codex) da OK" 0 "$RC"
+fx_nuevo; dr TCO_AUDIT_CLI=/opt/bin/codex-root; assert_eq "H-1 doctor: auditor declarado /opt/bin/codex-root (el pane ejecuta codex) da OK" 0 "$RC"
 fx_nuevo; : > "$FX/sudo-allow"; dr
 assert_eq "operador de incus sin sudo permitido: NOVERIF, nunca verde" "1|" "$RC|$(cats)"
 
@@ -629,7 +679,7 @@ if command -v tmux >/dev/null 2>&1; then
   printf '%s' "$(wc -c < "$SM/bus.log" | tr -d ' ')" > "$SM/run/talent-ceo/cursores/CEO.cursor"
   printf '%s' "$(stat -c '%d:%i' "$SM/bus.log")" > "$SM/run/talent-ceo/cursores/CEO.bus"
   OUT="$(env -i PATH="/usr/bin:/bin" HOME="$T/home" HOST_HOME="$T/home" SECRET_DIR="$T/secret" TMPDIR="$T/tmp" TMUX_TMPDIR="$SM/tm" \
-    XDG_RUNTIME_DIR="$SM/run" TA_PERFIL="$SM/perfil.tsv" TA_BUS="$SM/bus.log" TCO_AUDIT_CLI=codex TCO_HOST_ENV="$TOK" LC_ALL=C \
+    XDG_RUNTIME_DIR="$SM/run" TA_PERFIL="$SM/perfil.tsv" TA_BUS="$SM/bus.log" TCO_AUDIT_CLI=codex TCO_HOST_ENV="$TOK" LC_ALL=C TA_PAQUETE="$FXPK" TA_PAQUETE_PUBLICADO="$T/publicado.zip" \
     bash "$DOC" 2>"$SM/err")"; RC=$?
   # La sesion creada antes que el sello: el sello (ahora) es posterior al session_created (hace ~1 s)
   assert_eq "smoke tmux real: torre, renderer, ctx, menu y acreditacion OK (rc 0)" "0|torre,renderer,ctx,menu,acreditacion" \
@@ -647,10 +697,10 @@ fx_nuevo; rm "$RUN/homes/daemon/.config/talent-channel-operation/modelos.conf"; 
 assert_eq "registro de otro usuario ausente cierra doctor" "1|1" "$RC|$(printf '%s\n' "$OUT" | grep -c '^NOVERIF modelo torre-uno')"
 fx_nuevo; printf 'Opus 6' > "$FX/tmux/$ME/ses-ceo.model"
 sed -i 's/opus-4-8/opus-6/' "$T/home/.config/talent-channel-operation/modelos.conf"; dr
-assert_eq "doctor acepta versión futura del CEO desde registro propio" 0 "$RC"
+solo "modelo futuro del CEO diverge de otros registros" modelos-rol
 fx_nuevo; printf '[Opus 6]\nctx: 42%%\n' > "$FX/tmux/$ME/ses-ceo.cap"
 sed -i 's/opus-4-8/opus-6/' "$T/home/.config/talent-channel-operation/modelos.conf"; dr
-solo "modelo histórico no acredita la etiqueta vigente del panel" modelo
+solo "modelo histórico no acredita la etiqueta vigente del panel" modelo,modelos-rol
 # shellcheck source=/dev/null
 . "$HERE/supervision-modelo-mando.sh"
 printf '\n== %d ok, %d FAIL (esperados: %d casos; saltados: %d%s) ==\n' "$PASS" "$FAIL" "$TOTAL_ESPERADO" "$SKIP" "${SKIPPED:+ —$SKIPPED}"

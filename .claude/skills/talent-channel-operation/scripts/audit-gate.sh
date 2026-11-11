@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # audit-gate.sh — Envía un artefacto (plan|code) al panel de auditoría con run_id+artifact_sha,
 # espera el bloque JSON de veredicto y lo parsea. Imprime GO|NO-GO|INVALID (stdout = SOLO el veredicto).
+# [issue 10264] Imprime también ESCALAR (rc 4): el auditor tiene abierto un diálogo de aprobación; el gate PARA sin pulsar
+# nada y decide un humano en el panel. rc 22: parada del operador vigente (ver tco_parada_exigir en lib.sh).
 # Escribe el veredicto LITERAL de la auditoría en $OUT (para relevarlo de vuelta al dev).
 # INVARIANTE (lead 2026-06-28): el literal de auditoría SIEMPRE se releva al dev — también en GO
 # (el GO suele traer sugerencias NO bloqueantes que el dev debe incorporar). Sin excepciones.
@@ -72,14 +74,17 @@ tco_atomic_write() { # destino  (contenido por stdin)
 
 tco_audit_once() { # carril type literalfile sha outfile
   local carril="$1" typ="$2" lit="$3" sha="$4" out="$5"
+  # [issue 10264] Parada del operador vigente: ni modelo, ni pane, ni nada. rc 22 (también para quien nos llame con `source`).
+  tco_parada_exigir "$carril" audit-gate || return $?
   tco_ensure_audit_model "$carril" >&2 \
-    || tco_die "$carril: modelo del auditor Claude SIN confirmar — no se solicita veredicto"
+    || tco_die "$carril: el auditor no es Codex — se PARA y se escala (no se solicita veredicto)"
   # [CR] fail-closed: un typo en el tipo no debe auditar sin la instruccion especifica del artefacto
   case "$typ" in plan|code) ;; *) tco_die "tipo de auditoria invalido: $typ (usa plan|code)";; esac
   # [v5] el sha entra en comandos remotos y en el prompt: allowlist obligatoria antes de usarlo.
   tco_valid_token "$sha" || tco_die "artifact_sha invalido: $sha"
   local run; run="$(tco_new_run_id)"
   local pane; pane="$(tco_pane_audit)"
+  local -x TCO_TUI_CLI=''; TCO_TUI_CLI="$(_tco_tui_cli_panel "$carril" "$pane")" || TCO_TUI_CLI=''
   # [v5/B11] persistir la corrida ANTES de operar: si el gate muere a mitad, --parse-only recupera
   # el veredicto con este run_id/sha. (A stderr: el stdout del gate es SOLO el veredicto.)
   mkdir -p "$TCO_RUNS_DIR"
@@ -154,6 +159,13 @@ tco_audit_once() { # carril type literalfile sha outfile
     # [v5/A7] anomalías del TUI: encuesta → declinar y seguir; cola duplicada → avisar y NO nudgear
     # (el nudge/reintento ciego es precisamente lo que duplica).
     an="$(printf '%s' "$scr" | tco_pane_anomaly || true)"
+    # [issue 10264, R-b] Diálogo de aprobación del auditor abierto: el gate PARA con rc 4 y ESCALAR. Va DESPUÉS del veredicto
+    # (uno válido sigue ganando) y ANTES de todo lo demás: nunca teclea, nunca aprueba, nunca nudgea. Sin este corte, el nudge
+    # de abajo (idle sin «esc to interrupt») pulsaba Enter sobre la opción 1 preseleccionada.
+    if [ "$an" = approval ]; then
+      tco_gate_aprobacion_pendiente "$carril" "$pane" "$scr"
+      printf 'ESCALAR'; return 4
+    fi
     if [ "$an" = survey ]; then tco_pane_heal "$carril" "$pane" survey; continue; fi
     if [ "$an" = queued-dup ]; then tco_pane_heal "$carril" "$pane" queued-dup || true; continue; fi
     # [v5] nudge SOLO con el pane IDLE (jamás a un auditor trabajando — Escape lo interrumpiría):
@@ -219,5 +231,10 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
     printf 'INVALID'; exit 1
   fi
   [ $# -ge 5 ] || tco_die "uso: audit-gate.sh <carril> <plan|code> <literalfile> <sha> <out>  |  audit-gate.sh --parse-only <carril> [run_id] [sha] [out]"
-  tco_audit_once "$@"
+  # [issue 10264] El gate corre como hijo vigilado: TERM/INT/HUP del operador dejan la parada (no se relanza sin una orden
+  # humana nueva) y USR1 es el único parón propio del coordinador para un gate STALE (sin parada).
+  tco_valid_token "$1" || tco_die "canal inválido: $1"
+  rc=0
+  tco_correr_vigilado "$1" audit-gate -- tco_audit_once "$@" || rc=$?
+  exit "$rc"
 fi

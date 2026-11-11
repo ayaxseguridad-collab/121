@@ -31,12 +31,16 @@ incus() {
     if [ "${args[$i]}" = "-c" ]; then cval="${args[$((i+1))]}"; break; fi
   done
   printf '%s\n' "$cval" >> "$TMP_TEST/remoto"
-  if [ -n "${FAKE_FILE:-}" ]; then cat "$FAKE_FILE"; else printf '%b' "$FAKE_VER"; fi
+  # Con OTHER_BIN, el binario del OTRO pane (último argumento de la orden) responde con su captura buena OTHER_FILE.
+  if [ -n "${OTHER_BIN:-}" ] && [ "${args[$((${#args[@]} - 1))]}" = "$OTHER_BIN" ]; then cat "$OTHER_FILE"
+  elif [ -n "${FAKE_FILE:-}" ]; then cat "$FAKE_FILE"; else printf '%b' "$FAKE_VER"; fi
 }
 unset TCO_PANE_CLI_VERSION_CMD FAKE_FILE
 mkdir -p "$TMP_TEST/tmp"
 ver_case() ( # salida-del-cli agente pane
-  FAKE_VER="$1"; AGENTE="$2"; TCO_DEV_CLI="$2"; TCO_AUDIT_CLI="$2"; TCO_TMUX=v
+  # Ley del lead (7-nov): el auditor (pane .1) es siempre Codex y el desarrollo (pane .0) es Claude; el agente bajo prueba ocupa su pane.
+  FAKE_VER="$1"; AGENTE="$2"; TCO_TMUX=v
+  case "$3" in *.1) TCO_DEV_CLI=claude; TCO_AUDIT_CLI="$2" ;; *) TCO_DEV_CLI="$2"; TCO_AUDIT_CLI=codex ;; esac
   export TMPDIR="$TMP_TEST/tmp" # el fichero temporal de la función queda aquí: se comprueba que no sobrevive
   _tco_pane_agent_exes() { printf '%s\n' "$AGENTE"; }
   _tco_pane_cli_version 01 "$3"
@@ -116,17 +120,22 @@ done
 # Sentido 1: el CLI responde «2.1.302-beta (Claude Code)» y el registro tiene la estable «claude:2.1.302» -> el preflight falla.
 # Sentido 2: el CLI responde «2.1.302 (Claude Code)» y el registro tiene «claude:2.1.302-beta» -> tampoco pasa.
 # Control positivo: «2.1.302 (Claude Code)» contra «claude:2.1.302» pasa (si no, los rojos de arriba no probarían nada).
-pf_real() ( # salida-del-cli registro
-  FAKE_VER="$1"; TCO_DEV_CLI=claude; TCO_AUDIT_CLI=claude; TCO_TMUX=v; TCO_PANE_CALIBRATED="$2"
+# Ley del lead (7-nov): el desarrollo (pane .0) es Claude y el auditor (pane .1) es siempre Codex. El CLI bajo prueba ocupa su pane y
+# el OTRO pane responde con su captura real buena y está calibrado, así que solo falla el CLI bajo prueba.
+pf_real() ( # salida-del-cli(claude) registro(claude)
+  FAKE_VER="$1"; TCO_DEV_CLI=claude; TCO_AUDIT_CLI=codex; TCO_TMUX=v; TCO_PANE_CALIBRATED="$2|codex:0.162.1"
+  OTHER_BIN=codex; OTHER_FILE="$REAL_CODEX"
   export TMPDIR="$TMP_TEST/tmp"
-  _tco_pane_agent_exes() { printf 'claude\n'; }
+  _tco_pane_agent_exes() { tco_cli_exe "$3"; }
   : > "$TMP_TEST/remoto"
   tco_pane_calibration_preflight 01 >/dev/null 2> "$TMP_TEST/err-real"
 )
-pf_file() ( # fichero-con-la-salida cli registro: el .0 y el .1 son el mismo CLI
-  FAKE_FILE="$1"; AGENTE="$2"; TCO_DEV_CLI="$2"; TCO_AUDIT_CLI="$2"; TCO_TMUX=v; TCO_PANE_CALIBRATED="$3"
+pf_file() ( # fichero-con-la-salida cli registro: el cli ocupa su pane (claude = .0, codex = .1); el otro pane va bien
+  FAKE_FILE="$1"; AGENTE="$2"; TCO_DEV_CLI=claude; TCO_AUDIT_CLI=codex; TCO_TMUX=v
+  if [ "$2" = claude ]; then TCO_PANE_CALIBRATED="$3|codex:0.162.1"; OTHER_BIN=codex; OTHER_FILE="$REAL_CODEX"
+  else TCO_PANE_CALIBRATED="claude:2.1.301|$3"; OTHER_BIN=claude; OTHER_FILE="$REAL_CLAUDE"; fi
   export TMPDIR="$TMP_TEST/tmp"
-  _tco_pane_agent_exes() { printf '%s\n' "$AGENTE"; }
+  _tco_pane_agent_exes() { tco_cli_exe "$3"; }
   : > "$TMP_TEST/remoto"
   tco_pane_calibration_preflight 01 >/dev/null 2> "$TMP_TEST/err-real"
 )
@@ -262,7 +271,7 @@ barrido claude "$REAL_CLAUDE" 'claude:2.1.301' 0 delante:0 dentro:4 detras:7
 barrido codex "$REAL_CODEX" 'codex:0.162.1' 10 delante:10 dentro:12 detras:17
 ok "cerrada: la función no deja ficheros temporales" "$(find "$TMP_TEST/tmp" -type f | wc -l | tr -d ' ')" 0
 ok "cerrada: LC_ALL=C solo dentro de la función (el llamador sin LC_ALL sigue sin él)" \
-  "$( unset LC_ALL; FAKE_FILE="$REAL_CLAUDE"; TCO_DEV_CLI=claude; TCO_AUDIT_CLI=claude; TCO_TMUX=v
+  "$( unset LC_ALL; FAKE_FILE="$REAL_CLAUDE"; TCO_DEV_CLI=claude; TCO_AUDIT_CLI=codex; TCO_TMUX=v
       _tco_pane_agent_exes() { printf 'claude\n'; }
       _tco_pane_cli_version 01 v:.0 >/dev/null 2>&1; printf '%s' "${LC_ALL-sin}")" sin
 

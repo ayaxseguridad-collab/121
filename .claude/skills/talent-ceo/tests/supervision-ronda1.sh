@@ -51,9 +51,17 @@ for cab in 'NO-ES-FECHA' '2026-02-30T12:00:00Z' '2026-10-03' '2026-10-03T12:00:0
 done
 fx_nuevo; printf 'Necesito una decision del CEO. ¿Autorizas continuar?\nctx: 42%%\n' > "$FX/tmux/daemon/ses-torre.cap"; dr
 assert_eq 'H05 pregunta sin escalado: aviso informativo rc 0' '0|1' "$RC|$(printf '%s\n' "$OUT" | grep -c '^AVISO posible-pregunta-sin-escalar torre-uno:')"
+# Issue 9559: junto a «AVISO posible-pregunta…» el doctor emite, en una fixture sin talent-channels, UNA línea de alcance de
+# las sondas de seguridad. Estas comprobaciones cuentan solo el tipo que miden y, aparte, exigen que NO haya ningún otro
+# tipo de AVISO: un AVISO nuevo vuelve a poner la prueba en rojo.
+AVISO_ALCANCE='AVISO seguridad sondas: no se evalúan Node, LiteLLM ni zombis: el manifiesto de la instancia no declara talent-channels'
+avisos_de_otro_tipo() { printf '%s\n' "$OUT" | grep '^AVISO' | grep -v '^AVISO posible-pregunta' | grep -vxF "$AVISO_ALCANCE" | grep -c . || true; }
+avisos_de_alcance() { printf '%s\n' "$OUT" | grep -cxF "$AVISO_ALCANCE" || true; }
 for texto in 'Texto con ? en medio y final informativo' $'Preguntas frecuentes?\n 1. paso uno\n 2. paso dos' $'Informe de ejemplo, no selector activo:\n ❯ 1. Yes\n   2. No\n Esc to cancel'; do
   fx_nuevo; printf '%s\nctx: 42%%\n' "$texto" > "$FX/tmux/daemon/ses-torre.cap"; dr
-  assert_eq 'H05/H06 texto informativo y transcripción' '0|0' "$RC|$(printf '%s\n' "$OUT" | grep -c '^AVISO')"
+  assert_eq 'H05/H06 texto informativo y transcripción' '0|0' "$RC|$(printf '%s\n' "$OUT" | grep -c '^AVISO posible-pregunta')"
+  assert_eq 'H05/H06 ningún AVISO de un tipo nuevo' 0 "$(avisos_de_otro_tipo)"
+  assert_eq 'H05/H06 sin talent-channels la línea de alcance sale exactamente 1 vez' 1 "$(avisos_de_alcance)"
 done
 fx_nuevo; conf_canal PENDIENTE-PKG_IDENTITY_PROJECT; conf_orq PENDIENTE-PKG_IDENTITY_PROJECT; dr
 assert_eq 'H07 identidades iguales sin adjudicar' '1|identidad' "$RC|$(cats)"
@@ -82,9 +90,11 @@ assert_eq 'H07 identidad real admite tokens absolutos sin ruta relativa' 0 "$RC"
 fx_nuevo; sed -i '/^TORC_HOST_ENV_REL=/d' "$FXSK/talent-orchestrator/scripts/repo-identity.conf"; dr
 assert_eq 'H07 igualdad de proyecto sin campos obligatorios del orquestador' '1|identidad' "$RC|$(cats)"
 fx_nuevo; printf '¿Autorizas continuar?\nctx: 42%%\n' > "$FX/tmux/daemon/ses-torre.cap"; sello torre-uno ESCALA-torre-uno-r2 3; dr
-assert_eq 'H05 escalado reciente evita aviso' '0|0' "$RC|$(printf '%s\n' "$OUT" | grep -c '^AVISO')"
+assert_eq 'H05 escalado reciente evita aviso' '0|0' "$RC|$(printf '%s\n' "$OUT" | grep -c '^AVISO posible-pregunta')"
+assert_eq 'H05 escalado reciente: ningún AVISO de un tipo nuevo y la línea de alcance exactamente 1 vez' '0|1' "$(avisos_de_otro_tipo)|$(avisos_de_alcance)"
 fx_nuevo; printf '¿Autorizas continuar?\nesc to interrupt\nctx: 42%%\n' > "$FX/tmux/daemon/ses-torre.cap"; dr
-assert_eq 'H05 pane ocupado evita aviso' '0|0' "$RC|$(printf '%s\n' "$OUT" | grep -c '^AVISO')"
+assert_eq 'H05 pane ocupado evita aviso' '0|0' "$RC|$(printf '%s\n' "$OUT" | grep -c '^AVISO posible-pregunta')"
+assert_eq 'H05 pane ocupado: ningún AVISO de un tipo nuevo y la línea de alcance exactamente 1 vez' '0|1' "$(avisos_de_otro_tipo)|$(avisos_de_alcance)"
 assert_eq 'H09 doctrina lector restringido y aviso explícito' 'si' "$(grep -q 'leer-acreditacion.sh' "$ROOT/references/07-doctor-y-acreditacion.md" && grep -q 'AVISO posible-pregunta-sin-escalar' "$ROOT/references/07-doctor-y-acreditacion.md" && echo si || echo no)"
 fx_nuevo; h0="$(hash_estado)"; printf '%s' 999 > "$CDIR/CEO.cursor"; touch -r "$CDIR/torre-uno.cursor" "$CDIR/CEO.cursor"
 assert_eq 'H10 instantánea detecta contenido modificado' si "$([ "$h0" != "$(hash_estado)" ] && echo si || echo no)"

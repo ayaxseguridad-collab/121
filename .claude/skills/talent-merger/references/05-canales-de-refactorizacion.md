@@ -48,6 +48,19 @@ asume que la mayoría de conflictos mecánicos se resuelven aquí (métrica del 
 findings mecánicos resueltos por refacto vs bounce por defecto de diseño). Los findings
 FUNCIONALES ya NO cuentan en esa métrica de refacto — **se REBOTA SIEMPRE**.
 
+**Cálculo de la métrica** (tokens del flock, ref 01 §2). Cuenta solo las líneas que
+EMPIEZAN por el token: una línea que lo cita en prosa no es un evento. Es una medida a nivel
+de PR (merge frente a rebote) y NO lleva rango de fechas: los tokens `MERGED`/`BOUNCED` no
+llevan fecha y un PR rebotado no tiene `mergedAt`; el rango queda diferido en
+`PENDIENTE-2.1.md`. El comando, que prueba `tests/test-distill-findings.sh` (caso 9):
+
+```bash
+# Métrica refacto-vs-bounce (FLOCK = ruta del flock compartido)
+mergeados=$(grep -cE '^# ✅ M[0-9]+ MERGED #[0-9]+' "$FLOCK")
+rebotados=$(grep -cE '^# 🔴 BOUNCED #[0-9]+' "$FLOCK")
+printf 'refacto-vs-bounce: numerador=%s denominador=%s\n' "$mergeados" "$((mergeados + rebotados))"
+```
+
 ## 2. Auditar contra los invariantes del HANDOFF
 
 El auditor del canal de refactorización **NO re-juzga el diseño** (eso ya lo selló el

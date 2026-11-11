@@ -1,0 +1,176 @@
+PLAN-INICIO ABC-9001
+
+# Plan — ABC-9001 · Añadir la nota de mantenimiento al índice de la documentación (`docs/index.md`)
+
+> Re-presentación tras el NO-GO del plan (run `tco_1793905800_c798df75b414`). Los dos bloqueantes eran válidos y están corregidos (ver «Cambios tras el NO-GO» al final).
+
+## Sello de carga de skills
+
+- `linear-skill` — lectura completa de ABC-9001 por GraphQL token-only (sin MCP). También extrae el literal sellado para verificarlo, y hace el paso final a «In Review».
+- `talent-issue-craft` — la issue va por la vía `audit-issue` (marcador `issue-craft:v1 type=docs-adr variant=none`, sin comentario `BRIEF-ACREDITADO`). Rúbrica §7 de plan, §8 de código y baterías activas M10 + S5 + Q8 (`references/02-verificaciones.md`).
+- Perfil de issue-craft de ESTE repo: `docs/reference/issue-craft-perfil-ensayo.md`. Su único gate es `docs`: `test -f README.md`, bloqueante.
+- `talent-docs-skill` — obligatorio por la regla 9 de CLAUDE.md (toda documentación). Diátaxis y `markdownlint-cli2`.
+- No aplican: `convex-skill`, `nextjs-web` y los skills de ads, pagos, etc. El diff es solo Markdown y no toca backend, UI ni integraciones.
+
+## Contexto
+
+`docs/index.md` no explica cómo se mantiene la documentación. Quien llega al repo no sabe que todo cambio entra por PR revisado por la fábrica. La issue es la prueba de humo de la fase F8 del ensayo 175 (fábrica 1.7.5, proyecto «Ensayo fabrica 1.7.2»). Pide añadir al final del fichero una sección `## Mantenimiento` con un literal sellado. Encargo de una sola issue: no es bundle ni va en tren (la issue lo marca N/A).
+
+## Baseline verificado (comandos corridos, 2026-11-05)
+
+| Comprobación | Resultado real |
+|---|---|
+| `git ls-remote origin refs/heads/main` vs `git rev-parse HEAD` | ambos `857a4ae08dd4…`. La issue cita `22379c11f32e`, pero `git diff --stat 22379c1 HEAD -- docs/index.md` sale vacío, así que el ancla sigue vigente |
+| `grep -n "## Mantenimiento" docs/index.md` | 0 ocurrencias (exit 1) |
+| `npx markdownlint-cli2 docs/index.md` | exit 1, **23 hallazgos preexistentes**: 1×MD025 en la línea 9 y 22×MD013 entre las líneas 11 y 62. No hay `.markdownlint*` en el repo, así que rige la config por defecto (MD013 = 80) |
+| Anclas `docs/index.md:9-11` | coinciden literalmente (H1 + párrafo «Sistema de voz con RAG…») |
+| Forma del fichero | 62 líneas, termina en `\n`. La última línea es la del ADR-0005 |
+| `issue_craft_helper.ts --action audit-issue --issue ABC-9001 --min-score 70` | `GATE-OPERATIVO-OK`, score 97, hard_failures 0, `operational_gate_eligible=true`, exit 0. Solo falla una señal no dura: S4-origen-enlazado |
+| Literal sellado (Linear, regex `frases: «(.+?)»` sobre `issue.description`) | `Esta documentación se mantiene por pull request. Cada cambio pasa por la revisión de la fábrica antes de fusionarse en `main`.` (extracción exit 0) |
+| Linear | estado ya **In Progress** (no hace falta moverla). Sin comentarios, relaciones ni sub-issues. Label `vertical/fabrica`, estimate 1 |
+| Dedupe | sin ramas remotas `*abc-9001*` y sin PRs que mencionen ABC-9001 |
+| Precedente | PR #26 (ABC-9472, ensayo 174i): mismo cambio, revertido después por «Restaurar árbol del ensayo» (#27). Sirve de patrón |
+| Entorno | `awk` = mawk 1.3.4, que cuenta bytes y no caracteres. Por eso NO se usa `awk length` como evidencia |
+
+## Cambio exacto (único artefacto: `docs/index.md`)
+
+Se añaden 5 líneas al final, después de la línea 62:
+
+```markdown
+
+## Mantenimiento
+
+Esta documentación se mantiene por pull request.
+Cada cambio pasa por la revisión de la fábrica antes de fusionarse en `main`.
+```
+
+- **Patrón que se replica**: el de las secciones `##` existentes (`## Tutoriales`, `## Guías (How-to)`): título `##`, línea en blanco y párrafo corto. No hay lista porque no hay enlaces.
+- **Texto**: el literal sellado de «Incluye», carácter a carácter. Va partido en 2 líneas físicas de 48 y 77 caracteres dentro del MISMO párrafo; unidas con un espacio reproducen el literal exacto (lo comprueba L2). En una sola línea mediría 126 caracteres y crearía un MD013 nuevo, lo que rompe el DoD «sin errores nuevos».
+- **Alternativa más simple considerada** (S1/S8): el literal en una sola línea. Se descarta solo por el MD013 nuevo. No hay ninguna pieza extra que justificar.
+- **No se toca**:
+  - el front matter (`updated:` sigue en 2026-02-14; la issue lo dejó en «No se decidirá»);
+  - los 23 hallazgos preexistentes;
+  - `.claude/memory/MEMORY.md`: la issue exige un único fichero, así que la regla de memoria cede ante el alcance sellado;
+  - ningún otro fichero.
+- **Doc contra código (M10)**: la frase cuadra con CLAUDE.md/AGENTS.md (regla 5 y el flujo rama → PR draft → HANDOFF → squash del Mergeador). También cuadra con `.githooks/pre-push`, que bloquea el push directo a `refs/heads/main`. No hay ningún doc vivo que contradiga la frase.
+- **Frontera de evidencia**: el doc no lleva SHA, veredicto ni referencia al propio cambio.
+
+## Pasos de implementación (tras la aprobación, en bypass)
+
+0. **Sync** (regla 8): `git fetch origin && git pull --rebase` en `main`. Confirmar que `HEAD == origin/main`. Si `main` avanzó y tocó `docs/index.md`: re-correr el baseline y, si cambia la premisa, PARAR y escalar con citas al coordinador del ensayo (C1).
+1. **Rama**: `git switch -c docs/abc-9001-anadir-la-nota`.
+   - Se usa el slug del `branchName` de Linear, en minúsculas y con el prefijo `docs/` en lugar de `usuario/`.
+   - Verificar con `bash scripts/github/validar-rama-pr.sh <rama>` → 0.
+2. **Edición**: con la herramienta Edit, anclada en la línea del ADR-0005, añadir las 5 líneas.
+   - Verificar el paso con `git diff --numstat` → `5	0	docs/index.md` y con L1 sobre el working tree.
+3. **Commit**: `git add docs/index.md`, y después `git commit` con este mensaje:
+   - asunto: `docs(index): añadir sección de mantenimiento al índice de la documentación`;
+   - cuerpo: `Closes ABC-9001`;
+   - sin `Co-Authored-By` ni referencias a IA (la regla 2 de CLAUDE.md prevalece).
+4. **Verificación FASE A (pre-push)** sobre ese commit: SOLO la tabla «Fase A» de abajo. Todos sus comandos se pueden ejecutar sin push ni PR.
+5. **Informe pre-push**:
+   - escribir el informe COMPLETO con la herramienta Write en `~/stop-audit-report.txt` (nunca con heredoc ni redirect);
+   - la sección canónica lista los comandos de la Fase A con su exit real, uno por línea;
+   - después, imprimir su header anclado en el pane;
+   - PARAR sin push hasta el GO de código.
+
+   Formato del fichero (aquí va indentado; en el fichero real el ancla abre la primera línea):
+
+        STOP-AUDIT — ABC-9001 · informe pre-push
+        (resumen: 1 fichero, +5/−0; literal sellado verificado carácter a carácter contra Linear;
+         markdownlint crudo exit 1 antes y después por los MISMOS 23 hallazgos preexistentes,
+         delta vacío; Fase B —draft-handoff/verify-handoff— va DESPUÉS del GO, no se declara aquí)
+        ────────────────────────────────────────
+        · SHA auditado: <git rev-parse HEAD>
+        · Árbol: clean            (git status --porcelain vacío)
+        · Comandos de verificación corridos + EXIT CODE real, uno por línea (tabla Fase A)
+
+## Entrega (solo tras el GO de código) = Fase B
+
+6. `bash scripts/draft-handoff.sh` → 0. Valida la rama, el árbol limpio y el gate `docs`, y emite `.claude/.draft-handoff` con HEAD + rama.
+7. `git push -u origin docs/abc-9001-anadir-la-nota`.
+   - Va como comando atómico aparte: `check-push-audit.sh` acepta el sentinel draft y `.githooks/pre-push` lo consume.
+   - Si hubo un commit nuevo después del paso 6, re-correr el paso 6.
+8. `gh pr create --draft --base main` con el título del commit.
+   - El body sigue `.github/PULL_REQUEST_TEMPLATE.md`: resumen, checklist, verificación y `Closes ABC-9001` literal.
+   - Sin línea «Generated with».
+9. Comentario HANDOFF con `gh pr comment <pr> --body-file <scratchpad>/handoff.md`. El fichero se escribe con Write y sigue `docs/templates/handoff-pr-draft.md` COMPLETA:
+   - Las 10 secciones: Qué hace (con `closes ABC-9001`) · Decisiones y porqués · Invariantes sellados por el code-audit (incluye el run_id/SHA del GO) · Superficies: NINGUNA · Migraciones: NINGUNO/NO · Archivos calientes: N/A · Verificación local ejecutada · Scope ledger (AC-1..4, NG-1..2) · Qué NO tocar / trampas · Bloque machine-readable al final.
+   - «Verificación local ejecutada» lleva la Fase A completa más `draft-handoff.sh` → 0. NO incluye `verify-handoff.sh`: ese comando valida el propio HANDOFF y solo se corre después de publicarlo.
+   - El bloque: `{"schema_version":2,"issues":["ABC-9001"],"head_sha":"<HEAD del PR>","branch":"docs/abc-9001-anadir-la-nota","sensitive":false,"surfaces":[],"migration_slots":[],"destructive":false,"build":"omitido"}`.
+   - Sin `category`: es un encargo de docs de producto, no de ops.
+10. `bash scripts/verify-handoff.sh <pr>` → exit 0 obligatorio. Si falla: corregir lo que señale y re-validar.
+11. Linear: mover ABC-9001 a «In Review» con `issueUpdate`. El stateId se obtiene consultando los workflowStates del team ABC. Después, reportar al coordinador el nº de PR y la salida LITERAL de verify-handoff (aquí vive la evidencia de la Fase B).
+
+**Fin del canal**: sin CodeRabbit, sin esperar CI, sin rebase, sin merge y sin postear `local-gates`; todo eso es de la estación de merge. Los deploys de Convex y Railway (reglas 6 y 13) no aplican: el diff es solo docs y la fusión no la hago yo.
+
+## Verificación
+
+Variables auxiliares de la Fase A (se declaran en el informe tal cual):
+
+- `EXP_BLOCK` = `printf '\n## Mantenimiento\n\nEsta documentación se mantiene por pull request.\nCada cambio pasa por la revisión de la fábrica antes de fusionarse en `main`.'`
+- `LIT` = el literal extraído EN VIVO de `issue.description` de ABC-9001 con `linear-client.ts` y la regex `frases: «(.+?)»`. Es la fuente de verdad del sello, no mi transcripción.
+- `N` = `git show origin/main:docs/index.md | wc -l` (62).
+
+### Fase A — pre-push (va al informe; todas ejecutables sin PR)
+
+| ID | Criterio | Comando | Esperado |
+|---|---|---|---|
+| G1 | Gate `docs` del perfil | `test -f README.md` | exit 0 |
+| AC-1 | Sección presente una vez | `grep -c "## Mantenimiento" docs/index.md` | exit 0, salida `1` |
+| L0 | Literal del sello obtenible | extracción de `LIT` desde Linear (`npx tsx -e …linear-client.ts…`) | exit 0, `LIT` no vacío |
+| L1 (AC-4) | Bloque añadido EXACTO (blancos, `##`, ambas líneas) | `diff <(git show HEAD:docs/index.md \| tail -n 5) <(printf '%s\n' "$EXP_BLOCK")` | exit 0 |
+| L2 (AC-4) | Párrafo == literal sellado de Linear | `[ "$(git show HEAD:docs/index.md \| tail -n 2 \| paste -sd ' ')" = "$LIT" ]` | exit 0 |
+| L1-mut | L1 detecta una mutación de igual forma | `! diff <(git show HEAD:docs/index.md \| sed 's/fábrica/fabrica/' \| tail -n 5) <(printf '%s\n' "$EXP_BLOCK") >/dev/null` | exit 0 (= mutación detectada) |
+| L2-mut | L2 detecta la misma mutación | `! [ "$(git show HEAD:docs/index.md \| sed 's/fábrica/fabrica/' \| tail -n 2 \| paste -sd ' ')" = "$LIT" ]` | exit 0 (= mutación detectada) |
+| AC-2 / NG-1 | Diff docs-only | `git diff --name-only origin/main..HEAD` | exit 0, salida única `docs/index.md` |
+| NG-2 | Solo líneas añadidas | `git diff --numstat origin/main..HEAD` | exit 0, `5	0	docs/index.md` |
+| INV | Las 62 líneas originales, byte a byte | `cmp <(git show origin/main:docs/index.md) <(git show HEAD:docs/index.md \| head -n "$N")` | exit 0 |
+| AC-3 | markdownlint sin errores nuevos | `diff <(git show origin/main:docs/index.md \| npx markdownlint-cli2 - 2>&1 \| grep -E ' error MD') <(git show HEAD:docs/index.md \| npx markdownlint-cli2 - 2>&1 \| grep -E ' error MD')` | exit 0 (23 = 23, mismo conjunto) |
+| R1 | Rama válida | `bash scripts/github/validar-rama-pr.sh "$(git branch --show-current)"` | exit 0 |
+| T1 | Árbol y SHA | `git status --porcelain` (vacío) · `git rev-parse HEAD` | clean · SHA declarado |
+
+- **Ensayo en seco ya hecho** sobre el contenido simulado (`origin/main` + bloque, por stdin y sin tocar el árbol): L0, L1, L2, INV y AC-3 dieron exit 0. Con la mutación `fábrica`→`fabrica`, L1 y L2 se pusieron en rojo y `grep -c` siguió dando `1`. Es justo el hueco que señaló la auditoría, y ahora está cerrado.
+- **Transparencia**: `npx markdownlint-cli2 docs/index.md` sin filtrar sale con exit 1 antes y después por los 23 hallazgos preexistentes. Se declara en el resumen con los conteos y no figura como línea de gate. La línea de gate es el delta AC-3, que es exactamente lo que pide el DoD.
+- **Omitidos con motivo** (declarados en el informe): `pnpm typecheck/lint/build`, porque el diff es solo Markdown y el manifiesto solo declara `TF_GATE_IDS="docs"`. `lychee` y `cspell`, porque no están instalados y la sección no añade enlaces. `awk length`, porque mawk mide bytes; L1 y AC-3 ya cubren el formato.
+
+### Fase B — entrega (después del GO; NO va al informe pre-push)
+
+| ID | Comando | Cuándo | Esperado | Dónde queda la evidencia |
+|---|---|---|---|---|
+| D1 | `bash scripts/draft-handoff.sh` | paso 6, antes del push | exit 0 | HANDOFF § Verificación local |
+| D2 | `bash scripts/verify-handoff.sh <pr>` | paso 10, con el PR draft y el HANDOFF ya publicados | exit 0 | reporte al coordinador (salida literal) |
+
+## Riesgos y mitigación
+
+- **`main` avanza antes de implementar** → paso 0 (sync + re-baseline). Si cambia la premisa, PARAR y escalar a C1.
+- **MD013 nuevo** → el párrafo va partido en 2 líneas y AC-3 compara los deltas.
+- **Transcripción errónea del literal** → L2 compara contra el texto extraído en vivo de Linear, no contra el plan.
+- **Linear no responde en L0** → PARAR y avisar (regla del linear-skill). No se sustituye por la copia del plan, porque eso falsearía L2.
+- **Sentinel inválido por un commit posterior** → re-correr D1 antes del push.
+- **HANDOFF stale** → emitirlo DESPUÉS del push, con `head_sha` = headRefOid. D2 lo comprueba.
+- **CI ya en rojo**: en el PR #26, `Markdown format`, `Links` y `validar-build` fallaron con un diff idéntico. Arreglarlo cae fuera del alcance de esta issue (fichero único), así que no se corrige aquí. Se reporta al coordinador como observación para que salga como trabajo nuevo.
+
+## Rúbrica §7 de plan (autocomprobación)
+
+- Baseline corrido y anclas cotejadas con el árbol real: sí.
+- Cubre el 100% de «Incluye» y nada de «Fuera de alcance»: sí.
+- Cita el patrón que replica: sí.
+- Alternativa más simple presentada: sí.
+- No introduce decisiones nuevas: la partición en 2 líneas cumple el DoD sellado y L2 prueba que el texto es idéntico al literal.
+- Riesgos con mitigación y verificación por paso: sí.
+- Migraciones o superficie sensible: no aplica.
+
+## Cambios tras el NO-GO (run tco_1793905800_c798df75b414)
+
+1. **Bloqueante 1 (el literal no se comparaba)**: válido.
+   - Se añaden L1 (bloque exacto) y L2 (párrafo contra el literal extraído en vivo de Linear).
+   - Se añaden L1-mut y L2-mut como prueba de que son una red real: una mutación de igual forma se pone en rojo.
+   - Se añade AC-4 al scope ledger.
+2. **Bloqueante 2 (orden imposible)**: válido.
+   - La verificación se parte en Fase A, pre-push, que va al informe y se puede ejecutar sin PR, y Fase B, entrega después del GO: D1 antes del push y D2 con el PR y el HANDOFF publicados.
+   - El informe pre-push ya no declara D1 ni D2.
+3. **Defecto propio detectado al revisar**: la fila de longitudes con `awk` daba 49/79 en mawk (mide bytes), no los 48/77 esperados. Se elimina; L1 y AC-3 ya cubren el formato.
+
+PLAN-FIN
+

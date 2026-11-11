@@ -355,7 +355,7 @@ torc_torre_verify_delivered() { # session [max_s] [token]
 }
 
 # ---------------------------------------------------------------------------
-# Relay ANTI-FANTASMA de UNA linea (secuencia completa; la usan torre-relay.sh y torre-compact.sh).
+# Relay ANTI-FANTASMA de UNA linea (secuencia completa; la usa torre-relay.sh; conservada para el modo degradado).
 # rc EXACTOS: 0 entregado · 1 sin idle / entrega no confirmada · 3 cola real (queued: ESCALAR,
 # jamas reintento ciego — duplica) · 4 mismatch post-paste (NO se hizo submit).
 # ---------------------------------------------------------------------------

@@ -1,0 +1,11 @@
+# Huellas publicadas de las versiones 1.7.x del paquete (datos de origen-instalado.sh).
+# Columnas separadas por TAB: version, sha256 de instalacion/NUCLEO.sha256, sha256 del manifiesto, nota.
+# Una versión se reconoce solo si casan A LA VEZ las dos huellas; la línea version= del manifiesto no decide.
+# Medición (sobre el taller, un commit publicado por versión; el manifiesto vive en skills/skill-creator/assets/):
+#   git show <commit>:talent-factory/instalacion/NUCLEO.sha256 | sha256sum
+#   git show <commit>:talent-factory/skills/skill-creator/assets/package.manifest | sha256sum
+# nota: publicada = medida contra el ZIP público; taller = medida con git en el taller.
+1.7.2	94d91b919b0fc8ecfca78ab143fa5622920e422a571a430e6355dd3f9067d0cb	9ca3f61c04ccc7e09d30ab07f0442d24b2d52bb33816f439ff10ea99f1759f77	taller
+1.7.3	eea1970ca98f0a8f0f19194fffd45d7ac49f91a22716cccc34280065d6ddbd5c	fd7440fcfd27ff6be80f0d398db3212d44fb6f9fc000d913b8a5b2c08505f1e4	taller
+1.7.4	82aad0b2d6faaf630619f67608c28564f448638a2d86b10bcc32864cf92e8081	09387d4fcec0c875e9764ebc9810adfa290fd88bf463ae44b8c7d3396b0ffa9f	taller
+1.7.5	8d17b00d3adde6d6096eb9a530801ca87aee7cf45605482cec208e642ef86f5d	ed6091e1c420f078a5c6baf202bdae159b1072f0e6a118c9977e0c3d3acafcc9	publicada

@@ -50,14 +50,15 @@ TAL-2675, 2026-07-13), en cascada por toda la flota:
 | Actor | Modelo |
 |---|---|
 | **CEO** | **Opus vigente** del registro del usuario |
-| **PM** | **Sonnet vigente** del registro del usuario |
+| **PM** | **Opus vigente** del registro del usuario |
 | Orquestador · Coordinadores · Mergeador | **`Sonnet vigente` `high`** (política rodante; `max` PROHIBIDO — regla 0) |
 | Canales — **PLAN mode** | **`Opus vigente` `xhigh`** |
 | Canales — **CODING** | **`Sonnet vigente` `high`** (ahorro de cuota, TAL-2675; IDs completos por regla 0) |
 | Canales — **fallback** si el code-gate NO converge en **5 rondas** sobre el mismo fix | sube ESE fix a **`Opus vigente` `high`** |
-| Auditor | Codex (sin cambio — no es Claude, fuera de esta doctrina) |
+| Canales — código sensible (seguridad, dinero, privacidad) | **Opus vigente** |
+| Auditor | Codex Sol vigente, esfuerzo medio; otro proveedor que plan y código |
 
-- **CEO usa Opus vigente; PM y coordinación usan Sonnet vigente** — política rodante.
+- **CEO y PM usan Opus vigente; coordinación usa Sonnet vigente** — política rodante.
   Cada actor verifica el modelo de su rol. Un actor que hereda otro modelo del
   default de la cuenta se **corrige al ID COMPLETO del modo (p. ej. `Opus vigente`; alias desnudos prohibidos — regla 0)** (ver `references/09` §`tco_ensure_model`; los canales
   ARRANCAN en Opus vigente para el plan, coherente con este corrective).
@@ -144,4 +145,4 @@ CEO/lead (regla 21).
 > ambas coherentes. El motor no vive en este repo (clon hermano externo): el edit del README queda
 > como follow-up fuera de PRs de producto.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.

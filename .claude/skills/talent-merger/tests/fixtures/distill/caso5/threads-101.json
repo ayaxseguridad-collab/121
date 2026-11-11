@@ -1,0 +1,18 @@
+{
+  "thread_id": "PRRT_stub_major_1",
+  "resolved": false,
+  "path": "src/a.ts",
+  "category": "bug",
+  "severity": "major",
+  "body": "_⚠️ Potential issue_ | _🟠 Major_\n\n**Race condition between checkout confirmation and the webhook**\n\nDos rutas escriben el mismo pedido.",
+  "is_coderabbit": true
+}
+{
+  "thread_id": "PRRT_stub_minor_2",
+  "resolved": false,
+  "path": "src/a.ts",
+  "category": "nitpick",
+  "severity": "minor",
+  "body": "_🧹 Nitpick_ | _🟡 Minor_\n\n**Prefer early return**\n\nOpcional.",
+  "is_coderabbit": true
+}

@@ -277,4 +277,4 @@ Monitor sobre `ROTANDO|ROTADO|VOLVIENDO|ROTACION-PARCIAL|APPLY-FALLO|SIN-ALTERNA
 - Los tokens largos nunca se committean, sellan al bus ni pegan en Linear; solo su longitud o el
   email de la cuenta.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.

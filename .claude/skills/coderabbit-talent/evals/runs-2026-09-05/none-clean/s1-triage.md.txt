@@ -1,0 +1,167 @@
+# Triage CodeRabbit — PR #2182 (ejemplo/repo)
+
+**PR**: `feat(portal): ABC-5258 encuestas por formación Next con día del directo + ABC-5064
+quiz M1 Vibe Agents (tren)` — `feat/abc-5258-encuestas-next-directos` → `main`. Estado: **MERGED**
+(squash `f89ff5a01`, cierra ABC-5064 y ABC-5258).
+
+**Fuentes consultadas** (vía `gh api`, solo lectura):
+- `pulls/2182/comments` (comentarios inline de review) — 3 comentarios en 1 solo hilo.
+- `pulls/2182/reviews` — 5 reviews: `CHANGES_REQUESTED` inicial de CodeRabbit, un `COMMENTED`
+  de `example-reviewer`, un `DISMISSED` y un `COMMENTED` de CodeRabbit, y el `APPROVED` final.
+- `issues/2182/comments` — comentario de resumen/walkthrough + pre-merge checks de CodeRabbit,
+  más 4 comentarios operativos de `example-reviewer` (rebase, corrida CR-CLI interna, fix de
+  advisors, apply en prod) que documentan cómo se resolvió cada hallazgo.
+- GraphQL `reviewThreads` — confirma que el único hilo de review quedó `isResolved: true`.
+
+Metodología: para cada comentario de CodeRabbit con severidad potencialmente bloqueante según la
+política de severidad del repo (regla 16 de `CLAUDE.md`: solo bloquea *secret leaked, RLS
+faltante, OWASP, bug funcional, regresión, contrato roto, concurrencia, auth/authz defectuosa,
+fallo operacional o breaking change no documentado*; todo lo demás —minor/nitpick/style/naming/
+docstring/refactor cosmético— está suprimido por configuración y no bloquea merge), se evalúa:
+validez del hallazgo en sí, y si cae o no dentro de esas categorías bloqueantes.
+
+---
+
+## 1. Comentario inline (GitHub App) — i18n vacío en el seed del quiz
+
+- **Ubicación**: `supabase/migrations/20271331000000_abc5064_seed_quiz_modulo1_vibe_agents.sql`,
+  línea 42-43 (thread id `3920519916`, review `CHANGES_REQUESTED`).
+- **Severidad marcada por CodeRabbit**: `🎯 Functional Correctness | 🟠 Major`.
+- **Hallazgo**: el título del quiz se inserta como `{"es":"Examen Módulo 1","en":"","pt-BR":""}`
+  y el resto de campos editoriales (descripción, preguntas, opciones, explicaciones) solo llevan
+  `es`. Cita la convención del repo de que el contenido editorial debe ser `jsonb {es,en,pt-BR}`.
+
+**Veredicto: hallazgo VÁLIDO (no es falso positivo) pero NO BLOQUEANTE según la política del
+repo.**
+
+- *Razón tipificada*: **"deuda pre-existente fuera del alcance introducido por el diff"**. La
+  propia migración ya estaba aplicada en producción desde el 31-ago fuera de banda (según el
+  cuerpo del PR y confirmado por el ledger `supabase_migrations.schema_migrations`); este PR
+  solo reconcilia el historial de `main`, no cambia el contenido de la migración. El gap de
+  i18n es real (viola la convención de `jsonb {es,en,pt-BR}` para contenido editorial), pero
+  CodeRabbit lo evalúa contra el diff del PR sin ese contexto operativo (no sabe que el
+  contenido ya vive en prod sin poder tocarse desde este PR sin re-emitir la migración).
+  No encaja en ninguna de las categorías bloqueantes de la regla 16 (no es secret, RLS, OWASP,
+  bug funcional del flujo, regresión, contrato roto, concurrencia, auth ni fallo operacional) —
+  es contenido editorial incompleto, categoría explícitamente no bloqueante.
+- *Cómo se resolvió en el PR*: el equipo respondió inline documentando el contexto y declarando
+  la deuda editorial (sin código nuevo), y el hilo terminó `isResolved: true` en GitHub.
+
+**Plan de fix (para cuando se decida cerrar la deuda, NO dentro de este PR ya mergeado)**:
+
+| Fichero | Acción |
+|---|---|
+| Nueva migración `supabase/migrations/<timestamp>_abc5064_i18n_examen_m1_vibe_agents.sql` | **No editar** la migración `20271331000000...` ya aplicada en prod — crear una migración nueva tipo `UPDATE public.quiz_questions/quizzes SET title = title \|\| jsonb_build_object('en', ..., 'pt-BR', ...)` (o `jsonb_set`) para title/description/preguntas/opciones/explicaciones del quiz `bases-y-puesto-de-mando` de `vibe-agents-next`. Idempotente (guard tipo `WHERE title->>'en' = ''`). |
+| Issue de Linear de seguimiento | Crear/confirmar la issue de contenido editorial mencionada en el comentario del CEO (traducción EN/PT-BR del examen M1 de Vibe Agents Next) si aún no existe — es el ítem accionable real, no un fix de código. |
+
+---
+
+## 2. Hallazgo del CR-CLI interno (pegado como comentario operativo, no review de la App) —
+   fallback de `fetchPendingSurveys` ante `PGRST202`
+
+- **Ubicación**: `tests/unit/portal/pending-surveys.test.ts` / `src/lib/portal/pending-surveys.ts`
+  (reportado en el comentario `CEO-CR-CLI-2182`, corrida separada del CLI del Mergeador —
+  **no** es un comentario de la GitHub App de CodeRabbit, es la ejecución local del CLI cuyo
+  resultado se documentó como comentario en el PR; se incluye aquí porque el enunciado pide
+  "comentarios de CodeRabbit en el PR" y este resultado vive en el hilo del PR).
+- **Severidad reportada**: `major` (0 critical).
+- **Hallazgo**: ante un error `PGRST202` (RPC vieja sin el segundo argumento), la función debería
+  devolver `null` en vez de reintentar con la firma legada, porque el fallback devuelve encuestas
+  **sin acotar por formación** — es decir, mezclaría encuestas de programas en los que el alumno
+  no está viendo actualmente.
+
+**Veredicto: hallazgo FALSO POSITIVO respecto al *diseño*, aunque el comportamiento que señala es
+real.**
+
+- *Razón tipificada*: **"conflicto con diseño explícito y documentado, no con un bug"**. El
+  fallback es intencional y temporal (comentario de cabecera en el propio test, sección de
+  "Nota de rollout" en la descripción del PR, y tracking explícito en ABC-5259): cubre la ventana
+  entre el deploy de Railway del código nuevo y el `apply` de la migración `20271389` en prod
+  dentro del **mismo turno**. El comportamiento del fallback no es una regresión — es exactamente
+  el comportamiento de `main` hoy (sin filtro), acotado a esa ventana, con `logger.warn` trazable.
+  No cae en "regresión" porque no empeora el estado actual, solo lo mantiene un rato más de lo
+  ideal; tampoco es "bug funcional" en el sentido de romper un contrato nuevo, porque el propio
+  contrato nuevo se cierra en el mismo turno vía el `apply` post-merge documentado.
+- *Matiz*: el hallazgo SÍ sería válido y bloqueante si el fallback fuera indefinido o si el
+  `apply` no ocurriera en el mismo turno — ahí sí mezclaría encuestas cross-programa para
+  usuarios reales sin fecha de cierre. La mitigación (apply inmediato + log de auditoría +
+  issue de retirada ya creada) es lo que baja el riesgo a aceptable.
+
+**Plan de fix**:
+
+| Fichero | Acción |
+|---|---|
+| `src/lib/portal/pending-surveys.ts` | Sin cambio de comportamiento ahora. Cuando se ejecute ABC-5259 (retirada del fallback), cambiar el `catch` de `PGRST202` para devolver `null`/lanzar en vez de reintentar con la firma legada — que es exactamente el comportamiento que pide CodeRabbit, aplicado en el momento correcto (una vez la firma nueva lleva tiempo estable en prod). |
+| `tests/unit/portal/pending-surveys.test.ts` | Al cerrar ABC-5259, eliminar el test que ejercita el fallback legado y añadir el caso "PGRST202 con firma nueva ⇒ null/error sin reintento". |
+| Linear ABC-5259 | Ya existe según el comentario del CEO — usar el criterio de CodeRabbit (fail-closed con scope) como criterio de aceptación explícito de esa issue. |
+
+---
+
+## 3. Pre-merge check — "Breaking Changes Documentados" (⚠️ Warning)
+
+- **Hallazgo**: la migración elimina `get_pending_surveys_for_user(text)` y crea la versión con
+  `(text, uuid)` — cambio de firma pública — pero la descripción del PR no tiene una sección
+  literal `## Breaking changes`.
+
+**Veredicto: FALSO POSITIVO DE FORMA, hallazgo de fondo ya mitigado.**
+
+- *Razón tipificada*: **"gate de formato exacto, sustancia ya cubierta en otra sección"**. La
+  propia tabla de "Passed checks" del mismo comentario confirma que la descripción sí documenta
+  el orden de migración, el fallback `PGRST202` y la compatibilidad hacia atrás (`NULL` conserva
+  el contrato anterior) — solo que bajo el encabezado "Nota de rollout", no bajo el literal
+  `## Breaking changes` que el checker busca por texto exacto. Es, en esencia, sí encaja en la
+  categoría bloqueante "breaking change no documentado" de la regla 16 **si se interpreta
+  estrictamente por formato**, pero no si se interpreta por sustancia (que es lo que la regla 16
+  realmente protege: que nadie se entere tarde de un breaking change). Al no haber sido marcado
+  como comentario "Actionable" (0 actionable comments en el resumen), CodeRabbit mismo lo trata
+  como no bloqueante de merge.
+
+**Plan de fix**:
+
+| Fichero | Acción |
+|---|---|
+| Cuerpo del PR (no aplica retroactivamente, ya mergeado) | Para el próximo PR que cambie una firma de RPC pública, añadir explícitamente un encabezado `## Breaking changes` (aunque sea corto, remitiendo a la sección de detalle) para que el pre-merge check pase en verde sin depender de interpretación de sustancia. |
+| Plantilla de PR (`docs/templates` o `.github/PULL_REQUEST_TEMPLATE.md`) | Opcional: añadir un checkbox/sección `## Breaking changes (si aplica)` a la plantilla para que el hábito sea automático en PRs de tren con cambios de firma. |
+
+---
+
+## 4. Pre-merge check — "Docstring Coverage" (⚠️ Warning, 50% < 80%)
+
+**Veredicto: NO BLOQUEANTE, excluido explícitamente por política del repo.**
+
+- *Razón tipificada*: **"categoría suprimida por configuración (regla 16)"**. `CLAUDE.md` regla
+  16 dice textualmente que `.coderabbit.yaml` suprime comentarios de categoría "docstring" junto
+  con minor/nitpick/style/naming/refactor cosmético. Este warning entra exactamente en esa
+  categoría suprimida — no requiere acción ni justificación adicional.
+
+**Plan de fix**: ninguno.
+
+---
+
+## Nota aparte — hallazgo de `db-guards` (advisors gate), NO es un comentario de CodeRabbit
+
+Durante el ciclo de esta PR también saltó en rojo el gate interno `advisors:gate` (`WARN
+authenticated_security_definer_function_executable_internal` sobre la nueva firma de
+`get_pending_surveys_for_user_impl`). Se incluye aquí solo para no confundirlo con hallazgos de
+CodeRabbit al leer el hilo completo del PR: es un check **propio del pipeline de gates locales**
+(comparación contra `supabase/advisors/baseline.txt`), no una salida de CodeRabbit. Se diagnosticó
+como falso rojo del ratchet (la key del baseline no había sido renombrada tras el cambio de firma,
+no una exposición nueva de permisos) y se corrigió actualizando `supabase/advisors/baseline.txt`
+en el commit `174e851bf`. Mencionado por completitud, no cuenta en el recuento de comentarios
+bloqueantes de CodeRabbit.
+
+---
+
+## Resumen ejecutivo
+
+| # | Comentario | Fuente | Válido | Bloqueante (regla 16) | Estado en el PR |
+|---|---|---|---|---|---|
+| 1 | i18n vacío en/pt-BR en seed de quiz | GitHub App (inline) | Sí | No — deuda editorial pre-existente | Resuelto (documentado, hilo cerrado) |
+| 2 | Fallback PGRST202 no fail-closed | CR-CLI interno (comentario operativo) | Parcialmente (riesgo real pero mitigado) | No — diseño temporal documentado y trackeado | Aceptado, ABC-5259 abierta |
+| 3 | Falta sección `## Breaking changes` | Pre-merge check | Solo de forma | Cuestionable (formato sí, sustancia no) | No accionado (0 actionable), pasó a merge |
+| 4 | Docstring coverage 50% | Pre-merge check | No aplica (fuera de política) | No — categoría suprimida | Ignorado por política |
+
+**Comentarios realmente bloqueantes según la política del repo: 0.** El PR se mergeó con
+`local-gates=success` y CR-CLI limpio tras el fix del baseline de advisors; el único hallazgo
+`Major` de la GitHub App fue triado como deuda no bloqueante con justificación explícita y el
+hilo quedó resuelto en GitHub.

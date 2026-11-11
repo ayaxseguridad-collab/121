@@ -131,8 +131,42 @@ fi
 # Deliberado: el usuario del carril NO tiene permisos sobre el prefix global de npm, así que un self-update
 # lanzado desde el pane fallaría con EACCES y MATARÍA el proceso (el pane caería a un shell). Con el binario
 # root-managed + el notifier de update suprimido (config.toml del auditor en [6/9] + DISABLE_AUTOUPDATER en
-# [7/9]), el prompt de actualización no aparece. NO se pinea versión (regla 14: última estable por rebuild).
-tc_say "[5/9] Node (versión del repo o LTS) + CLIs npm globales"
+# [7/9]), el prompt de actualización no aparece. Versión: la última estable con >= 72 h, resuelta y registrada en herramientas.lock (issue 9564).
+tc_say "[5/9] Node (versión del repo o LTS, con suelo de parche) + CLIs npm globales"
+# [issue 9558] Suelos de parche de Node por mayor: UN solo sitio (assets/node-suelos.tsv, con fuente y fecha).
+# Se leen aquí, en el host, y entran al contenedor ya validados por regex (nada de metacaracteres hacia el shell
+# interno). Fichero ausente, fila mal formada o sin ningún suelo: se ABORTA (fail-closed).
+# suelos-host:ini
+[ -r "$ASSETS/node-suelos.tsv" ] || tc_die "falta assets/node-suelos.tsv (suelos de parche de Node)."
+NODE_SUELOS=""
+while IFS=$'\t' read -r _nm _nf _rest || [ -n "$_nm" ]; do
+  case "$_nm" in ''|'#'*) continue;; esac
+  [[ "$_nm" =~ ^[0-9]+$ ]] && [[ "$_nf" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ "${_nf%%.*}" = "$_nm" ] && [ -z "$_rest" ] \
+    || tc_die "assets/node-suelos.tsv: fila inválida (esperado 'mayor<TAB>X.Y.Z' con la misma mayor): '$_nm' '$_nf'"
+  NODE_SUELOS="$NODE_SUELOS $_nm=$_nf"
+done < "$ASSETS/node-suelos.tsv"
+[ -n "$NODE_SUELOS" ] || tc_die "assets/node-suelos.tsv no define ningún suelo de parche."
+# suelos-host:fin
+# [issue 9564] Herramientas npm: última estable con >= 72 h, audit/OSV por severidad y versión registrada en herramientas.lock.
+# El resolvedor y la lista entran al contenedor; un override urgente (versión + motivo) se valida aquí y viaja como FILA de datos.
+# herramientas-host:ini
+[ -r "$ASSETS/herramientas.lista" ] || tc_die "falta assets/herramientas.lista (herramientas npm del golden)."
+[ -r "$HERE/resolver-herramientas.sh" ] || tc_die "falta scripts/resolver-herramientas.sh."
+tc_cexec "$GOLDEN" 'install -d -m 0755 /etc/talent-channels /var/lib/talent-channels'
+incus file push "$HERE/resolver-herramientas.sh" "$GOLDEN/var/lib/talent-channels/resolver-herramientas.sh" >/dev/null
+incus file push "$ASSETS/herramientas.lista" "$GOLDEN/var/lib/talent-channels/herramientas.lista" >/dev/null
+if [ -n "${TC_HERRAMIENTAS_OVERRIDE:-}${TC_HERRAMIENTAS_MOTIVO:-}" ]; then
+  [ -n "${TC_HERRAMIENTAS_OVERRIDE:-}" ] && [ -n "${TC_HERRAMIENTAS_MOTIVO:-}" ] \
+    || tc_die "override de herramientas: exige TC_HERRAMIENTAS_OVERRIDE=<paquete>=<versión> Y TC_HERRAMIENTAS_MOTIVO (sin motivo no se admite)."
+  RH_PKG="${TC_HERRAMIENTAS_OVERRIDE%=*}"; RH_VER="${TC_HERRAMIENTAS_OVERRIDE##*=}"
+  [[ "$RH_PKG" =~ ^(@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$ ]] && [[ "$RH_VER" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] \
+    || tc_die "TC_HERRAMIENTAS_OVERRIDE inválido (esperado paquete=X.Y.Z estable): '$TC_HERRAMIENTAS_OVERRIDE'"
+  [[ "$TC_HERRAMIENTAS_MOTIVO" != *[[:cntrl:]]* ]] || tc_die "el motivo del override no admite tabuladores ni saltos de línea."
+  [ "${#TC_HERRAMIENTAS_MOTIVO}" -ge 10 ] && [ "${#TC_HERRAMIENTAS_MOTIVO}" -le 200 ] || tc_die "el motivo del override debe tener entre 10 y 200 caracteres."
+  printf '%s\t%s\t%s\n' "$RH_PKG" "$RH_VER" "$TC_HERRAMIENTAS_MOTIVO" | incus file push - "$GOLDEN/var/lib/talent-channels/override.tsv" >/dev/null
+fi
+# herramientas-host:fin
+# shellcheck disable=SC2016  # el guion del contenedor va en comillas simples A PROPÓSITO (se expande allí, no aquí)
 tc_cexec "$GOLDEN" 'set -e
 RD="/home/'"$CUSER"'/'"$REPO_DIR"'"
 NV=""
@@ -142,7 +176,63 @@ NV=""
 echo "Node major = $NV"
 curl -fsSL "https://deb.nodesource.com/setup_${NV}.x" | bash -
 apt-get install -y -qq nodejs
-npm install -g @anthropic-ai/claude-code @openai/codex @railway/cli convex supabase'
+# [issue 9558] SUELO DE PARCHE (fail-closed): la mayor la elige el repo, pero el parche que deja nodesource se
+# COMPRUEBA. Se busca el suelo de la mayor INSTALADA; una mayor sin suelo conocido o un parche por debajo
+# abortan el golden (rc != 0), nunca avisan y siguen. La salida de `node -v` solo vale como X.Y.Z puro.
+SUELOS="'"$NODE_SUELOS"'"
+# suelo:ini
+NODE_VER="$(node -v 2>/dev/null)" || NODE_VER=""
+NODE_VER="${NODE_VER#v}"
+[[ "$NODE_VER" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]] || { echo "ERROR: node -v no devolvió una versión X.Y.Z (obtenido: ${NODE_VER:-nada}) — FAIL-CLOSED" >&2; exit 1; }
+N_MAJ="${BASH_REMATCH[1]}"; N_MIN="${BASH_REMATCH[2]}"; N_PAT="${BASH_REMATCH[3]}"
+FLOOR=""
+for e in $SUELOS; do
+  if [ "${e%%=*}" = "$N_MAJ" ]; then FLOOR="${e#*=}"; fi
+done
+[ -n "$FLOOR" ] || { echo "ERROR: Node $NODE_VER: la mayor $N_MAJ no tiene suelo de parche conocido (suelos:$SUELOS) — FAIL-CLOSED, no se asume nada" >&2; exit 1; }
+IFS=. read -r _ F_MIN F_PAT <<< "$FLOOR"
+NODE_OK=no
+if [ "$((10#$N_MIN))" -gt "$((10#$F_MIN))" ]; then NODE_OK=yes
+elif [ "$((10#$N_MIN))" -eq "$((10#$F_MIN))" ] && [ "$((10#$N_PAT))" -ge "$((10#$F_PAT))" ]; then NODE_OK=yes; fi
+[ "$NODE_OK" = yes ] || { echo "ERROR: Node $NODE_VER está por DEBAJO del suelo de parche $FLOOR de su mayor (aviso de seguridad de Node del 21-oct-2026) — FAIL-CLOSED, el golden no se monta" >&2; exit 1; }
+echo "Node $NODE_VER >= suelo $FLOOR"
+# suelo:fin
+# ca-certificates al día en este mismo paso (raíz emSign/eMudhra): ya se instala en [2/9]; aquí se asegura que la
+# instalación de Node no lo deja atrás.
+apt-get install -y -qq --only-upgrade ca-certificates
+echo "ca-certificates $(dpkg-query -W -f="\${Version}" ca-certificates)"
+# herramientas:ini
+RH_DIR=/var/lib/talent-channels
+RH_OV=""
+if [ -f "$RH_DIR/override.tsv" ]; then RH_OV="--overrides-file $RH_DIR/override.tsv"; fi
+bash "$RH_DIR/resolver-herramientas.sh" --lista "$RH_DIR/herramientas.lista" --salida /etc/talent-channels/herramientas.lock --trabajo /var/lib/talent-channels/herramientas-audit $RH_OV
+PKGS_LOCK=""; RH_RES=""; RH_OVR=no
+RH_REG=https://registry.npmjs.org/
+RH_VAC=/var/lib/talent-channels/herramientas-audit/npmrc-vacio   # npmrc vacío que crea el resolvedor; user y global tienen que ser rutas DISTINTAS
+[ -f "$RH_VAC" ] || { echo "ERROR: falta $RH_VAC (lo crea el resolvedor) — FAIL-CLOSED" >&2; exit 1; }
+RH_NPM="--userconfig=$RH_VAC --globalconfig=/dev/null --registry=$RH_REG"
+while IFS="$(printf "\t")" read -r p v _f _r o uso _m; do
+  case "$p" in "# resuelta_utc="*) RH_RES="${p#*=}"; continue;; ""|"#"*) continue;; esac
+  if [ "$uso" = global ]; then PKGS_LOCK="$PKGS_LOCK $p@$v"; fi
+  if [ "$o" = override ]; then RH_OVR=yes; fi
+  case "$p" in @*) RH_NPM="$RH_NPM --${p%%/*}:registry=$RH_REG";; esac
+done < /etc/talent-channels/herramientas.lock
+[ -n "$PKGS_LOCK" ] && [ -n "$RH_RES" ] || { echo "ERROR: herramientas.lock sin herramientas globales o sin fecha de resolución — FAIL-CLOSED" >&2; exit 1; }
+# --before: las transitivas tampoco entran con menos de 72 h (con un override, la fecha de resolución: el parche urgente es más joven)
+RH_EP="$(date -u -d "$RH_RES" +%s)"   # +1 s (issue 9681, D14): el resolvedor elige por segundos truncados y npm compara al milisegundo
+if [ "$RH_OVR" = yes ]; then RH_EP=$((RH_EP + 1)); else RH_EP=$((RH_EP - 259200 + 1)); fi
+RH_BEFORE="$(date -u -d "@$RH_EP" +%Y-%m-%dT%H:%M:%SZ)"
+# npm del golden: entorno limpio (sin npm_config_*, NODE_OPTIONS, *_PROXY ni CURL_*), userconfig/globalconfig vacíos y registro fijo
+NPM_BIN="$(command -v npm)"
+npm() { env -i PATH="$PATH" HOME="${HOME:-/root}" LANG=C.UTF-8 LC_ALL=C.UTF-8 "$NPM_BIN" "$@"; }
+# herramientas:fin
+npm install -g $RH_NPM --before=$RH_BEFORE $PKGS_LOCK && npm ls -g --depth=0 $RH_NPM $PKGS_LOCK >/dev/null' \
+  || tc_die "[5/9] instalación de Node/CLIs fallida, Node por debajo del suelo de parche o herramientas sin versión válida de >= 72 h con audit limpio (ver el ERROR de arriba): el golden NO se monta."
+# El lock es el registro reproducible del golden (/etc/talent-channels/herramientas.lock, viaja a los clones); su sha256 queda en la instancia.
+RH_SHA="$(tc_cexec "$GOLDEN" 'sha256sum /etc/talent-channels/herramientas.lock | cut -d" " -f1')"
+[[ "$RH_SHA" =~ ^[a-f0-9]{64}$ ]] || tc_die "no pude leer el sha256 de herramientas.lock del golden."
+incus config set "$GOLDEN" user.fabrica.herramientas-lock-sha256 "$RH_SHA"
+tc_info "herramientas.lock del golden: sha256 $RH_SHA"
 
 # CodeRabbit CLI (review pre-PR; NO es npm) — TAL-1502/TAL-1512. El binario forma parte del GATE
 # pre-PR, y el instalador oficial `curl|sh` NO verifica checksum (limitación del vendor). Por eso NO
@@ -328,8 +418,8 @@ echo "gestor de paquetes del repo: $pm"
 # El exit code del install es SOLO señal de éxito/fallo transitorio (jamás sentinel de ausencia).
 tc_cuser "$GOLDEN" 'cd ~/'"$REPO_DIR"' && '"$pm"' install' \
   || tc_info "install de dependencias con '$pm' falló (transitorio — reintentar luego)"
-tc_cexec "$GOLDEN" "grep -q '\"playwright\"\\|@playwright/test' /home/$CUSER/$REPO_DIR/package.json 2>/dev/null && (cd /home/$CUSER/$REPO_DIR && npx --yes playwright install-deps chromium firefox >/dev/null 2>&1) || echo 'repo sin playwright; salto deps'"
-tc_cuser "$GOLDEN" "grep -q '\"playwright\"\\|@playwright/test' ~/$REPO_DIR/package.json 2>/dev/null && (cd ~/$REPO_DIR && npx playwright install chromium firefox >/dev/null 2>&1) || true"
+tc_cexec "$GOLDEN" "grep -q '\"playwright\"\\|@playwright/test' /home/$CUSER/$REPO_DIR/package.json 2>/dev/null && (cd /home/$CUSER/$REPO_DIR && npx --no-install playwright install-deps chromium firefox >/dev/null 2>&1) || echo 'repo sin playwright; salto deps'"
+tc_cuser "$GOLDEN" "grep -q '\"playwright\"\\|@playwright/test' ~/$REPO_DIR/package.json 2>/dev/null && (cd ~/$REPO_DIR && npx --no-install playwright install chromium firefox >/dev/null 2>&1) || true"
 
 tc_say "[9/9] Verificación"
 # Anti-regresión FINAL (TAL-2294/2296): repetir el hard-check DESPUÉS de los lifecycle scripts de

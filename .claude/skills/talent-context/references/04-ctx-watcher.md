@@ -1,5 +1,12 @@
 # ctx-watcher — Complete Reference
 
+> Camino por defecto: compact vivo (`07-compact-vivo.md`), autocompact al 60 % de
+> 200K tokens (CEO/PM 300K), banco construido por hooks y lectura obligatoria de estado.md.
+> La coreografía manual de esta referencia se conserva como modo degradado SIN hooks.
+> La barra ctx: mide la ventana completa del modelo; con ventana fijada el watcher avisa
+> de RETRASO, pues el autocompact debió disparar antes. No decide el compact vivo.
+
+
 Cubre la receta del ctx-watcher: vigilar el propio ctx% por `capture-pane` cada ~300 s y emitir un
 evento al cruzar el 60 %. Incluye la variante bajo tmux y la degradación sin tmux.
 
@@ -38,7 +45,7 @@ Fase 3" que en la Torre aún es futuro: hoy la cadencia la ponen los wakeups.
 
 Bajo tmux, la sesión corre en un pane con nombre conocido; el watcher lo captura periódicamente.
 Modelo de referencia validado: `talent-orchestrator` `scripts/torre-sweep.sh` (sweep read-only) +
-`torre-compact.sh check` (gate por ctx%). `scripts/ctx-watch.sh` lo generaliza a un solo pane
+`scripts/ctx-watch.sh` (aviso de retraso). `scripts/ctx-watch.sh` lo generaliza a un solo pane
 propio, sin dependencias de fábrica.
 
 ```bash

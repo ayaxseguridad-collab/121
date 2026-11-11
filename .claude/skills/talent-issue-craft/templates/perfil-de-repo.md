@@ -62,5 +62,8 @@ Marcar el peldaño del modelo operativo de este repo:
 ## 9. Loop post-rechazo
 
 - Registro de gaps ("¿la issue pudo haberlo prevenido?"): **[dónde — doc/etiqueta/hilo]**
+- Candidatos a regla desde los findings de CodeRabbit: `.claude/.gotcha-candidates.jsonl` (campo
+  `sugerencia_regla`; lo emite el paso 8-bis del Mergeador, `talent-merger/scripts/distill-findings.sh`).
+  Se revisan a mano: promover un candidato a gotcha es decisión humana.
 - Responsable de iterar las plantillas con los gaps acumulados: **[quién]**
 - Recordatorio: cambio de núcleo = canon + manifest + 9 plantillas en el MISMO cambio (`templates/00-nucleo.md` §mantenimiento).

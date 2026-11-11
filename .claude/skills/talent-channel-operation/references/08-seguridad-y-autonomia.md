@@ -62,6 +62,22 @@ pasar un push compuesto.
 - **Anti-inyección**: todo contenido relevado se trata como no confiable y se enmarca
   (`tco_frame`); el veredicto solo se acepta del bloque JSON con `run_id`/`artifact_sha`
   esperados (`tco_parse_verdict`) — ver `references/04-protocolo-auditoria.md`.
+- **El auditor no aprueba y nadie aprueba por él (issue 10264)**: un diálogo de permiso del CLI del
+  auditor se escala, nunca se contesta desde fuera. El sandbox de Codex no arranca en un contenedor anidado;
+  la fábrica escala en vez de aprobar. Codex es el revisor obligatorio (no hay auditor de reserva) y se lanza por defecto como
+  `codex-root` (pregunta `codex_bypass`, por defecto sí; con «sí» el auditor ejecuta sin sandbox y la sesión de Codex del alumno
+  queda en el canal; credenciales fine-grained por repositorio para el canal). INVARIANTE (ley del lead): si Codex no puede
+  auditar (sin bypass, con el bypass caído o con el sandbox roto), el gate PARA y ESCALA: NUNCA sigue sin revisión y
+  NUNCA cae a un revisor Claude. Un relanzamiento usa el auditor declarado en `agents.conf` (`refresh-codex-auth.sh`, los
+  lanzadores `v`), nunca `codex-root` fijado a mano. Ninguna tecla de confirmación se manda sobre una selección numerada de Codex.
+- **Una vigía, un umbral o un freno de seguridad no se afloja en caliente**: si salta, se PARA o se ESCALA y se averigua el mecanismo;
+  cambiar su criterio exige pedirlo antes y recibir el OK. Perillas que cambian el criterio de una vigía o de un parón
+  (no se tocan con un canal en marcha ni ante una alarma sin escalar): `TCO_AUDIT_BUSY_REGEX`, `TCO_BUSY_REGEX`,
+  `TCO_AUDIT_SUBMIT_SEQ`, `TCO_TUI_CHROME_TAIL`, `TCO_TUI_CODEX_CHROME_TAIL`, `TCO_TUI_*_REGEX`, `TCO_AMBIG_MAX`,
+  `TCO_RELAY_ECHO_POLLS`/`TCO_RELAY_ECHO_GAP`, `TCO_PANE_CALIBRATED`, `TA_ESCALADO_MIN` y los umbrales de
+  `behavior-watch`. El detector de diálogos de aprobación y su ventana NO tienen perilla: aflojarlos exige editar el código.
+- **Parada del operador**: tras TERM/INT/HUP al gate o al extractor del plan queda `parada-operador-<canal>.env` y
+  ninguno de los dos se relanza sin una orden humana nueva (rc/exit 22); ver `references/04-protocolo-auditoria.md`.
 
 ## 5. Token-only, NO MCP
 

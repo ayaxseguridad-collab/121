@@ -221,8 +221,8 @@ Cualquier dato ilegible o enumeración parcial detiene el despacho.
 Una desviación detiene el despacho
 (`tco_die`): el ACK del rol lo emite cualquier agente y `audit-gate.sh` solo mira que el pane exista, así que
 sin este gate un auditor del mismo proveedor que el dev pasa por independiente. `TCO_AUDIT_TOPOLOGY`:
-`distinto` (default: auditor ≠ agente del dev, o el despacho muere) | `mismo-adversarial` (auditor = el mismo
-agente que el dev, **declarado a propósito**: garantía de ROL adversarial, no de proveedor). El despacho
+solo `distinto` (auditor Codex ≠ agente del dev; con otro valor, con un auditor que no sea Codex o si
+coinciden, el despacho muere y se escala: no hay auditor de reserva, ley del lead del 7-nov). El despacho
 imprime siempre `AUDITOR: <ejecutable> · topología: <valor>`.
 
 **Preflight de calibración (`tco_pane_calibration_preflight`, llamado por `dispatch.sh` en normal y `--soft`
@@ -399,7 +399,7 @@ El plan se aprueba/rechaza desde el **diálogo de ExitPlanMode** del pane `.0`. 
   dev en plan mode revisando (NO aprueba) y vuelve a iterar.
 - **GO** → **opción 1** (aprobar) + relevar el **literal del GO** (sugerencias no bloqueantes) por archivo
   tras aprobar — el literal de la auditoría llega SIEMPRE al dev, también en GO (invariante 1). El diálogo
-  de aprobación **IGNORA texto tipeado**: fijar el modelo con **`model="$(tco_model_for_phase coding)" && [ -n "$model" ] && tco_set_model "$carril" "$pane" "$model" || exit 1`** (picker interactivo — `/model` **SIN** argumento inline, que es un NO-OP
+  de aprobación **IGNORA texto tipeado**: fijar el modelo con **`model="$(tco_model_for_phase coding "$carril")" && [ -n "$model" ] && tco_set_model "$carril" "$pane" "$model" || exit 1`** (picker interactivo — `/model` **SIN** argumento inline, que es un NO-OP
   silencioso sin diálogo que confirmar) → verificar con `tco_verify_model_effect` → `/effort high` —
   DOS diálogos modales INDEPENDIENTES, cada uno con su propia confirmación, INMEDIATAMENTE DESPUÉS de
   aprobar (el switch interrumpe antes del primer token); el relay de sugerencias encolado
@@ -482,8 +482,8 @@ Primer despliegue de una flota nueva (o coordinador en máquina recién aprovisi
    (`*_CLI` = UN solo ejecutable; los flags, en `*_FLAGS`), `TCO_AUDIT_CLI/FLAGS`, `TCO_DEV_MODEL_ARGS`/`TCO_AUDIT_MODEL_ARGS` (`--model …` — el lanzador del
    contenedor NO lo pasa), **`TCO_DEV_CARRILES` de ESTA máquina** (el default no aplica a flotas 2X/3X),
    `TCO_MAX_ACTIVE`, **`TCO_HOST_ENV`**, `TCO_AGENT_PROC_PAT="claude|codex"` (ERE anclada sobre el nombre del
-   ejecutable, no sobre la línea de comandos — ref 11 §3) y, si el auditor es del MISMO agente que el dev,
-   `TCO_AUDIT_TOPOLOGY=mismo-adversarial` (declarado; el default `distinto` detiene el despacho si coinciden).
+   ejecutable, no sobre la línea de comandos — ref 11 §3). El auditor es SIEMPRE Codex (`TCO_AUDIT_CLI` Codex) y la
+   topología es `distinto`: un auditor del mismo agente que el dev, o que no sea Codex, detiene el despacho.
    - **Cada TORRE copia scripts/config del skill a su ruta PRIVADA y despacha desde ahí.** El
      `agents.conf` (y los scripts que el coordinador ejecuta) viven en la ruta privada de la torre
      (`$SECRET_DIR/agents.conf`, gitignored, `0600`) — **la copia del repo es SOLO LECTURA**,
@@ -633,7 +633,7 @@ sería el diseño natural para soportarlo, pero **NO está implementado** — me
 nunca operar como si existiera. Mientras tanto, quien opera una flota remota lo hace a mano y lo
 declara así en su reporte.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
 # Preparación antes del primer despacho
 
 El montaje usa `scripts/preparar-sesiones.sh --plan CARRIL`, muestra el plan y

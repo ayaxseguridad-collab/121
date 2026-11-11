@@ -1,0 +1,50 @@
+
+  ␛[38;2;99;168;248m>_ ␛[1m␛[39mOpenAI Codex␛[0;2m (v0.166.0)␛[0m
+     ␛[2m~/producto␛[0m
+␛[2m  permissions: ␛[0;1m␛[38;5;5mYOLO mode␛[0m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+␛[1;7m› /model  ␛[0;7mchoose what model and reasoning effort to use␛[1m
+␛[0m
+␛[1m›␛[0m /model
+
+  ␛[38;2;246;226;183mGPT-5.6-Sol medium␛[39m · ␛[38;2;171;223;167m~/producto␛[39m
+

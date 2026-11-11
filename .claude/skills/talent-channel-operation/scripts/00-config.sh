@@ -22,7 +22,7 @@ fi
 # [TAL-8037/M3, n2] El marcador a rechazar es SOLO el del repo-identity.conf.example: el valor COMPLETO con la forma
 # PENDIENTE-<CLAVE> (anclado, mayúsculas) — jamás subcadenas ni palabras sueltas, para no rechazar valores legítimos
 # (un repo `todo`, `pendiente-app`, `placeholder-site`). Mismo criterio que pkg_es_marcador_example de
-# skill-creator/lib-package.sh (duplicado CONSCIENTE: este loader runtime no sourcea esa lib). Rechazo fail-closed.
+# scripts/paquete/lib-package.sh (duplicado CONSCIENTE: este loader runtime no sourcea esa lib). Rechazo fail-closed.
 tco_es_marcador_example() { [[ $1 =~ ^PENDIENTE-[A-Z][A-Z0-9_]*$ ]]; }
 tco_cargar_identidad() {
   local dir conf line k v
@@ -83,10 +83,9 @@ tco_cargar_identidad
 # `tail -f codex.log`, el lector de stdout…). Recomendado: TCO_AGENT_PROC_PAT="claude|codex". Los valores
 # viejos con clase de caracteres (`[c]laude|[c]odex`) siguen casando. Sin riesgo de self-match.
 : "${TCO_AGENT_PROC_PAT:=}"
-# [TAL-8042] Topología del auditor (FAB-OBS-001). `distinto` (DEFAULT): el auditor (pane .1) es de OTRO agente
-# que el dev (pane .0) — garantía de independencia adversarial por proveedor; el despacho MUERE si coinciden.
-# `mismo-adversarial`: el auditor es el MISMO agente que el dev (p. ej. una sola cuenta/proveedor), declarado a
-# propósito — la garantía es solo de ROL adversarial (no de proveedor) y el despacho lo imprime en cada corrida.
+# [TAL-8042] Topología del auditor (FAB-OBS-001). `distinto` (DEFAULT y ÚNICA): el auditor (pane .1) es Codex, de OTRO
+# agente que el dev (pane .0) — garantía de independencia adversarial por proveedor; el despacho MUERE si coinciden o si
+# el auditor no es Codex. La auditoría degradada con el mismo agente que desarrolla se retiró en la 2.0 (ley del lead, 7-nov).
 : "${TCO_AUDIT_TOPOLOGY:=distinto}"
 : "${TCO_PANE_IDENT_WAIT:=30}"   # s máx. que el preflight de identidad espera a que el agente aparezca en cada pane tras lanzarlo
 : "${TCO_AUDIT_FLAGS:=}"  # flags del agente de auditoría
@@ -205,6 +204,14 @@ tco_cargar_identidad
 : "${TCO_LOCK_DIR:=$SECRET_DIR/locks}"
 : "${TCO_LOCK_TTL:=3600}"                           # stale-lock TTL (s)
 
+# --- behavior-watch: activo-sin-progreso (SOLO avisa; ref 11 «Activo-sin-progreso») ---
+# El estado del detector vive FUERA de $TCO_RUNS_DIR: status.sh enumera "$TCO_RUNS_DIR"/*/ como corridas.
+: "${TCO_BEHAVIOR_DIR:=$SECRET_DIR/behavior}"      # estado <canal>.state + <canal>.lock
+: "${TCO_BEHAVIOR_WATCH:=1}"                       # 0 = status.sh no invoca el detector (columna behavior fuera)
+: "${TC_STALL_WINDOW:=1800}"                       # s: transcript y git quietos al menos esto para PROGRESO-ESTANCADO
+: "${TC_PHASE_TERMINAL:=done|merged|superseded|bounced|cancelled|delivered}"  # fases no vigentes para P2 (pipe-sep)
+: "${TC_GH_TIMEOUT:=15}"                           # s: timeout de cada `gh pr view` de P2; timeout -> UNKNOWN
+
 # --- Política de operación ---
 # Merge SIEMPRE humano (no existe modo auto): el gate verde produce stop-merge → OK del lead.
 # TA usa Supabase (Postgres): las migraciones SQL viven en supabase/migrations/*.sql y el post-merge
@@ -249,6 +256,8 @@ tco_cargar_identidad
 : "${TCO_AUDIT_ISSUE_MIN_SCORE:=70}"
 # Ruta al helper de issue-craft relativa a la raíz del repo del host (override por máquina si difiere).
 : "${TCO_ISSUE_CRAFT_HELPER:=.claude/skills/talent-issue-craft/scripts/issue_craft_helper.ts}"
+# Envoltorio de tsx del paquete (vacío = <raíz del repo o del paquete>/scripts/tsx.sh, derivada de la ubicación de la skill; issue 9564/9681).
+: "${TCO_TSX_SH:=}"
 # Comentarios por página al paginar comentarios de control (anti-explosión de complejidad de API).
 : "${TCO_CONTROL_COMMENTS_PAGE:=50}"
 
@@ -328,7 +337,7 @@ tco_repo_path()  { printf '/home/%s/%s' "$TCO_CUSER" "$TCO_REPO_DIR"; }
 # ($SECRET_DIR/env/<carril>.env, que gestiona el skill talent-channels y usa el carril dentro de su
 # contenedor): el coordinador NO inyecta sus tokens en los carriles. Token-only, NO MCP; nunca se imprimen.
 # [Review PR #13 del motor] Validación ESTRUCTURAL de la ruta REL EN EL LOADER, antes de leer
-# archivo alguno — contrato idéntico a pkg_validate_env_rel (skill-creator/scripts/lib-package.sh);
+# archivo alguno — contrato idéntico a pkg_validate_env_rel (scripts/paquete/lib-package.sh);
 # duplicado CONSCIENTE: este loader runtime no sourcea lib-package.sh (pkg_die2 haría exit del
 # shell del coordinador). Sin esto, una REL manipulada con `../../otra/.env.local` escapa de
 # $HOST_HOME y carga los tokens de otra fábrica en silencio (misma clase que el orquestador).
@@ -401,3 +410,8 @@ tco_load_tokens() {
   done < <(grep -E '^[A-Z][A-Z0-9_]*=' "$envf" 2>/dev/null)
   return 0
 }
+
+# Perfil del TUI (TCO_TUI_CLI): NUNCA se hereda del entorno ni de agents.conf. Solo lo fijan, con «local -x», las entradas
+# por panel de lib.sh (desde el CLI declarado de ese panel) y los fijadores de la calibración; ninguna perilla del operador
+# puede saltarse la calibración. Va al final, tras agents.conf.
+unset TCO_TUI_CLI

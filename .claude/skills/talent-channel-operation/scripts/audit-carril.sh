@@ -53,7 +53,9 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
   tco_remain_preparar "$CARRIL" "$P_AUD" || tco_die "$CARRIL: no pude preparar remain-on-exit antes de lanzar — no se lanza"
   tco_launchers_ready "$CARRIL" "$rp" TCO_AUDIT_CLI "$P_AUD" "$TCO_AUDIT_CLI" \
     || tco_die "$CARRIL: lanzador de auditoría sin ejecutable en el canal — no se lanza (fail-closed; el error de arriba nombra el CLI y el remedio)"
-  case "$TCO_AUDIT_CLI" in *claude*) tco_modelos_config || tco_die "$CARRIL: registro inválido antes de lanzar el auditor" ;; esac
+  # [issue 10264] LISTA BLANCA: tco_ensure_audit_model (lib.sh, ya cargada arriba) solo admite Codex (ejecutable exacto codex o codex-root).
+  tco_ensure_audit_model "$CARRIL" \
+    || tco_die "$CARRIL: Codex es obligatorio como revisor y TCO_AUDIT_CLI='$TCO_AUDIT_CLI' no es Codex — no se lanza el auditor; se PARA y se escala"
   LANZ_AUD="$(tco_orden_acreditada TCO_AUDIT_CLI "$P_AUD" "$TCO_AUDIT_FLAGS ${TCO_AUDIT_MODEL_ARGS:-}")" \
     || tco_die "$CARRIL: sin ruta acreditada del lanzador de auditoría — no se lanza"
   incus exec "$c" -- su - "$TCO_CUSER" -c "tmux respawn-pane -k -t '$P_AUD' -c '$rp' '$LANZ_AUD'" \

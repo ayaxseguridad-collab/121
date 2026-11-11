@@ -1,0 +1,68 @@
+# Notas — `.coderabbit.yaml` de partida para un repo Node.js/TypeScript nuevo (Next.js + Express)
+
+## Qué es y de dónde sale
+
+El YAML entregado (`s2-coderabbit.yaml`) combina las plantillas verificadas del skill `coderabbit-talent`
+(`base-talent.yaml` + el overlay `node-typescript.yaml`), adaptadas al caso concreto de un repo que
+mezcla **frontend Next.js** y **backend Express** en el mismo monorepo/repo simple. Usa el schema **v2**
+(`https://coderabbit.ai/integrations/schema.v2.json`), que es el vigente a la fecha de esta sesión
+(2026-09-05).
+
+## Intento de validación
+
+Se intentó `coderabbit config validate s2-coderabbit.yaml` (CLI 0.7.6, instalado localmente) para
+confirmar el YAML contra el schema oficial en vivo. **Falló dos veces por timeout de red** al descargar
+el schema remoto (la misma caída de conectividad a GitHub/red externa que afectó las llamadas `gh api`
+de la Tarea 1 durante esta sesión) — no fue un rechazo del schema, fue no poder alcanzarlo. Se verificó
+en su lugar que el YAML es sintácticamente válido (`yaml.safe_load` en Python, sin errores) y se
+construyó estructuralmente a partir de plantillas ya validadas y documentadas como `last_verified:
+2026-09-05` en el skill. Recomendación: correr `coderabbit config validate` (o el validador interactivo
+en <https://docs.coderabbit.ai/configuration/yaml-validator>) en cuanto haya red, antes de commitear el
+archivo al repo nuevo.
+
+## Decisiones tomadas y por qué
+
+- **`profile: chill`** en vez de `assertive`: un perfil asertivo desde el día uno genera abandono del
+  equipo por volumen de ruido en las primeras semanas (dato citado en el skill: ~28% de comentarios
+  "no interesantes" en una auditoría externa con perfil por defecto). Se puede subir a `assertive` más
+  adelante si el equipo lo pide explícitamente.
+- **`language: es-ES`** por default, con nota explícita de cambiarlo a `en-US` si el equipo no opera en
+  español — es el default de este entorno de trabajo, no necesariamente el correcto para cualquier repo
+  nuevo. **Esta es la decisión más específica de contexto: revisarla primero.**
+- **`enable_prompt_for_ai_agents: true`** (nunca `false`): sin este bloque, un agente (Claude Code,
+  Cursor, Copilot) no tiene el prompt pre-formateado para aplicar el fix sugerido — perder esto rompe
+  cualquier flujo de "resolver con IA" sobre los comentarios de CodeRabbit.
+- **`path_instructions` diferenciados** para: tests (relajar `any`/coverage), backend Express
+  (`server/**`, `routes/**`, `controllers/**`, `middleware/**`, `api/**` — foco en validación de input,
+  orden de middlewares, rate limiting), frontend Next.js (`app/**`, `pages/**`, `components/**` — foco en
+  Server/Client Components, hooks, accesibilidad) y migraciones de esquema. Esto es lo que hace que el
+  YAML sirva de verdad para un stack mixto en vez de ser genérico.
+- **`path_filters`** excluye `node_modules`, `dist`/`build`/`.next`/`out`, lockfiles, tipos generados,
+  binarios y snapshots — reduce ruido sin esconder código real.
+- **Tools de seguridad activas por default** (`gitleaks`, `trufflehog`, `semgrep`, `opengrep`,
+  `osvScanner`, `trivy`, `checkov`, `zizmor`, `presidio`): corren igual aunque no se listen en el YAML
+  (son defaults del producto), pero se dejan explícitas para que quede documentado qué se decidió y no
+  qué se heredó en silencio.
+- **`eslint`/`biome` activos en CodeRabbit**: recomendado dejarlos así HASTA que el repo tenga su propio
+  ESLint/Biome corriendo como gate en CI — en ese punto, desactivarlos aquí (`enabled: false`) para
+  evitar comentarios duplicados entre el linter local y el de CodeRabbit.
+- **`chat.integrations.linear.usage`** se deja comentado (default `auto`) con una nota de que, si el
+  equipo gestiona tareas en Linear/Jira con un flujo propio, conviene fijarlo en `disabled` explícito —
+  si no, `@coderabbitai` puede crear issues desde el chat de un PR sin pasar por ese flujo.
+- **`pre_merge_checks.custom_checks`** incluye un check `error` de "no secrets" (bloqueante, no
+  negociable) y uno `warning` de "breaking changes documentados" — punto de partida razonable, se puede
+  endurecer a `error` cuando el equipo tenga confianza en que no genera falsos positivos.
+- **`fix_ci` y `resolve_merge_conflict`** en `finishing_touches` requieren plan **Team** o superior — si
+  el repo nuevo arranca en un plan **Free/Lite**, esas dos claves no tendrán efecto (no rompen la config,
+  simplemente no se activan).
+
+## Qué falta decidir (fuera del alcance de un YAML de partida)
+
+1. **Plan de CodeRabbit para este repo nuevo** (Essentials/Team/Advanced) — condiciona el presupuesto de
+   reviews/hora y si `fix_ci`/`resolve_merge_conflict` funcionan. Verificar con `@coderabbitai rate
+   limit` en el primer PR real, o el dashboard `app.coderabbit.ai/settings/subscription`.
+2. **Si el repo es monorepo real** (workspaces npm/pnpm, Next.js y Express en paquetes separados), vale
+   la pena migrar a la plantilla `monorepo.yaml` del skill, que añade `path_instructions` por paquete —
+   el YAML entregado asume que ambos viven en el mismo árbol de `src/`.
+3. **Idioma del equipo** (`language`) — la decisión de negocio más importante de todo el archivo; el
+   default aquí es `es-ES` por contexto de esta sesión, no una recomendación universal.

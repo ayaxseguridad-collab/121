@@ -49,6 +49,7 @@ invariantes con test:
 | `references/05-leyes-del-mando.md` | Doctrina mínima: qué se escala, qué se decide, qué no se toca | Ante una duda de autoridad |
 | `references/06-paso-0-y-bancos.md` | Paso-0 de reanudación · banco de regreso · qué se mide y qué se pregunta | Al arrancar tras un relanzamiento o antes de compactar |
 | `references/07-doctor-y-acreditacion.md` | **Doctor de instancia** (lo declarado contra lo que corre) · escalado obligatorio al bus · re-acreditación de actores · manifiesto de capacidades por rol | Tras montar o reiniciar la fábrica, ante un actor que volvió de un `/clear`, o al sospechar que el perfil y el runtime divergen |
+| `references/08-vigias-y-medidores.md` | **Vigías y medidores del mando** · runners al día: `origin/main` de cada runner = `main` real antes de cualquier prueba, con el bundle verificado y el sha comprobado | Antes de lanzar un gate en un runner, o al ver un rojo que `main` puro no da |
 | `references/anexo-*.md` (uno por repo) | **OVERLAY**: la instancia concreta, con sus nombres reales | Solo al operar ESTA fábrica |
 
 > **El anexo es el único fichero con nombres reales.** El cuerpo del skill es agnóstico y hay un
@@ -95,7 +96,14 @@ TA_BUS=/ruta/al/bus bash $S/bus-sellar.sh --rol CEO --marcador HITO --nota "lo q
 | Antigüedad de un proceso | `runners-vivos.sh --etime <ETIME>` | 0 · 1 no parseable |
 | Estado de un composer | `ronda-canales.sh --clasificar` | `empty\|ghost\|text\|queued` |
 | ¿Lo declarado corre de verdad? | `doctor.sh` (solo lectura) | 0 puerta abierta · **1 algún FALLA o NOVERIF** · 2 no puede evaluar |
+| ¿Qué desvíos debo enviar al responsable? | `doctor.sh --informe` (tabla Markdown, solo lectura) | Mismo recorrido y rc; desviación, gravedad y cómo volver |
 | Re-acreditar un actor | `reacreditar.sh --rol R --iniciar\|--verificar` | 0 · **1 sin sello válido posterior** · 2 precondición |
+| Saldo y cambio de cuenta de Codex | `lector_cuotas.py eventos --provider codex --estado F` (campo `credits` en `read`) | 0 tick completo · **2 precondición, estado ilegible o emisión fallida** |
+| Canario de main tras una fusión | `canario-main.sh --repo R --estado D --runner X --runner-repo P --manifest M --una-vez` | 0 VERDE o nada nuevo · **1 ROJO** · **3 NO-MEDIDO** · 2 precondición |
+| ¿Qué versión tengo instalada? (por la huella del contenido; «desconocida» no es un fallo) | `origen-instalado.sh [--tabla F] CARPETA` | 0 con cualquier etiqueta · 2 uso incorrecto |
+| Runners al día antes de un gate | `runners-al-dia.sh --bundle F --ref R --esperado S [--dry-run]` | 0 todos al día · **1 alguno no (el gate no se lanza)** · 2 precondición (nada tocado) |
+| Armar los vigías del mando (un monitor, una línea = un evento) | `vigias.sh [--una-vez] [--lista]` | 0 · **1 algún tick falló (solo `--una-vez`)** · 2 precondición (nada armado) |
+| Un vigía suelto (un tick; lee el bus por cursor) | `vigia-bus.sh`, `vigia-silencio.sh`, `vigia-ociosa.sh`, `vigia-recursos.sh` | 0 tick hecho · 2 precondición |
 
 **El mapeo de rc que hay que tener claro** (y que no es capricho): una violación del contrato da
 **rc 1 en el validador** pero **rc 2 en las APIs que sirven filas**. Motivo: en esas APIs el rc 1 ya
@@ -164,11 +172,9 @@ silencioso**. Un perfil inválido es input inservible ⇒ mismo cubo que ausente
 
 ## Paquete de fábrica
 
-Este skill es miembro del **paquete de skills de fábrica** (16): linear-skill · skill-creator · talent-buzz ·
-talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-coordination ·
-talent-issue-craft · talent-llm-local · talent-memoria · talent-merger · talent-orchestrator · talent-pm · talent-prd · talent-repo-onboarding. El paquete viaja JUNTO y
+Este skill es miembro del **paquete de skills de fábrica** (13): coderabbit-talent · linear-skill · talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-docs-skill · talent-issue-craft · talent-medidor · talent-merger · talent-orchestrator · talent-pm · talent-sentry-guard. El paquete viaja JUNTO y
 **motor-primero**: canónico en el repo motor `talent-factory` (`skills/`), propagado como núcleo
-a los repos de producto con `skill-creator/scripts/sync-package.sh` (overlays por repo intactos)
-y validado con `skill-creator/scripts/validate-package.sh` + `<skill>/invariants.tsv`.
-Manifiesto: `skill-creator/assets/package.manifest` · doctrina y ratchet (D6): `skill-creator/references/09-paquete-de-fabrica.md`.
+a los repos de producto con `scripts/paquete/sync-package.sh` (overlays por repo intactos)
+y validado con `scripts/paquete/validate-package.sh` + `<skill>/invariants.tsv`.
+Manifiesto: `scripts/paquete/package.manifest` · doctrina y ratchet (D6): `scripts/paquete/PAQUETE.md`.
 Nunca vuelques el entorno ni ficheros de credenciales; comprueba únicamente nombres y presencia.

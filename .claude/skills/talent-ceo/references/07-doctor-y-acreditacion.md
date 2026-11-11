@@ -118,6 +118,131 @@ restaura el modo antes de invocar el doctor; este observa los permisos originale
 de instantánea enrojece la suite. El smoke tmux se
 comprueba aparte; no se afirma aquí que esa corrida tenga la instantánea del fixture.
 
+## Desvíos respecto al paquete
+
+El doctor también compara lo instalado con el paquete. La raíz se resuelve en
+orden `TA_PAQUETE`, `TF_ROOT` del entorno, `TF_ROOT` de `agents.conf` leído como
+dato literal. El manifiesto de instancia se localiza por el lector del paquete:
+`.claude/paquete/package.manifest` en el clon, `scripts/paquete/` en distribución.
+Una precondición de un eje ausente produce NOVERIF de ese eje; no da verde.
+
+| Eje | Contraste | Cómo volver |
+|---|---|---|
+| nucleo | Entradas de NUCLEO.sha256 en paquete y skills instalados; excluye overlays y guardas | Restaurar paquete publicado y sincronizar instancia |
+| version | Versión de instancia frente al ZIP publicado | Instalar versión publicada o restaurar fuente |
+| miembros | Cada member del manifiesto tiene SKILL.md; otros skills son legítimos | Sincronizar miembros declarados |
+| modelos-rol | IDs por rol iguales para todos los usuarios de actores locales y el mando, resueltos por la librería del paquete | Resolver registros como sus dueños |
+| guardas | SHA de doctor-guardas.tsv; en el clon, core.hooksPath=.githooks y pre-push presente y ejecutable | Restaurar guardas y activar hook |
+
+El atributo `paquete_publicado=` de la fila CEO admite una ruta absoluta a ZIP o
+HTTPS sin credenciales; `TA_PAQUETE_PUBLICADO` gana. Solo se leen por `unzip -p`
+los miembros fijos `talent-factory/scripts/paquete/package.manifest` y
+`talent-factory/instalacion/NUCLEO.sha256`, sin extraer archivos. Se rechazan URL
+con consulta, fragmento, controles o credenciales y no se imprime la fuente.
+AL DÍA da OK; ATRASADA da FALLA. Una instalada posterior a la fuente también
+cierra la puerta para revisar la autoridad. Fuente declarada ilegible da
+NOVERIF (NO MEDIDO); sin fuente declarada, AVISO version-no-medida no cuenta.
+A igual versión se compara además el manifiesto local con el publicado.
+
+```bash
+bash $S/doctor.sh --informe
+```
+
+El recorrido y rc son idénticos. El informe presenta una fila por FALLA/NOVERIF
+con desviación, gravedad y cómo volver; sin filas dice `Sin desviaciones.`.
+Los avisos quedan aparte; RESUMEN y PUERTA conservan su formato. Se neutralizan
+controles y se escapan barras de tabla. Los remedios y las gravedades son datos
+en `doctor-volver.tsv`; una categoría sin remedio cierra la puerta.
+
+### Extensiones doctor.d
+
+Después de los ejes propios se cargan en orden léxico `doctor.d/NN-nombre.sh`.
+Cada fichero de código versionado registra funciones con
+`DOCTOR_EXTRA+=(check_nombre)`; cada función emite por `ok`, `falla` o `noverif`.
+Comparte `como`, `perfil_rows`, `perfil_attr`, `LOCAL_ID`, `YO` y `NOW`.
+Su `NN-nombre.volver.tsv` opcional añade categorías únicas con tres columnas:
+categoría, gravedad (alta/media/baja), cómo volver. Un error de sintaxis,
+registro vacío o función sin resultado produce FALLA doctor.d. Directorio
+ausente no añade comprobaciones. P-CV y P9 aportan sus extensiones; P7 conserva
+la propiedad del formato de modelos. El eje actual usa las cuatro claves
+OPUS_MODEL/SONNET_MODEL/RESOLVED_UTC/CLI_VERSION y los nueve roles vigentes.
+
+La garantía cubre desvíos accidentales, no a quien sustituye el doctor o controla
+su entorno. No se detectan ficheros añadidos sin entrada en el manifiesto. Un
+temporal bajo TMPDIR contiene stderr y lecturas publicadas; se borra al salir.
+No se repara, reanima, sella ni avisa por el bus.
+
+### Sondas de seguridad
+
+Tres sondas de solo lectura miden exposiciones que el resto del doctor no ve. Se evalúan cuando el manifiesto de la
+instancia declara `talent-channels` como miembro. Una fábrica real SIEMPRE lo declara (el manifiesto del paquete lo
+lista y la validación estricta del paquete (modo `--strict-set`) rechaza cualquier directorio de skills fuera del manifiesto); si falta, el
+doctor lo AVISA en cada corrida (`AVISO seguridad sondas: no se evalúan Node, LiteLLM ni zombis: el manifiesto de la
+instancia no declara talent-channels`, gravedad baja) y no las evalúa. Ninguna otra comprobación cierra la puerta
+por esa causa: el aviso es la única señal.
+
+- `seguridad-node`: `node -v` del host (el del PATH del usuario que corre el doctor) y de cada canal y runner contra
+  el suelo de parche de su mayor, leído del mismo `node-suelos.tsv` que usa el golden. Por debajo del suelo, o una
+  mayor sin suelo, es `FALLA`; si no se puede medir, `NOVERIF`.
+- `seguridad-litellm`: la búsqueda es CARA (recorre hogares y contenedores) y NO la hace el doctor normal. La hace el
+  modo escritor `doctor.sh --seguridad`, que lanza un cron DIARIO (04:11, `nice` e `ionice`, línea de
+  `cron-seguridad.sh --linea` instalada por F6) y que F6 ejecuta una vez de verdad al instalar. Busca `cook.pth`,
+  `cook.py`, `litellm-1.107.0.dist-info` y cualquier `sitecustomize.py` que no sea el del sistema dentro de una
+  librería de Python, más el señuelo `/tmp/remote_code_loader.lock` (aparte, con su propia orden), en el sistema, en el
+  hogar de cada usuario del perfil y en cada canal. Profundidad 6 bajo cada hogar y 7 en el canal, 600 s por sujeto
+  (host, cada usuario y cada canal): si se agota, NOVERIF que dice el sujeto y la raíz. Cualquier rc ≠ 0 del `find`
+  (permiso, raíz inexistente, tiempo) es NOVERIF con su motivo, NUNCA una búsqueda completa. El resultado queda en
+  `$(estado del bus)/seguridad/ultimo.res` (0600, directorio 0700) y se SELLA en el bus con
+  `SEG-<12 hex del sha del resultado>`; la hora la mide `bus-sellar.sh`, no el mtime del fichero. El doctor normal
+  LEE ese resultado: `FALLA` si es rojo, si trae NOVERIF (con el sujeto y la raíz) o si tiene más de 26 h;
+  `NOVERIF` si no existe o su sello no cuadra (sha sin sello, hora que no cuadra, sondas distintas de las actuales),
+  con el remedio de correr `doctor.sh --seguridad`. El doctor nunca borra nada.
+  El lector también exige **cobertura**: la cabecera declara tantos `sujetos=` como filas trae y CADA sujeto actual del
+  perfil (el host con su sistema y su señuelo, cada usuario del perfil, cada canal y runner con su señuelo) tiene su
+  fila; si falta uno (un canal añadido después del último cron, un resultado vacío o recortado) sale `NOVERIF` «sujeto
+  X sin medir en el último resultado». Una cuenta del perfil sin hogar da `NOVERIF host/<usuario>` con la causa del
+  `find`. Solo corre una búsqueda a la vez (`flock -n` sobre `seguridad/.lock`: la segunda sale con rc 2); el sello se
+  pone ANTES de publicar el resultado, así que el doctor normal nunca ve un `ultimo.res` sin sello, y un temporal
+  `.res.*` huérfano de una corrida muerta no se borra: se aparta con `mv` a `seguridad/apartado/`.
+  Los sellos `SEG-*` los firma el cron con el rol del CEO, pero NO son sellos de su sesión: `ultimo_sello` los ignora,
+  de modo que no acreditan la sesión del CEO, no hacen pasar `menu-reciente` ni ocultan un `ESCALA-CEO-…` anterior
+  (solo los lee el lector del resultado).
+  **Dónde vive el resultado:** en `$(estado del bus)/seguridad`, es decir bajo `TA_BUS_STATE_DIR` o, si no está, bajo
+  `XDG_RUNTIME_DIR/talent-ceo` (volátil). Un doctor lanzado a mano SIN el mismo entorno que el cron busca en otro
+  sitio, dice «no existe» y su remedio escribiría una segunda copia divergente: lanzar el doctor y `--seguridad` con
+  el mismo `TA_BUS_STATE_DIR` (el mensaje de remedio lo repite).
+- `zombi`: sesiones de tmux con `claude` o `codex` vivos y más de 25 días sin actividad. Solo informa.
+
+`AVISO` frente a `FALLA` y `NOVERIF`: el `AVISO` es informativo, no entra en `RESUMEN ok= falla= noverif=` ni cierra
+la puerta, y en `--informe` sale en una sección propia con gravedad «info»; `FALLA` y `NOVERIF` cierran la puerta.
+Un rechazo de `sudo` en una sonda es `NOVERIF` con su motivo, nunca una omisión.
+
+Las órdenes de las sondas (y por tanto las reglas exactas del sudoers que escribe el montaje) salen de UN fichero,
+`scripts/doctor-sondas.tsv`: lo ejecuta el doctor y lo lee `fases.py` para generar el sudoers, sin ninguna orden
+repetida en el código. Cada regla es de solo lectura, por contenedor y usuario concretos, sin comodines.
+
+**Límites declarados de la búsqueda de LiteLLM.** (1) Un entorno de Python a más profundidad NO se ve: p. ej. un
+proyecto en `~/trabajo/a/b/.venv/lib/python3.12/site-packages` (profundidad 8) o un entorno de `uv tool` o `pipx`
+(`~/.local/share/uv/tools/litellm/lib/python3.12/site-packages`, profundidad 9); sí se ve
+`~/proyecto/.venv/lib/python3.12/site-packages` (profundidad 6). (2) Poda por nombre exacto, declarada en el tsv:
+`node_modules .git .cache .npm .cargo .rustup .nvm .gradle .m2 .pnpm-store .yarn .bun .deno snap __pycache__
+.mypy_cache .pytest_cache Trash .vscode-server`, y además `containerd` y `lost+found`, directorios de root que dan
+«Permiso denegado» a un usuario normal (medido: `/opt/containerd`); es la ÚNICA tolerancia y es por nombre, nunca por el
+rc de `find`. (3) Un `cook.py` o `cook.pth` fuera de una librería de Python (p. ej. un fichero de un proyecto) no es
+hallazgo. (4) Medido en un hogar real de más de un millón de directorios: profundidad 6 tarda entre 163 y 333 s según la
+carga de la máquina (241 s con load 9,9; 333 s con load 26), por eso el presupuesto es de 600 s por sujeto y, aun así,
+si se agota queda en NOVERIF con el sujeto y la raíz, nunca en OK; el presupuesto es una constante del tsv
+(`presupuesto-s`) y solo lo paga el cron nocturno. (5) **Un directorio ilegible nuevo bajo un hogar** (un `chmod 000`,
+un árbol de otro dueño…) hace que `find` termine con rc 1: la búsqueda de ese sujeto queda en `NOVERIF` y, por tanto,
+el doctor normal en `FALLA`, hasta que el directorio se mueva (no se borra) o se declare en la poda del tsv con una
+edición visible. No hay tolerancia automática por rc: es la consecuencia buscada de no dar por buena una búsqueda
+incompleta.
+
+**Riesgo residual aceptado (23-oct-2026, CEO).** El `sitecustomize.py` del sistema se reconoce por su ruta anclada
+`/usr/lib/python3.N/sitecustomize.py`, sin comprobar que enlace a `/etc`; cualquier otro `sitecustomize.py` dentro de
+una librería de Python da `FALLA`. Suplantar esa ruta exige root, y la decisión de seguridad solo pide distinguir el
+del sistema del que cuelga de `site-packages`.
+
 ## Escalado obligatorio al bus
 
 Un coordinador que espera una decisión de la capa superior en un menú de su pane **no deja ningún rastro**:
@@ -179,7 +304,7 @@ Re-acreditar demuestra QUE el actor puede sellar; no que conserve el resto de lo
 | Rol | Skills cargados | Bus | Cursor y watchers | Gates y rutas |
 |---|---|---|---|---|
 | CEO | `talent-ceo` (+ `talent-pm` si lo ejerce) | sella y lee con su identidad | cursor propio al día; las dos tablas por cron instaladas | rutas canónicas del anexo |
-| Coordinador (torre) | `talent-coordination`, `talent-context` | sella cada transición | cursor y vigías de su ronda armados | gates de despacho y de verificación |
+| Coordinador (torre) | `talent-channel-operation`, `talent-context` | sella cada transición | cursor y vigías de su ronda armados | gates de despacho y de verificación |
 | Orquestador | `talent-orchestrator` | sella órdenes | torre-sweep y wakeups re-armados | cola del Mergeador |
 | Mergeador / estación | `talent-merger` | sella cada merge y cierre | su cursor al día | gates AND y apply |
 

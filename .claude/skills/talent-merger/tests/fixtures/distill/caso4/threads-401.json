@@ -1,0 +1,47 @@
+{
+  "thread_id": "PRRT_n1",
+  "resolved": false,
+  "path": "src/a.ts",
+  "category": "nitpick",
+  "severity": "minor",
+  "body": "_🧹 Nitpick_ | _🟡 Minor_\n\n**Prefer const over let**\n\nUsa const.",
+  "is_coderabbit": true
+}
+{
+  "thread_id": "PRRT_n2",
+  "resolved": false,
+  "path": "src/a.ts",
+  "category": "nitpick",
+  "severity": "minor",
+  "body": "_🧹 Nitpick_ | _🟡 Minor_\n\n**Rename this variable**\n\nMejor nombre.",
+  "is_coderabbit": true
+}
+{
+  "thread_id": "PRRT_n3",
+  "resolved": false,
+  "path": "src/a.ts",
+  "category": "nitpick",
+  "severity": null,
+  "body": "_🧹 Nitpick (optional)_\n\n**Add a docstring**\n\nFalta doc.",
+  "is_coderabbit": true
+}
+{
+  "thread_id": null,
+  "resolved": null,
+  "path": null,
+  "category": "other",
+  "severity": "major",
+  "body": "_📝 Walkthrough_ | _🟠 Major_\n\n**Resumen de cambios del PR**\n\nCambios en varios ficheros.",
+  "is_coderabbit": true,
+  "source": "issue_comment"
+}
+{
+  "thread_id": null,
+  "resolved": null,
+  "path": null,
+  "category": "other",
+  "severity": null,
+  "body": "🐇 un poema para el PR\n\n**Versos del conejo**\n\nRosas son rojas.",
+  "is_coderabbit": true,
+  "source": "issue_comment"
+}

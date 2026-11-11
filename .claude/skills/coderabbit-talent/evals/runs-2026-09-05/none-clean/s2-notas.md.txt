@@ -1,0 +1,71 @@
+# Notas — `.coderabbit.yaml` de partida para repo Node.js/TypeScript nuevo (Next.js + Express)
+
+Fichero generado: `s2-coderabbit.yaml` (mismo directorio). Validado con
+`coderabbit config validate s2-coderabbit.yaml` → **válido contra el schema oficial actual**
+(CLI CodeRabbit 0.7.6 instalado localmente; comando de solo-lectura, sin ejecutar `review`).
+
+## Supuestos de partida
+
+- Repo nuevo, sin historial de configuración previa — se parte de cero, no de un YAML heredado.
+- Stack: Next.js (App Router, con Server Components/Server Actions) en el front y Express en el
+  back, ambos TypeScript. Estructura asumida `apps/web/**` y `apps/api/**` (monorepo-friendly);
+  si es un repo single-app, cambiar esos `path:` a `src/app/**` / `src/**` según corresponda —
+  es el único ajuste estructural que casi seguro hace falta día uno.
+- No se asume Postgres/Supabase de forma dura, pero se deja una regla de RLS para `**/*.sql`
+  porque es el error más caro de omitir si el backend termina siendo Postgres.
+
+## Decisiones y por qué
+
+1. **`profile: chill`** — perfil menos ruidoso desde el día uno. Un repo nuevo sin cultura de
+   review todavía establecida se beneficia de partir con menos fricción (nitpicks silenciados)
+   y subir el rigor más adelante si el equipo lo pide, en vez de al revés (partir estricto y que
+   el equipo empiece a ignorar CodeRabbit por ruido).
+2. **`request_changes_workflow: false`** — deja comentarios sin bloquear el merge vía "changes
+   requested" de GitHub; el gate real de merge lo decide el equipo (branch protection / CI), no
+   el estado de la review de IA. Evita que un falso positivo bloquee el flujo de un repo que
+   recién arranca.
+3. **`auto_review.base_branches: [main]`** — solo revisa PRs contra `main`; ajustar si el repo
+   usa `develop`/trunk distinto.
+4. **`path_filters`** — excluye artefactos generados (`.next/`, `dist/`, `build/`, lockfiles,
+   snapshots, `generated/`) para no gastar presupuesto de review en ruido no editado a mano.
+5. **`path_instructions` por área** — separa las reglas de negocio reales por dominio en vez de
+   un blob genérico:
+   - Next.js: Server Components por defecto + alerta específica sobre fuga de secretos de
+     servidor al bundle de cliente (el error más caro y menos obvio en Next).
+   - Express: exige validación de entrada y orden correcto de middlewares de auth — el bug de
+     seguridad más común en APIs Express nuevas.
+   - SQL: RLS obligatoria si aparece Postgres — barato de declarar ahora, caro de añadir después
+     de la primera tabla sin política.
+   - Tests: exige cubrir el caso de error, no solo happy path.
+6. **`tools`** — se activan gitleaks (secrets), osv-scanner y semgrep (SAST genérico), eslint y
+   biome (ya que es TS), markdownlint/yamllint/actionlint/hadolint/checkov como higiene general
+   de repo (Dockerfile, YAML de CI, Actions) sin coste de mantenimiento added. Todos son gratis
+   de tener activos desde el día uno; no hay downside real.
+7. **`pre_merge_checks`** — `docstrings: off` (TypeScript de app de producto rara vez necesita
+   docstring coverage obligatoria; sería ruido desde el día uno) y `title`/`description` en modo
+   `warning` (no bloqueante) para empujar Conventional Commits sin frenar el primer PR de un
+   repo que aún no tiene convención asentada.
+8. **`chat.auto_reply: true`** y **`knowledge_base.learnings.scope: auto`** — deja que el equipo
+   converse con `@coderabbitai` en los PRs y que las correcciones aceptadas se aprendan solas,
+   sin configuración manual adicional.
+
+## Qué NO incluye (a propósito) y por qué
+
+- No fija `reviews.auto_review.labels`/`ignore_title_keywords` ni excepciones de `draft` más
+  allá de `drafts: false` — son afinaciones que solo tienen sentido una vez el equipo vea cómo
+  usa realmente los borradores de PR.
+- No incluye reglas `path_instructions` de dominio de negocio específico (facturación, RLS por
+  tabla, etc.) porque el repo es nuevo y ese contexto de negocio aún no existe — se añade cuando
+  aparezcan los primeros dominios reales, siguiendo el mismo patrón por `path:`.
+- No pinea `tools.*` de seguridad "enterprise-only" (p. ej. escaneo de contenedores más pesado)
+  para no asumir un plan de pago concreto de partida; los listados arriba están disponibles en
+  planes base y ya cubren el 80% del riesgo típico de un repo Node/TS nuevo.
+
+## Cómo verificar antes de commitear
+
+```bash
+coderabbit config validate .coderabbit.yaml
+```
+
+Repetir esta validación cada vez que se edite el YAML a mano — el schema de CodeRabbit cambia
+con el tiempo y campos que fueron válidos en una versión pueden quedar obsoletos.

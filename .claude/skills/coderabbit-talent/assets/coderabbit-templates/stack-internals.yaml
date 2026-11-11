@@ -1,0 +1,413 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — Example Stack internals (v3 — state-of-the-art 2026-09)
+# Para repos que tocan múltiples sistemas internos de Example Stack.
+#
+# GENERADO-DE: coderabbit-talent skill. Mantener en sync con el template.
+# Si se edita en un repo concreto, dejar comentarios "# LOCAL: <razón>" en
+# las líneas divergentes.
+#
+# Las migraciones SQL de Supabase SÍ entran a review (sin exclusión en
+# path_filters): son código con impacto en producción (ABC-5174/D3).
+#
+# last_verified: 2026-09-22
+
+early_access: false
+enable_free_tier: true
+
+language: es-ES
+
+# tone_instructions tiene un límite duro de 250 caracteres en el schema v2
+# (top-level, no bajo reviews:) — coderabbit config validate lo rechaza si
+# se excede. El contexto de negocio (eventos 30k-40k, tolerancia cero a
+# downtime) vive en reviews.instructions, que no tiene ese límite.
+tone_instructions: |
+  Sé directo y conciso. Contexto: eventos de 30k-40k attendees, tolerancia
+  cero a downtime. No elogies código que ya está bien.
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  sequence_diagrams: true
+  changed_files_summary: true
+  enable_prompt_for_ai_agents: true  # NUNCA false: lo depende el comando `resolve` del skill.
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: [main, master, develop, staging, production]
+
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/coverage/**"
+    - "!**/.turbo/**"
+    - "!**/__pycache__/**"
+    - "!**/.venv/**"
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/yarn.lock"
+    - "!**/poetry.lock"
+    - "!**/*.generated.*"
+    - "!**/*.gen.*"
+    - "!**/*.pb.*"
+    - "!**/*.d.ts"
+    - "!**/__snapshots__/**"
+    - "!**/*.snap"
+    - "!**/*.min.js"
+    - "!**/*.min.css"
+    # Migraciones de ORMs autogeneradas (Alembic/Django) — SIN excluir
+    # migraciones SQL de Supabase: esas SÍ entran a review (ABC-5174/D3).
+    - "!**/migrations/versions/**"
+
+  instructions: |
+    Contexto crítico Example Stack:
+    - Eventos con 30k-40k attendees en un solo día con picos de tráfico extremos
+    - Sistemas deben ser offline-first para uso en el venue con WiFi inestable
+    - Email deliverability es recurrente (Gmail Primary tab vs Promotions)
+    - Multi-país: México (CDMX, ZMG), España, Puerto Rico — considera timezones y currencies
+    - Ecosistema de producto: 6 Tierras (Developer, Business, Creator, Investor, Health, Future)
+
+    No comentes sobre:
+    - Orden de imports o formatting
+    - Type hints faltantes en scripts one-off
+    - Comentarios en inglés vs español (mezclamos ambos)
+
+    Foco obligatorio en:
+    - Manejo correcto de timezones (America/Mexico_City, Europe/Madrid, America/Puerto_Rico)
+    - Rate limiting hacia APIs de terceros (Eventbrite, Meta Ads, Google Ads, Whapi)
+    - Retry logic con backoff exponencial en cualquier network call
+    - Manejo de webhooks con idempotency keys (dedup)
+    - Secretos en env vars, no en código
+    - Validación de datos antes de batch sends (emails, WhatsApp, SMS)
+
+  # Notas sobre path_instructions:
+  # - Schema oficial: `path` es un ÚNICO glob string (no CSV).
+  # - Por eso cada dominio lógico se desglosa en varios bloques, uno por glob.
+  # - Las `instructions` se pueden compartir textualmente entre bloques de un
+  #   mismo dominio; se mantienen por separado para que cada glob aplique.
+  path_instructions:
+    # === Eventbrite + CRM ===
+    - path: "**/eventbrite/**"
+      instructions: &eventbrite_crm |
+        Sistema CRM + Eventbrite. Recordatorio: la API de Eventbrite es
+        effectively read-only para mutación de attendees (limitación conocida).
+        Foco en:
+        - Rate limiting hacia API de Eventbrite (1000 req/hora por app)
+        - Manejo de API keys (nunca en código, siempre env)
+        - Retry con exponential backoff en 429/503
+        - Dedup de attendees por email + event_id
+        - Manejo de datos PII según GDPR/LFPDPPP (México)
+    - path: "**/crm/**"
+      instructions: *eventbrite_crm
+    - path: "**/attendees/**"
+      instructions: *eventbrite_crm
+
+    # === Email infrastructure ===
+    - path: "**/ses/**"
+      instructions: &email_infra |
+        Infraestructura de email. Volumen: 500K-2M emails/mes.
+        Foco en:
+        - Respeto a unsubscribe lists (compliance)
+        - Bounce handling (suppression lists)
+        - Rate limiting por dominio receptor (Gmail, Outlook)
+        - DNS records referenciados (SPF, DKIM, DMARC) consistentes
+        - Plantillas de email: no imagen-pesadas (trigger Promotions tab)
+        - Lista de 7 newsletters temáticas (Business, Developer, Creator, Investor, Health, Future, general)
+        - Segmentación correcta antes de send
+    - path: "**/listmonk/**"
+      instructions: *email_infra
+    - path: "**/email*/**"
+      instructions: *email_infra
+    - path: "**/newsletter*/**"
+      instructions: *email_infra
+
+    # === WhatsApp ===
+    - path: "**/whapi/**"
+      instructions: &whatsapp |
+        Sistema WhatsApp (Whapi.Cloud). ~20 comunidades en 5 números.
+        Foco en:
+        - Validación de firma de webhooks (security)
+        - Rate limiting por número de teléfono
+        - Manejo de media (audio, imagen) con tamaños máximos de WA
+        - PII: no loggear contenido de mensajes de usuarios
+        - Deduplicación de mensajes recibidos (WA retries)
+        - Distribución de carga entre los 5 números
+    - path: "**/whatsapp/**"
+      instructions: *whatsapp
+    - path: "**/wa-community/**"
+      instructions: *whatsapp
+
+    # === Trading bots y DeFi ===
+    - path: "**/hyperliquid/**"
+      instructions: &defi |
+        Código DeFi / trading bot. Fondos reales en juego.
+        Foco CRÍTICO en:
+        - Private keys NUNCA en código, NUNCA en logs
+        - Simulación de tx antes de send (eth_call)
+        - Slippage tolerance configurable por ambiente
+        - Gas estimation con buffer de seguridad
+        - Retry loops que NO reenvían misma nonce
+        - Reorg handling (esperar N confirmaciones en mainnet)
+        - Manejo de decimales correcto (18 vs 6 vs 8)
+        - Rate limiting API Hyperliquid
+        - Bot state persistence (no perder posiciones en reinicio)
+        - Hedging ratios balanceados
+        - Liquidation price monitoring
+    - path: "**/uniswap*/**"
+      instructions: *defi
+    - path: "**/arbitrum*/**"
+      instructions: *defi
+    - path: "**/trading-bot*/**"
+      instructions: *defi
+    - path: "**/lp-*/**"
+      instructions: *defi
+
+    # === Event-day infrastructure ===
+    - path: "**/scanner/**"
+      instructions: &event_day |
+        Sistemas event-day con 30k-40k attendees concurrentes.
+        Foco en:
+        - Offline-first patterns (local cache + sync posterior)
+        - Idempotent scans (mismo QR dos veces no rompe nada)
+        - Queue-based processing para no bloquear UI
+        - Retry logic para network calls durante el evento
+        - Data consistency eventual, no fuerte, si mejora UX
+        - Métricas en tiempo real sin bloquear operación
+    - path: "**/inventory/**"
+      instructions: *event_day
+    - path: "**/logistics/**"
+      instructions: *event_day
+    - path: "**/beacon/**"
+      instructions: *event_day
+    - path: "**/check-in/**"
+      instructions: *event_day
+
+    # === Videos / Media pipeline ===
+    - path: "**/media/**"
+      instructions: &media |
+        Media pipeline: Whisper transcripción, MediaPipe speaker tracking,
+        Remotion para composición. Volumen: 50+ keynotes por evento.
+        Foco en:
+        - Manejo de archivos grandes (streams, no buffer completo en memoria)
+        - Timeouts configurables para jobs largos
+        - Cleanup de archivos temporales
+        - Resumable uploads/downloads
+        - Branding por Tierra aplicado consistentemente
+    - path: "**/video*/**"
+      instructions: *media
+    - path: "**/transcription/**"
+      instructions: *media
+    - path: "**/remotion/**"
+      instructions: *media
+    - path: "**/whisper/**"
+      instructions: *media
+
+    # === Voice AI ===
+    - path: "**/voice*/**"
+      instructions: &voice_ai |
+        Voice AI para call volumes altos en eventos (Twilio + Pipecat +
+        Deepgram + ElevenLabs cloned voice).
+        Foco en:
+        - Latencia (streaming donde aplique)
+        - Costos (elevenlabs + deepgram son per-use)
+        - Manejo de cortes de llamada
+        - Grabación solo con consent
+    - path: "**/twilio/**"
+      instructions: *voice_ai
+    - path: "**/pipecat/**"
+      instructions: *voice_ai
+    - path: "**/deepgram/**"
+      instructions: *voice_ai
+    - path: "**/elevenlabs/**"
+      instructions: *voice_ai
+
+    # === Security ===
+    - path: "**/auth/**"
+      instructions: &security |
+        Código de seguridad. Zero tolerance para debilidades.
+        Foco en: validación exhaustiva de input, manejo correcto de sesiones,
+        no exponer detalles de errores al cliente, logging de eventos de seguridad.
+    - path: "**/security/**"
+      instructions: *security
+    - path: "**/permissions/**"
+      instructions: *security
+    - path: "**/shannon/**"
+      instructions: *security
+
+    # === Ads platforms ===
+    - path: "**/google-ads/**"
+      instructions: &ads |
+        APIs de ad platforms. Foco en:
+        - Rate limiting (cada plataforma es distinta)
+        - Manejo de token refresh
+        - Budget safety (no crear campaigns con typo en monto)
+        - Atribución correcta con UTM params
+    - path: "**/meta-ads/**"
+      instructions: *ads
+    - path: "**/tiktok-ads/**"
+      instructions: *ads
+    - path: "**/linkedin-ads/**"
+      instructions: *ads
+    - path: "**/twitter-ads/**"
+      instructions: *ads
+
+    # === Tests ===
+    - path: "**/tests/**"
+      instructions: &tests |
+        Tests. Foco en assertions específicas, no tautologías, sin orden-dependency,
+        cleanup entre tests. No comentes sobre `any` ni coverage.
+    - path: "**/*.test.*"
+      instructions: *tests
+    - path: "**/*.spec.*"
+      instructions: *tests
+    - path: "**/__tests__/**"
+      instructions: *tests
+
+    # === Fábrica: skills y ADRs de Claude Code (convención de la casa Talent,
+    # ABC-6693/ABC-7122, verificado 2026-09-22 contra el .coderabbit.yaml vivo
+    # de Example Project 2.0). Resumido aquí; ver ese repo para el texto completo. ===
+    - path: ".claude/skills/**/references/**/*.{md,mdx}"
+      instructions: &skill_refs |
+        Documentación de referencia de un skill: contenido ilustrativo (ejemplos,
+        esqueletos, patrones a replicar), no código de producto. Vara reducida —
+        bloqueante SOLO ante secreto real, PII o un patrón inseguro copiable tal
+        cual a producción (p. ej. OAuth sin `state`, webhook sin verificación de
+        firma). NO comentar enhancement, robustez ni cobertura de casos límite en
+        snippets ilustrativos. Los ejecutables del skill (`.sh`, `.py`, `.sql`,
+        `.ts`, `.mjs`) y `assets/` mantienen la vara normal.
+    - path: ".claude/skills/**/evals/**/*.{md,mdx}"
+      instructions: *skill_refs
+    - path: "docs/decisions/**"
+      instructions: |
+        ADRs (registros de decisión), inmutables una vez aceptados: se superseden,
+        no se reescriben. Bloqueante SOLO ante secreto real, afirmación sobre un
+        tercero sin fuente ni fecha, o contradicción interna del propio ADR.
+
+  # Tools SAST y linters habilitados.
+  # eslint, biome, ruff se mantienen activos; desactivarlos en repos con
+  # linters locales como fuente de verdad.
+  tools:
+    # Seguridad / secrets
+    gitleaks: { enabled: true }
+    trufflehog: { enabled: true }
+    semgrep: { enabled: true }
+    opengrep: { enabled: true }
+    osvScanner: { enabled: true }
+    trivy: { enabled: true }
+    checkov: { enabled: true }
+    zizmor: { enabled: true }      # Analizador estático de workflows de GitHub Actions.
+    presidio: { enabled: true }    # PII de alta señal en ficheros cambiados.
+    reactDoctor: { enabled: true } # Seguridad/performance/correctness/accesibilidad en apps React.
+    # AST patterns
+    ast-grep: { essential_rules: true }
+    # Lenguaje natural
+    languagetool:
+      enabled: true
+      level: "default"
+      disabled_categories:
+        - "TYPOS"
+        - "TYPOGRAPHY"
+        - "CASING"
+    # Docs / YAML / Actions
+    markdownlint: { enabled: true }
+    yamllint: { enabled: true }
+    actionlint: { enabled: true }
+    # Shell / Docker
+    shellcheck: { enabled: true }
+    hadolint: { enabled: true }
+    # Lenguajes
+    eslint: { enabled: true }
+    biome: { enabled: true }
+    ruff: { enabled: true }
+    # GitHub checks: solo admite la clave enabled en el schema v2
+    github-checks:
+      enabled: true
+
+  pre_merge_checks:
+    title:
+      mode: warning
+      requirements: |
+        PR title debe seguir Conventional Commits:
+        feat|fix|chore|docs|refactor|test|ci(scope): descripción
+        Ejemplos: feat(crm): add eventbrite dedup, fix(hyperliquid): slippage tolerance
+    description:
+      mode: warning
+    issue_assessment:
+      mode: warning
+    custom_checks:
+      - mode: "error"
+        name: "No secrets in code"
+        instructions: |
+          El PR NO debe contener secrets, API keys, tokens, private keys
+          ni URLs con credenciales embebidas. Patrones a detectar
+          (placeholders para evitar falsos positivos de secret scanners al
+          propagar este template a otros repos): <stripe-live-key>,
+          <stripe-publishable-key>, <slack-bot-token>, <slack-user-token>,
+          <github-token>, <aws-access-key>, <google-api-key>,
+          <private-key-header>, private_key=<secret>, api_key=<secret>,
+          jwt_secret=<secret>, postgres://<user>:<pass>@<host>,
+          redis://:<pass>@<host>.
+          Si se detecta cualquier credencial real: BLOQUEAR merge y pedir
+          rotar la credencial.
+      - mode: "warning"
+        name: "Breaking changes documentados"
+        instructions: |
+          Si el PR modifica schema de datos, elimina endpoints públicos, o cambia
+          firmas públicas de funciones exportadas, debe incluir sección
+          "## Breaking changes" en la descripción del PR.
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    autofix:
+      enabled: true
+    fix_ci:
+      enabled: true
+    resolve_merge_conflict:
+      enabled: true
+
+  labeling_instructions:
+    - label: "security"
+      instructions: "Aplica cuando el PR toca autenticación, autorización, webhooks o secrets."
+    - label: "event-day-critical"
+      instructions: "Aplica cuando el PR toca scanner/check-in/beacon/logistics/inventory: tolerancia cero a downtime durante eventos."
+
+chat:
+  auto_reply: true
+  # integrations.linear.usage default es "auto" (activo en repos privados).
+  # Deshabilitado para que el chat de un PR NUNCA cree issues de Linear fuera
+  # del flujo de talent-issue-craft (CLAUDE.md regla 21):
+  integrations:
+    linear:
+      usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto
+  code_guidelines:
+    enabled: true
+    # CLAUDE.md, AGENTS.md, .cursorrules y .cursor/rules/* se auto-detectan: NO listarlos.
+    # Forma objeto {files, applyTo}: un string plano solo gobierna su propio directorio
+    # (una guía en docs/ no afectaría a src/). Ver references/yaml-reference.md.
+    filePatterns:
+      - files: "docs/decisions/**/*.md"
+        applyTo: "src/**,supabase/**,scripts/**"
+      - files: "docs/explanation/**/*.md"
+        applyTo: "src/**"
+      - files: "docs/coding-standards/**/*.md"
+        applyTo: "src/**,scripts/**"

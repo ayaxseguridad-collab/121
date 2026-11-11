@@ -1,0 +1,79 @@
+# Notas — `.coderabbit.yaml` de partida para repo Node.js/TypeScript (Next.js + Express)
+
+Fuente: skill `coderabbit-talent` — plantilla base `assets/coderabbit-templates/node-typescript.yaml`
+(pensada exactamente para "Next.js, Express, NestJS, etc."), con refuerzos de seguridad y
+`pre_merge_checks` tomados de `assets/coderabbit-templates/base-talent.yaml`, más un par de
+propiedades del schema v2 documentadas en `references/yaml-reference.md`. Validado con
+`python3 -c "import yaml; yaml.safe_load(...)"` — YAML correcto, 5 propiedades top-level
+(`language`, `tone_instructions`, `reviews`, `chat`, `knowledge_base`).
+
+## Decisiones y por qué
+
+- **`profile: chill` + `language: es-ES`** — default recomendado por la skill para arrancar: el
+  perfil `assertive` genera abandono del equipo por exceso de ruido en las primeras semanas.
+  Si el equipo es angloparlante, cambiar `language` a `en-US` (o quitar la clave; el default de
+  CodeRabbit es inglés).
+- **`slop_detection.enabled: true`** — propiedad de schema v2, útil desde el día 1 en un repo
+  nuevo si parte del código se va a generar con agentes IA (Copilot/Claude Code/Cursor/Codex):
+  marca PRs de baja calidad/spam en el comentario de walkthrough.
+- **`path_filters`** — excluye build artifacts (`.next/`, `dist/`, `build/`, `out/`), lockfiles,
+  archivos generados/minificados y assets estáticos. Es la lista de la plantilla `node-typescript.yaml`
+  recortada a lo que aplica a Next.js + Express (sin `.nuxt/`, `.svelte-kit/`, que no aplican aquí).
+- **`instructions` (negativas + positivas)** — la mitad negativa ("no comentes sobre...") es lo
+  que más reduce el nitpick ratio desde el arranque (orden de imports, longitud de línea, JSDoc
+  interno, `any` en tests). La mitad positiva prioriza lo que de verdad importa en este stack:
+  tipos TS relajados (`as`, `@ts-ignore`, `any` en prod), promesas sin manejar, seguridad de
+  Express (CORS mal configurado, headers, rate limiting), validación de input, SSR/CSR mismatches
+  de Next.js y dependency arrays de React.
+- **`path_instructions` con foco en Express** — se añadió explícitamente lo que la plantilla base
+  `node-typescript.yaml` no cubre en detalle: middleware de manejo de errores de 4 argumentos
+  `(err, req, res, next)`, orden de montaje del middleware, y una entrada dedicada a
+  `src/app.ts`/`src/server.ts`/`src/middleware/**` para pillar `cors({origin:"*", credentials:true})`
+  (combinación insegura común). También se añadió un path_instruction para `**/*.env*,**/config/**`
+  recordando que un secret real ahí debe bloquear el merge.
+- **`tools`** — `eslint: true`, `biome: false` (activar solo si el repo usa Biome en vez de
+  ESLint+Prettier — no asumir las dos herramientas del mismo repo), `prettier: false` (formato puro,
+  no interesa que CR lo flaguee), `gitleaks`/`trufflehog`/`osvScanner`/`semgrep` activos como capa
+  SAST + dependencias vulnerables (npm), y `github-checks` para que CR lea el resultado de la CI
+  del repo como contexto.
+- **`pre_merge_checks`** — tomado de `base-talent.yaml`: título en Conventional Commits (warning,
+  no bloqueante — ajustar a `error` si el equipo lo quiere estricto), y dos `custom_checks`: "No
+  secrets in code" en `mode: error` (bloqueante, no negociable) y "Breaking changes documentados"
+  en `mode: warning` (pide sección `## Breaking changes` cuando cambia una firma pública/endpoint).
+- **`knowledge_base`** — `learnings`/`issues`/`pull_requests` en `scope: auto` (CR aprende del
+  propio repo con el tiempo), `mcp.usage: auto` (propiedad de schema v2: usa servidores MCP como
+  contexto si el repo los tiene configurados) y `code_guidelines.filePatterns` apuntando a
+  `CLAUDE.md`/`AGENTS.md`/`CONTRIBUTING.md`/`docs/decisions/**`/`.cursorrules` — si el repo nuevo
+  no tiene ninguno de estos archivos todavía, la clave es inofensiva (CR simplemente no encuentra
+  nada que ingerir) y queda lista para cuando se añadan.
+- **`chat.auto_reply: true`** — CR responde automáticamente a menciones `@coderabbitai` cuando el
+  contexto lo permite.
+
+## Qué se dejó fuera a propósito
+
+- **`reviews.tools.ruff` / `checkov` / `hadolint` / `shellcheck`** de `base-talent.yaml` — son para
+  Python/Docker/Shell; se omiten porque el stack declarado es puramente Node/TS. Añadirlos no
+  rompe nada si luego el repo incorpora esos lenguajes, pero no aportan valor de partida.
+  `markdownlint`/`yamllint`/`actionlint` tampoco se incluyeron por defecto — añadirlos si el repo
+  va a tener volumen relevante de docs/CI YAML desde el principio.
+- **`code_generation` / `issue_enrichment` / `finishing_touches`** (schema v2) — no se activaron
+  porque dependen del plan contratado (Pro/Pro+) y de si el equipo quiere que CR genere
+  docstrings/tests automáticamente; es un ajuste de "segunda pasada" una vez que el equipo ya
+  se acostumbró al ruido base del review, no algo para el día 1.
+- **`inheritance: true`** — solo tiene efecto si existe una config a nivel de organización en
+  CodeRabbit; se omite porque no se sabe si esta org ya tiene una. Añadir si aplica.
+- Nada de `path_instructions` específico de Example Stack (Eventbrite, WhatsApp, Hyperliquid, etc.):
+  ese bloque es exclusivo de `stack-internals.yaml` para repos de ESE stack; aquí es un
+  repo nuevo genérico.
+
+## Antes de mergear este archivo
+
+1. Confirmar que el GitHub App de CodeRabbit está instalado en la organización
+   (`https://github.com/apps/coderabbitai/installations/new`) — no es automatizable por CLI.
+2. Validar el YAML: `python3 -c "import yaml; yaml.safe_load(open('.coderabbit.yaml'))"`.
+3. Ajustar `path_instructions` de Express a la estructura real de carpetas del repo si difiere de
+   `src/server|routes|controllers|api` (por ejemplo, si el backend vive en un paquete separado tipo
+   `apps/api/**` en un monorepo — en ese caso considerar la plantilla `monorepo.yaml` de la skill en
+   su lugar, que usa `path_instructions` por paquete).
+4. El primer review aparece en el siguiente PR abierto; para dispararlo en un PR ya abierto,
+   comentar `@coderabbitai review`.

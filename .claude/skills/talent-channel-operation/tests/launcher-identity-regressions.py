@@ -113,12 +113,10 @@ esac
             code += 'TCO_PANE_IDENT_WAIT=0; tco_pane_identity_preflight 01\n'
             result = subprocess.run(["/bin/bash", "-c", code, "fixture", cli],
                                     env=env, text=True, capture_output=True, timeout=10)
-            expected_rc = 1 if rejected else 0
-            assert result.returncode == expected_rc, f"preflight/{mode}: {result}"
-            if rejected:
-                assert result.stdout == "", f"preflight/{mode}: acreditación inesperada: {result}"
-            else:
-                assert f"AUDITOR: {name} " in result.stdout, f"preflight/{mode}: {result}"
+            # Ley del lead (7-nov): la topología `mismo-adversarial` ya no existe, así que el mismo ejecutable como dev y
+            # como auditor PARA siempre (rc 1, nada acreditado), sea cual sea la identidad del proceso del pane.
+            assert result.returncode == 1, f"preflight/{mode}: {result}"
+            assert result.stdout == "", f"preflight/{mode}: acreditación inesperada: {result}"
             assert process.poll() is None, "el preflight alteró el proceso del fixture"
             print(f"OK preflight/{mode} rc={result.returncode}")
     finally:

@@ -195,5 +195,34 @@ hout="$(inst bin289 -h 2>&1)"; assert_rc "-h -> rc0" "0" "$?"
 assert_eq "-h: muestra Uso: y NO codigo del script" "1/0" "$(printf '%s\n' "$hout" | grep -c '^Uso:')/$(printf '%s\n' "$hout" | grep -cE 'set -uo pipefail|^HERE=|^ASSETS=')"
 assert_eq "la minima declarada es 2.1.289" "2.1.289" "$(tr -d '[:space:]' < "$ROOT/assets/claude-min-version")"
 
+# Compact vivo: cada aserción del test concreto entra en el total del skill.
+compact_log="$TW/compact-vivo.log"
+# Cada hijo acredita ejecución con un resumen único y sus líneas concordantes.
+validar_compact_log() {
+  local log="$1" minimo="$2"
+  awk -v minimo="$minimo" '
+    /^PASS / {p++} /^FAIL / {f++} /^SKIP / {s++}
+    /^[0-9]+ PASS · [0-9]+ FAIL$/ {r++; rp=$1; rf=$4}
+    END {exit !(r==1 && rp==p && rf==f && p+f>=minimo && s==0)}
+  ' "$log" || bad "resumen/aserciones inválidos: $log (mínimo $minimo)"
+}
+bash "$HERE/test-compact-vivo.sh" > "$compact_log" 2>&1; compact_rc=$?
+cat "$compact_log"
+while IFS= read -r resultado; do
+  case "$resultado" in PASS\ *) ok "${resultado#PASS }" ;; FAIL\ *) bad "${resultado#FAIL }" ;; esac
+done < "$compact_log"
+# Piso del hook: 95 de la batería previa + 92 del bloque de órdenes íntegras (O: registro, cotas, redactor ampliado, relays redactados, C8 en lectura y los casos de los mutantes supervivientes).
+validar_compact_log "$compact_log" 187
+[ "$compact_rc" = 0 ] || bad "test-compact-vivo rc=$compact_rc"
+
+install_log="$TW/install-compact-vivo.log"
+bash "$HERE/test-install-compact-vivo.sh" > "$install_log" 2>&1; install_rc=$?
+cat "$install_log"
+while IFS= read -r resultado; do
+  case "$resultado" in PASS\ *) ok "${resultado#PASS }" ;; FAIL\ *) bad "${resultado#FAIL }" ;; esac
+done < "$install_log"
+validar_compact_log "$install_log" 54
+[ "$install_rc" = 0 ] || bad "test-install-compact-vivo rc=$install_rc"
+
 printf '\n== RESULTADO: %d ok, %d FAIL ==\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

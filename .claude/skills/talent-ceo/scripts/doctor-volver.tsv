@@ -1,0 +1,31 @@
+# categoría	gravedad	cómo volver
+torre	alta	Reabrir F5 y restaurar sesión, proceso descendiente y barra.
+renderer	alta	Reabrir F5 y restaurar sesión, proceso descendiente y barra.
+ctx	alta	Reabrir F5 y restaurar sesión, proceso descendiente y barra.
+identidad	alta	Reabrir F4 o F1 según causa; usuarios distintos y autoridad del manifiesto.
+sellado	alta	Reabrir F4 o F1 según causa; usuarios distintos y autoridad del manifiesto.
+sellado-imposible	alta	Reabrir F4 o F1 según causa; usuarios distintos y autoridad del manifiesto.
+cron	alta	Reabrir F6; restaurar permisos y cadencia sin truncar bus ni rebobinar cursor.
+bus	alta	Reabrir F6; restaurar permisos y cadencia sin truncar bus ni rebobinar cursor.
+cursor	alta	Reabrir F6; restaurar permisos y cadencia sin truncar bus ni rebobinar cursor.
+canal	alta	Revisar contenedor (F2), login (F3) y panes .0/.1; reabrir F5 para preparar sesiones e identidad del auditor.
+auditor	alta	Revisar contenedor (F2), login (F3) y panes .0/.1; reabrir F5 para preparar sesiones e identidad del auditor.
+acreditacion	alta	El actor recupera capacidades y se reacredita con nonce nuevo en su terminal.
+modelo	alta	Resolver el registro bajo el usuario propietario; cambiar la torre o preparar el canal con las órdenes del skill y repetir el doctor completo.
+modelo-auditor	alta	Resolver el registro bajo el usuario propietario; cambiar la torre o preparar el canal con las órdenes del skill y repetir el doctor completo.
+modelo-desarrollo	alta	Resolver el registro bajo el usuario propietario; cambiar la torre o preparar el canal con las órdenes del skill y repetir el doctor completo.
+menu	media	El actor sella ESCALA-ROL según ref 07 y espera la autoridad correspondiente.
+escalado	media	El actor sella ESCALA-ROL según ref 07 y espera la autoridad correspondiente.
+menu-reciente	media	El actor sella ESCALA-ROL según ref 07 y espera la autoridad correspondiente.
+bloqueo-sin-escalar	alta	El actor sella ESCALA-ROL según ref 07 y espera la autoridad correspondiente.
+nucleo	alta	Restaurar el paquete publicado y sincronizar su núcleo con la instancia; repetir el doctor completo.
+version	media	Instalar la versión publicada mediante el instalador y repetir el doctor; si NO MEDIDO, restaurar la fuente declarada.
+miembros	alta	Sincronizar todos los miembros del manifiesto desde el paquete y repetir el doctor completo.
+modelos-rol	alta	Resolver modelos como cada usuario local con la librería del paquete; unificar IDs por rol y repetir el doctor.
+guardas	alta	Restaurar guardas desde el paquete publicado; activar core.hooksPath=.githooks y pre-push ejecutable; repetir el doctor.
+doctor.d	alta	Restaurar la extensión versionada, su registro DOCTOR_EXTRA y su tabla de remedios; repetir el doctor completo.
+desviacion	media	Declarar el revisor como coderabbit (o quitar TCO_REVISOR de agents.conf) para volver a la capa externa; un valor fuera de coderabbit y code-audit se corrige; repetir el doctor completo.
+seguridad-node	alta	Subir Node al suelo de su mayor (skills/talent-channels/assets/node-suelos.tsv): en el host reinstalar desde NodeSource, en el canal reconstruir el golden (02-golden.sh) y reclonar; repetir el doctor completo.
+seguridad-litellm	alta	La búsqueda la hace «doctor.sh --seguridad» (cron diario del usuario CEO) y el doctor lee su resultado sellado: si falta, no cuadra o tiene más de 26 h, ejecutarlo y repetir el doctor; si agotó su tiempo, ver el sujeto y la raíz del detalle. Ante un indicador real no borrar desde el doctor: aislar el venv, rotar las credenciales que vivieron en esa máquina y avisar a la torre Security (borra ella, con su GO); LiteLLM seguro 1.106.2 o posterior limpio.
+seguridad	baja	Informativo: añadir talent-channels al manifiesto de la instancia (una fábrica real siempre lo declara) con el instalador y repetir el doctor; mientras falte, las sondas de seguridad no se evalúan.
+zombi	baja	Informativo: el CEO decide si cierra la sesión inactiva; el doctor no mata nada. Repetir el doctor tras decidir.

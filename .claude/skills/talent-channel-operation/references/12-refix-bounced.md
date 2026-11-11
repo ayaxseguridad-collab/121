@@ -10,7 +10,7 @@ atado a la transición plan→GO, que este flujo no tiene. El re-fix corre **dir
 CODING = `Sonnet vigente` `high`** desde el arranque de este procedimiento manual (NO el `dispatch.sh` de plan
 mode del despacho normal — reciclaría el clon a `origin/main` y perdería la rama del PR, ver
 precondición arriba). El coordinador fija el modelo/effort sobre el pane con
-`model="$(tco_model_for_phase coding)" && [ -n "$model" ] && tco_set_model "$carril" "$pane" "$model" || exit 1`
+`model="$(tco_model_for_phase coding "$carril")" && [ -n "$model" ] && tco_set_model "$carril" "$pane" "$model" || exit 1`
 y `tco_set_effort <carril> <pane> high` (cada uno su propio diálogo modal, confirmado
 y verificado — coreografía de ref 11 §6) **antes** de entregar el brief code-only del paso 2. El
 fallback de la 5ª ronda (ref 11 §5) aplica igual: el re-fix también acumula rondas de code-gate sobre
@@ -104,4 +104,4 @@ apuntaban a código ya eliminado en un commit posterior al bounce).
   un defecto de diseño → bounce-to-pool del Orquestador como encargo nuevo con Fase A completa, no
   un re-fix.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.

@@ -96,7 +96,12 @@ PASS=0; FAIL=0; SKIP=0
 # [TAL-3375] Gate anti-enmascaramiento (M2): PASS+FAIL+SKIP debe cuadrar SIEMPRE con esta
 # constante en AMBOS layouts (motor y producto). Añadir/quitar tests legítimamente = actualizar
 # la constante en el MISMO cambio (queda bajo ratchet). Un TOTAL distinto → rc 1 aunque FAIL=0.
-TOTAL_ESPERADO=1002
+# 990 en la 1.7.3; +7 de la 2.0 (997) y +12 de la 1.7.4 (issue 9011) = 1009, contados por diferencia de cada rama
+# contra la base común; la medición de la unión lo confirma o lo corrige.
+# +5 (issue 9681): el cuerpo REAL de tco_run_audit_issue_helper (argumentos, rc, ausencia del envoltorio y los dos layouts).
+# +1 (issue 10139): el registro de la sub-suite test-plan-pantalla.sh (diálogo de plan pendiente con el CLI en waiting).
+# +1 (issue 10264): el registro de la sub-suite test-approval-dialog.sh (el plan-gate escala en vez de aprobar los diálogos del auditor).
+TOTAL_ESPERADO=1025
 ok(){ if [ "$2" = "$3" ]; then PASS=$((PASS+1)); else FAIL=$((FAIL+1)); printf '  FAIL %s: esperaba [%s] obtuvo [%s]\n' "$1" "$3" "$2"; fi; }
 # skip contabilizado (nunca PASS silencioso): SOLO para artefactos de la ruta canónica de
 # producto ausentes en este layout (carve-out D4) — jamás para un FAIL real.
@@ -123,6 +128,10 @@ _TEXT_RC=0
 bash "$SC/../tests/test-text-stability.sh" > "$SECRET_DIR/text-stability.log" 2>&1 || _TEXT_RC=$?
 cat "$SECRET_DIR/text-stability.log"
 ok 'reposo confirmado por estabilidad del texto' "$_TEXT_RC" 0
+_BEHAVIOR_RC=0
+bash "$SC/selftest-behavior-watch.sh" > "$SECRET_DIR/behavior-watch.log" 2>&1 || _BEHAVIOR_RC=$?
+cat "$SECRET_DIR/behavior-watch.log"
+ok 'vigía de canal activo sin progreso (selftest)' "$_BEHAVIOR_RC" 0
 _ANSI_RC=0
 bash "$SC/../tests/test-composer-ansi.sh" > "$SECRET_DIR/composer-ansi.log" 2>&1 || _ANSI_RC=$?
 cat "$SECRET_DIR/composer-ansi.log"
@@ -135,6 +144,18 @@ _CALPF_RC=0
 bash "$SC/../tests/test-calibration-preflight.sh" > "$SECRET_DIR/calibration-preflight.log" 2>&1 || _CALPF_RC=$?
 cat "$SECRET_DIR/calibration-preflight.log"
 ok 'versión del CLI del pane y preflight de calibración del despacho' "$_CALPF_RC" 0
+_TUICX_RC=0
+bash "$SC/../tests/test-tui-codex.sh" > "$SECRET_DIR/tui-codex.log" 2>&1 || _TUICX_RC=$?
+cat "$SECRET_DIR/tui-codex.log"
+ok 'perfil codex del analizador del TUI: capturas reales, sin cruce con Claude' "$_TUICX_RC" 0
+_PLANPAN_RC=0
+bash "$SC/../tests/test-plan-pantalla.sh" > "$SECRET_DIR/plan-pantalla.log" 2>&1 || _PLANPAN_RC=$?
+cat "$SECRET_DIR/plan-pantalla.log"
+ok 'plan con el CLI en waiting: diálogo pendiente en pantalla, rc 6 y rc 21 (2.1.318)' "$_PLANPAN_RC" 0
+_APPROVAL_RC=0
+bash "$SC/../tests/test-approval-dialog.sh" > "$SECRET_DIR/approval-dialog.log" 2>&1 || _APPROVAL_RC=$?
+cat "$SECRET_DIR/approval-dialog.log"
+ok 'diálogos de permiso del auditor: el plan-gate escala en vez de aprobar (issue 10264)' "$_APPROVAL_RC" 0
 _TURN_RC=0
 bash "$SC/../tests/test-turn-identity.sh" > "$SECRET_DIR/turn-identity.log" 2>&1 || _TURN_RC=$?
 cat "$SECRET_DIR/turn-identity.log"
@@ -705,8 +726,8 @@ ok "modelo ausente de las opciones -> 1"               "$(printf '  1. haiku 4.5
 echo "== v5: submit-keys por CLI del auditor =="
 ok "codex -> Enter Enter"  "$(TCO_AUDIT_SUBMIT_SEQ='' TCO_AUDIT_CLI=codex tco_audit_submit_keys)" "Enter Enter"
 ok "codex con ruta -> Enter Enter" "$(TCO_AUDIT_SUBMIT_SEQ='' TCO_AUDIT_CLI=/usr/bin/codex tco_audit_submit_keys)" "Enter Enter"
-ok "claude -> C-m"         "$(TCO_AUDIT_SUBMIT_SEQ='' TCO_AUDIT_CLI=claude tco_audit_submit_keys)" "C-m"
-ok "override gana"         "$(TCO_AUDIT_SUBMIT_SEQ='Enter' TCO_AUDIT_CLI=claude tco_audit_submit_keys)" "Enter"
+ok "claude como auditor -> PARA (rc 1, sin teclas, ni con override)" "$(TCO_AUDIT_SUBMIT_SEQ='' TCO_AUDIT_CLI=claude tco_audit_submit_keys >/dev/null 2>&1; echo $?)/$(TCO_AUDIT_SUBMIT_SEQ='Enter' TCO_AUDIT_CLI=claude-root tco_audit_submit_keys 2>/dev/null)" "1/"
+ok "override gana"         "$(TCO_AUDIT_SUBMIT_SEQ='Enter' TCO_AUDIT_CLI=codex tco_audit_submit_keys)" "Enter"
 ok "tecla fuera de allowlist -> rc 2" "$(tco_send_submit 01 v:.1 BadKey >/dev/null 2>&1; echo $?)" "2"
 
 echo "== v5/G32: selfmatch del patrón de procesos =="
@@ -1415,6 +1436,25 @@ ok "A4: exit1 (score bajo) → NO acredita" "$(
   }
   tco_audit_issue_gate "$_GATE4_ISSUE" >/dev/null 2>&1; echo $?
 )" "1"
+
+echo "== [issue 9681] cuerpo REAL de tco_run_audit_issue_helper: envoltorio de tsx, rc y raíz derivada de la ubicación de la skill (5 tests) =="
+_RB="$(mktemp -d "${TMPDIR:-/tmp}/rb9681.XXXXXX")"
+mkdir -p "$_RB/a/scripts" "$_RB/b" "$_RB/pkg/skills/talent-channel-operation/scripts" "$_RB/pkg/scripts" "$_RB/repo/.claude/skills/talent-channel-operation/scripts" "$_RB/repo/scripts"
+# shellcheck disable=SC2016  # el doble del envoltorio va en comillas simples A PROPÓSITO
+printf '%s\n' '#!/usr/bin/env bash' 'printf "%s\n" "$@"' 'exit "${TSX_DOBLE_RC:-0}"' > "$_RB/a/scripts/tsx.sh"   # doble del envoltorio: imprime sus argumentos
+cp "$_RB/a/scripts/tsx.sh" "$_RB/pkg/scripts/tsx.sh"; cp "$_RB/a/scripts/tsx.sh" "$_RB/repo/scripts/tsx.sh"
+cp "$SC/lib.sh" "$SC/lib-modelos.sh" "$_RB/pkg/skills/talent-channel-operation/scripts/"; cp "$SC/lib.sh" "$SC/lib-modelos.sh" "$_RB/repo/.claude/skills/talent-channel-operation/scripts/"
+mkdir -p "$_RB/pkg/skills/talent-issue-craft/scripts"; : > "$_RB/pkg/skills/talent-issue-craft/scripts/issue_craft_helper.ts"   # el helper en el layout del paquete (sin .claude/)
+_RB_ARGS="--action audit-issue --issue ABC-7 --min-score 70 "
+ok "R9681-A cuerpo real: el envoltorio recibe el helper y los argumentos exactos" "$(TCO_HOST_REPO_ROOT="$_RB/a" tco_run_audit_issue_helper ABC-7 | tr '\n' ' ')" "$_RB/a/.claude/skills/talent-issue-craft/scripts/issue_craft_helper.ts $_RB_ARGS"
+TSX_DOBLE_RC=7 TCO_HOST_REPO_ROOT="$_RB/a" tco_run_audit_issue_helper ABC-7 > /dev/null; _RB_RC=$?
+ok "R9681-B cuerpo real: el rc del envoltorio es el del helper" "$_RB_RC" "7"
+_RB_OUT="$(TCO_HOST_REPO_ROOT="$_RB/b" tco_run_audit_issue_helper ABC-7 2>&1)"; _RB_RC=$?
+ok "R9681-C cuerpo real: sin envoltorio → rc 127 y lo dice (fail-closed, jamás tsx a secas)" "$_RB_RC|$(grep -c 'falta el envoltorio de tsx' <<< "$_RB_OUT")" "127|1"
+# shellcheck source=/dev/null
+ok "R9681-D layout skills/ (raíz del paquete): el envoltorio se deriva de la ubicación de la skill" "$( unset TCO_HOST_REPO_ROOT TCO_TSX_SH; . "$_RB/pkg/skills/talent-channel-operation/scripts/lib.sh"; tco_run_audit_issue_helper ABC-7 | tr '\n' ' ')" "$_RB/pkg/skills/talent-issue-craft/scripts/issue_craft_helper.ts $_RB_ARGS"
+# shellcheck source=/dev/null
+ok "R9681-E layout .claude/skills/ (raíz del repo): el envoltorio se deriva de la ubicación de la skill" "$( unset TCO_HOST_REPO_ROOT TCO_TSX_SH; . "$_RB/repo/.claude/skills/talent-channel-operation/scripts/lib.sh"; tco_run_audit_issue_helper ABC-7 | tr '\n' ' ')" "$_RB/repo/.claude/skills/talent-issue-craft/scripts/issue_craft_helper.ts $_RB_ARGS"
 
 echo "== [TAL-3266-B] control_verdict (HOLD/RELEASE/SIN-AUDIT) puro (9 tests) =="
 
@@ -3458,8 +3498,9 @@ ok "preflight: sin agentes en los panes -> rc 1" "$PF_RC" "1"
 pf_run claude-root claude-root distinto 'bash\nclaude\n' 'bash\nclaude\n'
 ok "preflight: topología 'distinto' con dev=auditor=claude -> rc 1 (FAB-OBS-001)" "$PF_RC" "1"
 pf_run claude-root claude-root mismo-adversarial 'bash\nclaude\n' 'bash\nclaude\n'
-ok "preflight: 'mismo-adversarial' declarado y coincide -> rc 0" "$PF_RC" "0"
-ok "preflight: la topología declarada queda VISIBLE en la salida" "$(printf '%s' "$PF_OUT" | grep -c 'topología: mismo-adversarial')" "1"
+ok "preflight: 'mismo-adversarial' ya no existe (el revisor es siempre Codex) -> rc 1" "$PF_RC" "1"
+pf_run claude-root codex-root distinto 'bash\nclaude\n' 'bash\ncodex\n'
+ok "preflight: la topología declarada (distinto) queda VISIBLE en la salida" "$(printf '%s' "$PF_OUT" | grep -c 'topología: distinto')" "1"
 pf_run claude-root codex-root inventada 'bash\nclaude\n' 'bash\ncodex\n'
 ok "preflight: topología desconocida -> rc 1 (fail-closed)" "$PF_RC" "1"
 PF_OUT="$(TCO_DEV_CLI=claude-root TCO_AUDIT_CLI=codex-root TCO_PANE_IDENT_WAIT=0 bash -c '
@@ -3478,6 +3519,12 @@ echo "== Identidad durante el arranque: procesos efímeros y reintentos cerrados
 for regression in vanished_stat vanished_exe unreadable_stat unreadable_exe retry_dev retry_audit never_dev never_audit wrong_after_retry; do
   python3 "$SC/../tests/pane-identity-regressions.py" "$regression"
   ok "identidad durante el arranque: $regression" "$?" "0"
+done
+
+echo "== Identidad: Codex de npm, codex.js hace execve al binario nativo del paquete =="
+for regression in npm_execve npm_spawn npm_arm64 npm_vendor npm_escape npm_name npm_arch npm_escape_mutante; do
+  python3 "$SC/../tests/pane-identity-regressions.py" "$regression"
+  ok "identidad Codex npm: $regression" "$?" "0"
 done
 
 echo "== Identidad: resolución del lanzador declarado y del ejecutable derivado =="

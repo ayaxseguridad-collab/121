@@ -1,0 +1,116 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — Monorepo (pnpm workspace, Turborepo, Nx, Lerna)
+# Usa path_instructions para aplicar reglas específicas por paquete.
+#
+# last_verified: 2026-09-22
+
+early_access: false
+enable_free_tier: true
+
+language: es-ES
+
+tone_instructions: |
+  Sé directo y conciso. Considera siempre el blast radius cross-package
+  cuando un cambio podría afectar otros paquetes del monorepo.
+
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  enable_prompt_for_ai_agents: true  # NUNCA false: lo depende el comando `resolve` del skill.
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: [main, master, develop]
+
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!**/.turbo/**"
+    - "!**/.nx/**"
+    - "!**/coverage/**"
+    - "!**/*.lock"
+    - "!**/pnpm-lock.yaml"
+    - "!**/yarn.lock"
+    - "!**/*.d.ts"
+    - "!**/__snapshots__/**"
+
+  instructions: |
+    Monorepo. En cualquier PR, evalúa si el cambio rompe contratos
+    públicos entre paquetes (tipos exportados, APIs, esquemas de eventos).
+
+    No comentes nitpicks de estilo — tenemos linters por paquete.
+
+    Foco en:
+    - Cambios en packages/* que podrían romper consumers
+    - Duplicación de código que debería estar en un paquete shared/utils
+    - Dependencias cross-package no declaradas en package.json
+    - Version drift entre paquetes (mismo dep a dos versiones)
+    - Breaking changes sin bump de version / changeset
+
+  # AJUSTAR path_instructions según la estructura real del monorepo.
+  # Descomentar y modificar los paths que apliquen.
+  path_instructions:
+    - path: "packages/shared/**,packages/utils/**,packages/types/**"
+      instructions: |
+        Paquete compartido. Cualquier cambio aquí afecta múltiples consumers.
+        Flaggea breaking changes en APIs públicas explícitamente.
+        Foco extra en backward compatibility y en tests.
+
+    - path: "apps/web/**,apps/frontend/**"
+      instructions: |
+        Frontend app. Foco en: performance (bundle size, lazy loading),
+        accessibility, y SSR/CSR correctness.
+
+    - path: "apps/api/**,apps/backend/**,services/**"
+      instructions: |
+        Backend service. Foco en: validación de input, auth, rate limiting,
+        manejo de errores sin leak de stack traces.
+
+    - path: "infra/**,ops/**,terraform/**,k8s/**,deploy/**"
+      instructions: |
+        Infraestructura como código. Foco en: secretos hardcoded,
+        permisos IAM excesivos, puertos abiertos al internet,
+        y changes en prod sin plan/apply trail.
+
+  tools:
+    biome:
+      enabled: true
+    eslint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    zizmor: { enabled: true }      # Analizador estático de workflows de GitHub Actions.
+    presidio: { enabled: true }    # PII de alta señal en ficheros cambiados.
+    reactDoctor: { enabled: true } # Seguridad/performance/correctness/accesibilidad en apps React del monorepo.
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    autofix:
+      enabled: true
+
+  labeling_instructions:
+    - label: "breaking-change"
+      instructions: "Aplica cuando el PR rompe un tipo exportado, una API o un esquema de eventos entre paquetes."
+
+chat:
+  auto_reply: true
+  # integrations.linear.usage default es "auto" (activo en repos privados).
+  # Descomentar para que el chat de un PR NUNCA cree issues de Linear fuera
+  # del flujo de talent-issue-craft (CLAUDE.md regla 21):
+  # integrations:
+  #   linear:
+  #     usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto

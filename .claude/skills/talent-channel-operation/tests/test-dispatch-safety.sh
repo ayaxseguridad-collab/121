@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Contrato de diálogos activos y envío con compositor propio. Solo en el arnés.
+# El aislamiento de estas regresiones (sin agentes reales ni credenciales del usuario) solo vale si el proceso se lanza con el
+# entorno limpio desde fuera: el arnés del paquete (`tests/run-tests.sh`, la batería de F0 por `clean_environment()` de
+# `fases.py`) o el envoltorio de mutantes. La invocación directa sin entorno limpio queda NO SOPORTADA / NO AISLADA.
 set -uo pipefail
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SC="$TEST_DIR/../scripts"
@@ -7,10 +10,33 @@ export TF_LINEAR_TEAM_KEY=ABC TCO_REPO_DIR=Repo-Neutro TCO_REPO_SLUG=org-neutra/
 export TCO_ANEXO_FILE=references/anexo-neutro.md TCO_HOST_ENV_REL=Repo-Neutro/.env.local
 export TCO_LINEAR_INPROGRESS_STATE=00000000-0000-4000-8000-000000000007
 export TCO_LINEAR_INREVIEW_STATE=00000000-0000-4000-8000-000000000008
+# Fallo cerrado ANTES de cargar nada (00-config.sh carga $SECRET_DIR/agents.conf): el arnés no fija SECRET_DIR ni HOST_HOME,
+# los trae quien lo llama (tests/run-tests.sh o el envoltorio de mutantes). Si caen en el HOME real del usuario, si existe un
+# agents.conf o si hay una variable con nombre de credencial en el entorno, la suite no corre. HOME se comprueba en el mundo
+# de las regresiones del lanzador, no aquí.
+_tco_cierra() { printf 'FAIL entorno del arnés: %s\n' "$1"; exit 1; }
+[ -n "${SECRET_DIR:-}" ] || _tco_cierra 'SECRET_DIR vacía o sin definir'
+[ -n "${HOST_HOME:-}" ] || _tco_cierra 'HOST_HOME vacía o sin definir'
+_tco_hogar_real="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f6)"
+[ -n "$_tco_hogar_real" ] || _tco_hogar_real="${HOME:-}"
+[ -n "$_tco_hogar_real" ] || _tco_cierra 'HOME real no verificable'
+_tco_hogar_real="$(realpath -m -- "$_tco_hogar_real")"
+for _tco_v in SECRET_DIR HOST_HOME; do
+  _tco_ruta="$(realpath -m -- "${!_tco_v}")"
+  case "$_tco_ruta/" in "$_tco_hogar_real"/*) _tco_cierra "$_tco_v cae dentro del HOME real" ;; esac
+done
+[ ! -e "$SECRET_DIR/agents.conf" ] || _tco_cierra 'existe agents.conf en SECRET_DIR'
+while IFS= read -r _tco_n; do
+  case "$_tco_n" in
+    SECRET_DIR) ;;
+    *TOKEN*|*SECRET*|*PASSWORD*|*API_KEY*|*OAUTH*) _tco_cierra "variable de entorno con nombre de credencial: $_tco_n" ;;
+  esac
+done < <(compgen -e)
+_TCO_ENTORNO_OK=1
 # shellcheck source=/dev/null
 . "$SC/00-config.sh"
 # shellcheck source=/dev/null
-. "${TCO_SAFETY_LIB:-$SC/lib.sh}"
+. "$SC/lib.sh"
 FX="$TEST_DIR/fixtures/cli-current"
 REAL="$TEST_DIR/fixtures/pane/claude_2.1.289"
 TMP_TEST="$(mktemp -d)"
@@ -20,6 +46,7 @@ ok() {
   if [ "$2" = "$3" ]; then PASS=$((PASS+1)); printf 'PASS %s\n' "$1";
   else FAIL=$((FAIL+1)); printf 'FAIL %s: actual [%s], esperado [%s]\n' "$1" "$2" "$3"; fi
 }
+ok 'arnés: SECRET_DIR y HOST_HOME fuera del HOME real, sin agents.conf y sin credenciales en el entorno' "$_TCO_ENTORNO_OK" 1
 rc_of() { local rc=0; "$@" >/dev/null 2>&1 || rc=$?; printf '%s' "$rc"; }
 _dialog() {
   # Selector y valoración: capturas reales; restantes: controles sintéticos de la suite.
@@ -177,18 +204,22 @@ for mode in dispatch_sin_lanzadores dispatch_con_lanzadores dispatch_lanzadores_
             identidad_h02_enlaces_duros identidad_emite_inodo vida_remain_local vida_restauracion_falla \
             vida_estado_tardio vida_estado_nunca vida_senal \
             j5_orden_estatico j5_a_shell_cambiada j5_b_cwd_sin_lanzadores_en_repo j5_b_cwd_con_lanzadores_en_repo \
-            j5_hook_after_new_window j5_identidad_acreditada j5_binario_symlink j5_binario_rename \
+            j5_hook_after_new_window j5_identidad_acreditada j5_identidad_acreditada_execve j5_binario_symlink j5_binario_rename \
             j5_marcador_sin_marcador j5_marcador_nonce_distinto j5_marcador_ruta_relativa j5_marcador_ruta_inexistente \
             j5_marcador_permisos \
             j6_cuelgue_nunca j6_cuelgue_tarde j6_pane_died_hook j6_mensajes_rc j6_identidad_relanzamiento \
             j6_identidad_auditoria j6_acreditacion_forjada j6_destinos_estaticos \
             j7_n8_ventana_cambia j7_n9_acreditacion_rancia j7_pane_muere_tui j7_censo_destinos j7_eco_no_es_ack \
             j8_s1_soft j8_soft_dispatch j8_s3_vida j8_identidad_tras_ack j8_relanzamiento_ventanas \
-            fase_tmux_real fase_misma_clave fase_negativos fase_dobles_pane_id; do
+            fase_tmux_real fase_misma_clave fase_negativos fase_dobles_pane_id \
+            sistema_sin_agentes dispatch_shell_del_servidor_sistema_con_agentes sonda_shell_del_servidor_sistema_con_agentes \
+            j5_a_shell_cambiada_sistema_con_agentes j5_b_cwd_sin_lanzadores_en_repo_sistema_con_agentes; do
   mode_log="$TMP_TEST/lanzador-$mode.log"
-  mode_rc=0; python3 "$TEST_DIR/launcher-dispatch-regressions.py" "$mode" > "$mode_log" 2>&1 || mode_rc=$?
+  mode_rc=0; env -u BASH_ENV -u ENV python3 "$TEST_DIR/launcher-dispatch-regressions.py" "$mode" > "$mode_log" 2>&1 || mode_rc=$?
   ok "lanzador ejecutable: $mode" "$mode_rc" 0
   [ "$mode_rc" -eq 0 ] || tail -n 12 "$mode_log"
+  # Las anotaciones R11 (c) de un modo (sin directorio de testigos) salen al resumen, fuera del temporal que se borra al salir.
+  grep -a '^ANOTADO R11c ' "$mode_log" || :
 done
 # Gramática CERRADA del CLI declarado (TCO_DEV_CLI/TCO_AUDIT_CLI): UN solo ejecutable —el nombre de un lanzador o una ruta
 # absoluta—; los flags van en TCO_*_FLAGS. Cualquier otra forma se rechaza antes de lanzar nada.
@@ -225,7 +256,7 @@ ok 'preflight R-04: el error nombra el ejecutable real compartido' "$(printf '%s
 pf_run claude-root codex-root distinto 'bash\nclaude\n' 'bash\ncodex\n' '' ''
 ok "preflight R-04: 'distinto' sin la ruta real de los panes -> rc 1 (no verificable = no pasa)" "$PF_RC" 1
 pf_run claude-root claude-root mismo-adversarial 'bash\nclaude\n' 'bash\nclaude\n' /opt/agente /opt/agente
-ok "preflight R-04: 'mismo-adversarial' declarado con el mismo ejecutable real -> rc 0 (no aplica)" "$PF_RC" 0
+ok "preflight R-04: 'mismo-adversarial' ya no existe (ley del lead del 7-nov: el revisor es siempre Codex) -> rc 1" "$PF_RC" 1
 pf_run 'IS_SANDBOX=1 claude-root' codex-root distinto 'bash\nclaude\n' 'bash\ncodex\n'
 ok 'preflight: CLI del dev con asignación VAR=valor -> rc 1 (gramática cerrada)' "$PF_RC" 1
 ok 'preflight: el error manda mover los flags a TCO_DEV_FLAGS' "$(printf '%s' "$PF_OUT" | grep -c 'TCO_DEV_FLAGS')" 1
@@ -237,5 +268,25 @@ pf_run claude-root codex-root distinto 'bash\nclaude\n' 'bash\ncodex\n' /opt/cla
 ok "preflight H-02: rutas y dispositivo:inodo distintos -> rc 0" "$PF_RC" 0
 pf_run claude-root codex-root distinto 'bash\nclaude\n' 'bash\ncodex\n' /opt/claude /opt/codex 65:100 ''
 ok "preflight H-02: dispositivo:inodo de un solo pane -> rc 1 (no verificable = no pasa)" "$PF_RC" 1
+# [issue 10264, H-1] audit-carril.sh LANZA el auditor: su guarda es la lista blanca de tco_ensure_audit_model (ejecutable exacto
+# codex o codex-root), no un `case *claude*`. Se extrae del script REAL la sentencia de la guarda (2 líneas) y se ejecuta con la
+# lib.sh real: ante un auditor que no es Codex muere con rc 1 ANTES de la línea «LANZADO», que simula el siguiente paso (el lanzamiento).
+AC_GUARDA="$(sed -n '/^  tco_ensure_audit_model "\$CARRIL"/{N;p}' "$SC/audit-carril.sh")"
+ok "audit-carril.sh: la guarda del auditor es tco_ensure_audit_model con tco_die y ya no queda el case *claude* (lista negra)" "$(printf '%s\n' "$AC_GUARDA" | grep -c .):$(printf '%s' "$AC_GUARDA" | grep -c 'tco_die'):$(grep -c 'in \*claude\*) tco_die' "$SC/audit-carril.sh")" '2:1:0'
+ac_guarda_run() { # TCO_AUDIT_CLI → «rc:líneas LANZADO:mensajes de parada del script»
+  local rc=0 out
+  out="$(TCO_AUDIT_CLI="$1" AC_G="$AC_GUARDA" bash -c '
+    . "'"$SC"'/00-config.sh"; . "'"$SC"'/lib.sh"
+    CARRIL=01
+    eval "$AC_G"
+    echo LANZADO' 2>&1)" || rc=$?
+  printf '%s:%s:%s' "$rc" "$(printf '%s\n' "$out" | grep -c '^LANZADO$')" "$(printf '%s\n' "$out" | grep -c 'no se lanza el auditor; se PARA y se escala')"
+}
+for aud in codexx codex-evil codex-root.sh codexfalso-root gemini; do
+  ok "audit-carril.sh: auditor '$aud' ⇒ PARA (rc 1) con «se PARA y se escala» ANTES de lanzar nada" "$(ac_guarda_run "$aud")" '1:0:1'
+done
+for aud in codex codex-root /x/codex-root; do
+  ok "audit-carril.sh: auditor '$aud' ⇒ la guarda deja pasar (rc 0) y llega al lanzamiento" "$(ac_guarda_run "$aud")" '0:1:0'
+done
 printf 'PASS=%s FAIL=%s TOTAL=%s\n' "$PASS" "$FAIL" "$((PASS+FAIL))"
-[ "$FAIL" -eq 0 ] && [ "$((PASS+FAIL))" -eq 252 ]
+[ "$FAIL" -eq 0 ] && [ "$((PASS+FAIL))" -eq 268 ]

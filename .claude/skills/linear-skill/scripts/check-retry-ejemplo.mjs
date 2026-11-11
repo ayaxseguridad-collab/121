@@ -15,7 +15,7 @@
 //
 // De cada sujeto se EXTRAE el bloque y se EJECUTA. Un ejemplo que no se extrae no se verifica: se
 // lee. Y uno que se extrae pero no se confronta con el cliente vivo, tampoco.
-import { readFileSync, writeFileSync, mkdtempSync, rmSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdtempSync, rmSync, readdirSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve, basename } from "node:path";
@@ -27,6 +27,11 @@ const CLIENTE = process.argv[3] ?? resolve(AQUI, "linear-client.ts");
 const ANCLA = "async function withRetry<T>(";
 
 const noMedible = (m) => { console.error("NO SE PUEDE MEDIR:", m); process.exit(2); };
+// tsx SIEMPRE por el envoltorio (version exacta del lock, >= 72 h); jamas tsx a secas por npx (issue 9564).
+// Raiz = <repo> si la skill vive en `.claude/skills/`, o la raiz del paquete si vive en `skills/`.
+const SKILLS_PADRE = resolve(AQUI, "../../..");
+const TSX_SH = resolve(basename(SKILLS_PADRE) === ".claude" ? resolve(SKILLS_PADRE, "..") : SKILLS_PADRE, "scripts/tsx.sh");
+if (!existsSync(TSX_SH)) noMedible(`falta el envoltorio de tsx: ${TSX_SH}`);
 
 let rojos = 0;
 const chk = (nombre, ok, detalle) => { console.log(`  ${ok ? "ok   " : "ROJO "} ${nombre}: ${detalle}`); if (!ok) rojos++; };
@@ -143,7 +148,7 @@ try {
 
     const f = join(dir, s.nombre.replace(/[^a-zA-Z0-9]/g, "_") + ".ts");
     writeFileSync(f, arnes(s.bloque, forma, n));
-    const salida = execFileSync("npx", ["--yes", "tsx", f], { encoding: "utf8" });
+    const salida = execFileSync("bash", [TSX_SH, f], { encoding: "utf8" });
     process.stdout.write(salida.split("\n").filter((l) => !l.startsWith("{")).join("\n"));
     const medida = salida.trim().split("\n").filter((l) => l.startsWith("{")).pop();
     if (!medida) noMedible(`el arnes no emitio medida para ${s.nombre}`);

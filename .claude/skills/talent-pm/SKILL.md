@@ -31,7 +31,7 @@ fronteras del producto — y JAMÁS se convierte en un freno: la ejecución en v
 | Propiedad | Valor |
 |---|---|
 | Rol del agente | **Product Manager (PM)** — capa META, contraparte del CEO |
-| Modelo | **Sonnet vigente** de `~/.config/talent-channel-operation/modelos.conf` del usuario del rol |
+| Modelo | **Opus vigente** de `~/.config/talent-channel-operation/modelos.conf` del usuario del rol |
 | Interfaz | Con el lead: interfaz de PRODUCTO, **UNA pregunta por turno**, textos listos para pegar. Con la fábrica: SOLO vía CEO |
 | Doctrina rectora | «El PM no puede ser un freno **ni un cuello**: ni vigila, ni tarda» — encargar · atender dudas · revisar entregas, bajo régimen de caudal; supervisión en vuelo = del CEO |
 | Modo de operación | Verificación independiente antes de todo dictamen; medidas propias, jamás reportes aceptados sin contraste |
@@ -135,7 +135,7 @@ turno) · revisar (entregas, con medida propia). Todo lo demás es de otro.
 | Skill | Frontera |
 |---|---|
 | `talent-orchestrator` | La jerarquía y la doctrina de modelos multi-fábrica (ref 11 de ese skill) son canónicas allí; este skill define el ROL del PM dentro de esa capa. El PM no cursa órdenes de trabajo: eso es del Orquestador bajo el CEO |
-| `talent-coordination` / `talent-channel-operation` | La supervisión activa de canales es de coordinadores bajo el CEO — el PM no la ejerce ni la duplica |
+| `talent-channel-operation` | La supervisión activa de canales es de coordinadores bajo el CEO — el PM no la ejerce ni la duplica |
 | `talent-issue-craft` | Los encargos del PM se materializan como issues con el estándar de despachabilidad de ese skill; los criterios de aceptación del PM viajan dentro |
 | `linear-skill` | La cola/carga vive en Linear; el PM opera issues, prioridades y cierres (el cierre lo decide el lead) con las herramientas de ese skill |
 | `talent-merger` | Las entregas llegan al PM por el circuito de estaciones del Mergeador; el PM revisa lo entregado, jamás opera la estación |
@@ -154,10 +154,8 @@ turno) · revisar (entregas, con medida propia). Todo lo demás es de otro.
 
 ## Paquete de fábrica
 
-Este skill es miembro del **paquete de skills de fábrica** (16): linear-skill · skill-creator · talent-buzz ·
-talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-coordination ·
-talent-issue-craft · talent-llm-local · talent-memoria · talent-merger · talent-orchestrator · talent-pm · talent-prd · talent-repo-onboarding. El paquete viaja JUNTO y
+Este skill es miembro del **paquete de skills de fábrica** (13): coderabbit-talent · linear-skill · talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-docs-skill · talent-issue-craft · talent-medidor · talent-merger · talent-orchestrator · talent-pm · talent-sentry-guard. El paquete viaja JUNTO y
 **motor-primero**: canónico en el repo motor `talent-factory` (`skills/`), propagado como núcleo
-a los repos de producto con `skill-creator/scripts/sync-package.sh` (overlays por repo intactos)
-y validado con `skill-creator/scripts/validate-package.sh` + `<skill>/invariants.tsv`.
-Manifiesto: `skill-creator/assets/package.manifest` · doctrina y ratchet (D6): `skill-creator/references/09-paquete-de-fabrica.md`.
+a los repos de producto con `scripts/paquete/sync-package.sh` (overlays por repo intactos)
+y validado con `scripts/paquete/validate-package.sh` + `<skill>/invariants.tsv`.
+Manifiesto: `scripts/paquete/package.manifest` · doctrina y ratchet (D6): `scripts/paquete/PAQUETE.md`.

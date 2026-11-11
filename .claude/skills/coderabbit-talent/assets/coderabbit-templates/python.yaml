@@ -1,0 +1,117 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# .coderabbit.yaml — Python (FastAPI, Django, Flask, data/ML scripts, bots)
+#
+# last_verified: 2026-09-22
+
+early_access: false
+enable_free_tier: true
+
+language: es-ES
+
+tone_instructions: |
+  Sé directo y conciso. Salta los pleasantries.
+  Usa ejemplos de código Python idiomático cuando sugieras alternativas.
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  enable_prompt_for_ai_agents: true  # NUNCA false: lo depende el comando `resolve` del skill.
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: [main, master, develop]
+
+  path_filters:
+    - "!**/__pycache__/**"
+    - "!**/*.pyc"
+    - "!**/.venv/**"
+    - "!**/venv/**"
+    - "!**/.tox/**"
+    - "!**/.pytest_cache/**"
+    - "!**/.mypy_cache/**"
+    - "!**/.ruff_cache/**"
+    - "!**/htmlcov/**"
+    - "!**/coverage/**"
+    - "!**/*.egg-info/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/poetry.lock"
+    - "!**/Pipfile.lock"
+    - "!**/uv.lock"
+    - "!**/migrations/versions/**"  # Alembic / Django migraciones autogeneradas
+    - "!**/*.ipynb_checkpoints/**"
+
+  instructions: |
+    Este es un proyecto Python. No comentes sobre:
+    - Orden de imports (isort/Ruff lo maneja)
+    - PEP 8 de formatting (Black/Ruff format)
+    - Type hints faltantes en scripts pequeños o notebooks (**/*.ipynb)
+    - Docstrings faltantes en funciones internas
+
+    Enfoca atención extra en:
+    - Mutables como default arguments (def foo(x=[])  <- bug clásico)
+    - Exception handling demasiado amplio (except: pass, except Exception)
+    - SQL injection via f-strings o .format() en queries
+    - Secretos hardcodeados (API keys, DSNs, tokens)
+    - Uso de pickle con input no confiable (RCE)
+    - Falta de context managers en recursos (open, connections)
+    - Race conditions en código async (await faltante, concurrent.futures)
+    - Validación de input en endpoints (pydantic/marshmallow)
+    - Manejo de timezones (datetime.now() naive vs aware)
+
+  path_instructions:
+    - path: "**/tests/**,**/test_*.py,**/*_test.py"
+      instructions: |
+        Tests. Foco en: assertions específicas (no assert result),
+        fixtures compartidas, mocks que no leakean entre tests,
+        parametrize correcto. No comentes sobre coverage.
+    - path: "**/api/**,**/routes/**,**/views/**,**/endpoints/**"
+      instructions: |
+        Endpoints HTTP. Foco obligatorio en: validación de input,
+        rate limiting, auth decorators aplicados, manejo de errores
+        sin exponer stack traces o rutas internas.
+    - path: "**/models/**,**/db/**,**/repositories/**"
+      instructions: |
+        Capa de datos. Foco en: queries N+1 (sobre todo en ORMs),
+        transacciones correctas, índices para queries frecuentes.
+
+  tools:
+    ruff:
+      enabled: true
+    pylint:
+      enabled: false  # Demasiado ruidoso por default; activar solo si el proyecto lo usa
+    gitleaks:
+      enabled: true
+    zizmor: { enabled: true }    # Analizador estático de workflows de GitHub Actions.
+    presidio: { enabled: true }  # PII de alta señal en ficheros cambiados.
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    autofix:
+      enabled: true
+
+  labeling_instructions:
+    - label: "breaking-change"
+      instructions: "Aplica cuando el PR rompe una firma pública, un endpoint o un schema pydantic/marshmallow expuesto."
+
+chat:
+  auto_reply: true
+  # integrations.linear.usage default es "auto" (activo en repos privados).
+  # Descomentar para que el chat de un PR NUNCA cree issues de Linear fuera
+  # del flujo de talent-issue-craft (CLAUDE.md regla 21):
+  # integrations:
+  #   linear:
+  #     usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto

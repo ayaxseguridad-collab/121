@@ -1,0 +1,55 @@
+# Triage — comentarios de CodeRabbit en PR #2182 (ejemplo/repo)
+
+**PR**: #2182 — `feat(portal): ABC-5258 encuestas por formación Next con día del directo + ABC-5064 quiz M1 Vibe Agents (tren)`
+**Estado**: MERGED · rama `feat/abc-5258-encuestas-next-directos` → `main`
+**Método**: `gh api` sobre `pulls/2182/comments` (inline), `issues/2182/comments` (top-level) y `pulls/2182/reviews`, más `gh pr diff` para verificar el código real contra cada hallazgo. Intento de leer el estado de resolución de threads vía GraphQL (`resolveReviewThread`/`isResolved`) falló por caída de red (DNS a `api.github.com`) durante la sesión — no fue necesario para el triage porque el contenido de las reviews ya deja explícito qué quedó accionable y qué no.
+
+## Resumen ejecutivo
+
+CodeRabbit dejó **4 reviews** en este PR: `CHANGES_REQUESTED` → `DISMISSED` → `COMMENTED` (vacía) → `APPROVED`. En total generó **un único comentario bloqueante/accionable** en toda la vida del PR (la propia CodeRabbit lo etiqueta "Actionable comments posted: 1" en la única review con contenido). El segundo ciclo de review ("No actionable comments were generated in the recent review 🎉") **no es evidencia de que el hallazgo se corrigiera**: ese ciclo revisó el diff incremental entre dos commits donde el único archivo tocado fue `supabase/advisors/baseline.txt` — la migración con el hallazgo no volvió a entrar al diff, así que CodeRabbit no tuvo nada que re-evaluar sobre ella. Confirmé contra el código real (vía `gh pr diff`) que el contenido del hallazgo sigue tal cual estaba cuando se generó.
+
+## Comentario bloqueante #1
+
+- **Fichero**: `supabase/migrations/20271331000000_abc5064_seed_quiz_modulo1_vibe_agents.sql`
+- **Línea**: 42-43 (INSERT de `public.quizzes`)
+- **Categoría / severidad CodeRabbit**: 🎯 Functional Correctness · 🟠 Major · etiqueta de esfuerzo 🏗️ Heavy lift
+- **Texto del hallazgo**: el título del quiz guarda `en`/`pt-BR` como cadenas vacías (`{"es":"Examen Módulo 1","en":"","pt-BR":""}`), y la descripción, las 20 preguntas, las 80 opciones y las explicaciones **solo** incluyen la clave `es` (ni siquiera tienen `en`/`pt-BR` presentes, vacíos o no). CodeRabbit cita explícitamente la instrucción de ruta del repo que exige `jsonb {"es","en","pt-BR"}` para campos editoriales.
+- **Prompt for AI Agents**: presente (bloque estándar pidiendo completar es/en/pt-BR en todos los campos editoriales).
+
+### Veredicto: **falso positivo como bloqueante de ESTE PR** (razón tipificada: `patrón-establecido-fuera-de-alcance` — hallazgo técnicamente correcto pero no es una regresión de este PR ni algo que deba resolverse en su scope)
+
+Razonamiento verificado contra el propio repo, no solo contra el diff:
+
+1. **El propio fichero declara la intención explícitamente**: el comentario de cabecera de la migración dice literalmente *"20 single_choice × 4 opciones (1 correcta + explicación), **SOLO ES**, pass_pct 100..."*. No es un olvido — es una decisión de diseño documentada in situ.
+2. **Es un patrón replicado, no nuevo**: verifiqué `supabase/migrations/20271303000000_abc4993_seed_quiz_modulo1_vibe_marketer.sql` (precedente inmediato citado en el propio comentario del fichero, "réplica del examen M1 de vibe-marketer-next, ABC-4993") y migraciones más antiguas de quizzes de vibecoder — todas usan exactamente la misma forma: título con `en`/`pt-BR` vacíos y el resto de campos (`description`, `text_i18n`, `explanation_i18n`) con solo la clave `es`. Esto ya está en `main` desde antes de este PR, mergeado sin objeción. Por la regla 2 del propio `CLAUDE.md` del repo ("cuando un patrón alcance 3+ ocurrencias, promoverlo..."), esto es candidato a excepción documentada, no a bug puntual de este PR.
+3. **CodeRabbit no tiene visibilidad de ese contexto**: el `path_instructions` que dispara el hallazgo (regla genérica de "Campos i18n editoriales") no distingue el caso "contenido de examen replicado 1:1 de una transcripción en español" del caso general de contenido editorial (títulos de programa, anuncios, etc.) que sí debe traducirse. La propia etiqueta 🏗️ Heavy lift que puso CodeRabbit reconoce que esto es un trabajo de traducción de fondo, no un fix de PR.
+4. **No bloqueó el merge en la práctica**: el ciclo de reviews terminó en `APPROVED` y el PR se mergeó — el equipo (correctamente, en mi lectura) no lo trató como gate.
+
+**Esto no significa "ignorar para siempre"**: es una deuda real (los alumnos con `en`/`pt-BR` seleccionado ven contenido vacío o mixto en este quiz, igual que en ABC-4993 y los quizzes de vibecoder). Pero es una decisión de producto/alcance (¿se traduce contenido de examen que replica lecciones dadas en español?, ¿se documenta como excepción permanente del i18n?), no un bug de código de este PR — y afecta a varios ficheros ya mergeados, no solo a este.
+
+## Plan de fixes por fichero
+
+### `supabase/migrations/20271331000000_abc5064_seed_quiz_modulo1_vibe_agents.sql`
+
+- **No tocar la migración ya mergeada/aplicada** (convención del repo: migraciones son inmutables una vez aplicadas a prod).
+- **Decisión previa necesaria del lead** antes de cualquier fix de código: ¿el quiz debe tener traducción real en/pt-BR, o el patrón "SOLO ES" queda ratificado como aceptado para contenido de examen?
+  - **Si se decide traducir**: nueva migración de `UPDATE` idempotente que rellene `en`/`pt-BR` en `quizzes.title`, `quizzes.description`, `quiz_questions.text_i18n`/`explanation_i18n` y `quiz_options.text_i18n` por `quiz_id` (join contra `modules`/`programs` para ubicar el quiz sin hardcodear IDs). Alcance real: ~1 título + 1 descripción + 20 preguntas + 20 explicaciones + 80 opciones = 122 valores a traducir — coherente con la etiqueta "Heavy lift" de CodeRabbit; candidato a issue propia en Linear, no a un fix inline.
+  - **Si se ratifica "SOLO ES"**: no requiere cambio de código en este fichero. Acción recomendada: documentar la excepción (ver abajo) para que CodeRabbit deje de repetir el mismo hallazgo en cada migración de quiz futura.
+
+### `.coderabbit.yaml` (raíz del repo) — acción recomendada, no bloqueante
+
+- Añadir un `path_instructions` específico para `supabase/migrations/**seed_quiz*.sql`/`supabase/migrations/**quiz*.sql` que documente la excepción "SOLO ES" para contenido de examen replicado de transcripción, de forma que el `path_instructions` genérico de i18n editorial no se dispare sobre este patrón conocido y aceptado. Esto es lo que evita que el mismo comentario bloqueante reaparezca en cada futuro `ABC-XXXX_seed_quiz_moduloN_*.sql` (ya van 3+ ocurrencias: vibecoder, ABC-4993, ABC-5064).
+
+### `docs/decisions/` o `talent-quiz-builder` (skill) — acción recomendada, no bloqueante
+
+- Formalizar el patrón "SOLO ES" para quizzes replicados de transcripción como decisión documentada (ADR corto o nota en el skill `talent-quiz-builder`), citando que la audiencia LATAM-first consume las lecciones en español y que la traducción de exámenes queda fuera de alcance salvo decisión explícita en contrario. Esto cierra el ciclo: la próxima vez que CodeRabbit (o un humano) revise una migración de este patrón, hay una fuente de verdad a la que apuntar en vez de re-litigar el mismo punto PR a PR.
+
+## Comentarios no bloqueantes / no accionables
+
+- Segundo comentario inline (`id 3920829746`): es el mensaje automático estándar de CodeRabbit indicando cómo invocar `@coderabbitai resolve`/`approve` — no es un finding, es meta-instrucción del bot. No requiere acción.
+- Reviews `DISMISSED` y `COMMENTED` (bodies vacíos): sin contenido accionable — probablemente reflejan el ciclo de re-review tras push sin nuevos hallazgos.
+- Comentario top-level (walkthrough/summary): puramente descriptivo (resumen del cambio, archivos críticos, impacto, locales afectados) — no es un finding, no requiere triage de validez.
+
+## Nota metodológica
+
+No se ejecutó `coderabbit review` ni se comentó en el PR (ambos expresamente prohibidos para esta tarea). El triage se basó en: (a) el contenido textual completo de las 4 reviews y los comentarios inline vía REST API, (b) el diff real del PR para verificar el código contra cada hallazgo, y (c) una búsqueda de precedentes en el propio repo (`grep` sobre migraciones de quiz anteriores) para distinguir "bug nuevo" de "patrón establecido que CodeRabbit no puede ver por sí solo".

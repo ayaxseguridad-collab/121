@@ -8,10 +8,17 @@
 #
 # Uso:
 #   doctor.sh            # evalúa TODO; no hay opción que apague una comprobación
+#   doctor.sh --informe  # tabla Markdown exportable; mismo recorrido y rc
 #   doctor.sh --help
 #
-# Salida: una línea por comprobación:  OK|FALLA|NOVERIF <categoría> <id>: detalle
+# Salida: una línea por comprobación:  OK|FALLA|NOVERIF|AVISO <categoría> <id>: detalle
 #         y al final  `RESUMEN ok=N falla=N noverif=N`  y  `PUERTA ABIERTA|CERRADA`.
+#         AVISO es solo informativo: no entra en RESUMEN ni cierra la puerta (en --informe va aparte, «info»).
+#
+# Modo escritor aparte (cron diario del usuario CEO):  doctor.sh --seguridad
+#   Hace la búsqueda CARA de LiteLLM (hogares y canales, profundidad 6/7, 600 s por sujeto) y deja su resultado SELLADO
+#   en el bus. El doctor normal NO la repite: lee ese último resultado (FALLA si es rojo, si tiene NOVERIF o si tiene más
+#   de 26 h; NOVERIF si no existe o su sello no cuadra). Es el único modo que escribe, y solo su resultado.
 #
 # ── rc EXACTOS ─────────────────────────────────────────────────────────────────────────────────
 #   0  todo OK · puerta ABIERTA
@@ -29,7 +36,10 @@
 # rechaza, `NOVERIF`. Nunca verde sin comprobar.
 #
 # Entorno (todo opcional): TA_PERFIL / SECRET_DIR (perfil, como el resto del skill) · TA_BUS ·
-# TA_BUS_CURSOR_DIR · XDG_RUNTIME_DIR · TA_ESCALADO_MIN (minutos, defecto 15).
+# TA_BUS_CURSOR_DIR · XDG_RUNTIME_DIR · TA_ESCALADO_MIN (minutos, defecto 15) · TA_SEG_RAIZ (SOLO pruebas:
+# prefijo de /usr, /etc y /tmp para las sondas de seguridad; en producción vacío).
+# Las sondas de seguridad (Node, LiteLLM, sesiones zombi) se evalúan si el manifiesto de la instancia declara
+# `talent-channels` (una fábrica real siempre lo declara); si falta, el doctor lo AVISA en cada corrida.
 set -uo pipefail
 export LC_ALL=C
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -41,13 +51,28 @@ SKILLS="$(cd "$HERE/../.." && pwd)"
 # shellcheck source=/dev/null
 . "$SKILLS/talent-channel-operation/scripts/lib.sh"
 
+INFORME=0; SEGURIDAD=0
 case "${1-}" in
-  --help) sed -n '2,32p' "${BASH_SOURCE[0]}"; exit 0 ;;
+  --help) sed -n '2,42p' "${BASH_SOURCE[0]}"; exit 0 ;;
+  --informe) INFORME=1 ;;
+  --seguridad) SEGURIDAD=1 ;;
   '') : ;;
   *) echo "doctor: argumento desconocido: $1 (uso: doctor.sh [--help])" >&2; exit 2 ;;
 esac
+[ "$#" -le 1 ] || { echo 'doctor: demasiados argumentos' >&2; exit 2; }
 
 die2() { printf 'doctor: PRECOND: %s\n' "$*" >&2; exit 2; }
+
+# shellcheck source=/dev/null
+. "$HERE/lib-desvio.sh"
+# shellcheck source=/dev/null
+. "$HERE/lib-seguridad.sh"
+# shellcheck disable=SC2034 # Arrays compartidos con lib-desvio.sh.
+declare -A D_GRAVEDAD=() D_VOLVER=() D_SHA=() D_GUARDAS=()
+# shellcheck disable=SC2034
+declare -a D_FILAS=() D_MEMBERS=() D_OVERLAY=() D_PREFIX=()
+REMEDIOS_OK=1
+desvio_remedios "$HERE/doctor-volver.tsv" || REMEDIOS_OK=0
 
 # ── UN CAMPO DEL PERFIL (o del runtime) NO PUEDE MANDAR SOBRE EL TERMINAL ───────────────────────
 # Misma neutralización que `perfil-render.sh`: el perfil valida ESTRUCTURA, no que sus campos sean
@@ -73,14 +98,27 @@ inerte() {
   printf '%s' "$v" | sed 's/\xc2[\x80-\x9f]//g' | tr -d '[:cntrl:]' | cut -c1-200
 }
 
-N_OK=0; N_FALLA=0; N_NOVERIF=0
+N_OK=0; N_FALLA=0; N_NOVERIF=0; N_AVISO=0; D_AVISOS=()
 emit() { # estado categoría id detalle
-  printf '%s %s %s: %s\n' "$1" "$(inerte "$2")" "$(inerte "$3")" "$(inerte "$4")"
-  case "$1" in OK) N_OK=$((N_OK + 1)) ;; FALLA) N_FALLA=$((N_FALLA + 1)) ;; *) N_NOVERIF=$((N_NOVERIF + 1)) ;; esac
+  if [ -z "${D_VOLVER[$2]+x}" ] && [ "$2" != doctor.d ]; then
+    set -- NOVERIF doctor.d remedios "categoría $2 sin remedio declarado"
+  fi
+  if [ "$INFORME" -eq 0 ]; then
+    printf '%s %s %s: %s\n' "$1" "$(inerte "$2")" "$(inerte "$3")" "$(inerte "$4")"
+  elif [ "$1" = AVISO ]; then
+    # Informativo: gravedad literal «info» (la tabla solo admite alta|media|baja) y fuera de las desviaciones.
+    D_AVISOS+=("| $(desvio_md "$1 $2 $3: $4") | info | $(desvio_md "${D_VOLVER[$2]:-Restaurar la tabla de remedios del doctor.}") |")
+  elif [ "$1" != OK ]; then
+    D_FILAS+=("| $(desvio_md "$1 $2 $3: $4") | ${D_GRAVEDAD[$2]:-alta} | $(desvio_md "${D_VOLVER[$2]:-Restaurar la tabla de remedios del doctor.}") |")
+  fi
+  # AVISO tiene rama propia: ni cuenta como NOVERIF ni cierra la puerta, y RESUMEN no cambia de formato.
+  case "$1" in OK) N_OK=$((N_OK + 1)) ;; FALLA) N_FALLA=$((N_FALLA + 1)) ;; AVISO) N_AVISO=$((N_AVISO + 1)) ;; *) N_NOVERIF=$((N_NOVERIF + 1)) ;; esac
 }
 ok()   { emit OK "$@"; }
 falla() { emit FALLA "$@"; }
 noverif() { emit NOVERIF "$@"; }
+# shellcheck disable=SC2329 # la invoca lib-seguridad.sh
+aviso() { emit AVISO "$@"; }
 
 # ── Precondiciones: sin ellas NO se evalúa nada (rc 2) ─────────────────────────────────────────
 command -v tmux >/dev/null 2>&1 || die2 "no hay \`tmux\` en el PATH; no se puede contrastar ninguna sesión"
@@ -114,8 +152,9 @@ BUS="${TA_BUS:-$BUS_PERFIL}"
 [ -n "$BUS" ] || die2 "sin ruta del bus: ni TA_BUS ni una fila 'bus' con path=; no se puede evaluar el bus"
 
 YO="$(id -un 2>/dev/null || true)"
-ERRF="$(mktemp 2>/dev/null)" || die2 "no se pudo crear un temporal para capturar stderr de sudo"
-trap 'rm -f "$ERRF"' EXIT
+D_TMP="$(mktemp -d 2>/dev/null)" || die2 "no se pudo crear un temporal para capturar stderr de sudo"
+ERRF="$D_TMP/stderr"
+trap 'rm -rf -- "$D_TMP"' EXIT
 NOW="$(date -u +%s 2>/dev/null)"
 case "$NOW" in ''|*[!0-9]*) die2 "no se pudo medir la hora; la antigüedad de un sello no se extrapola" ;; esac
 
@@ -123,16 +162,22 @@ case "$NOW" in ''|*[!0-9]*) die2 "no se pudo medir la hora; la antigüedad de un
 # El usuario del propio proceso (o vacío) ejecuta directo. Otro usuario: `sudo -n` (jamás pide
 # contraseña). Si falla y stderr empieza por «sudo:» el fallo es de PERMISO, no del comando: la
 # comprobación pasa a NOVERIF en vez de leerse como «la sesión no existe».
-COMO_OUT=''; COMO_RC=0; COMO_SUDO=0
+# COMO_TIMEOUT (s) y COMO_NICE (cualquier valor), vacíos por defecto: `timeout` y `nice -n 19` envuelven la orden ENTERA,
+# sudo incluido, así que no entran en la firma del sudoers. COMO_ERR = primera línea del stderr de la orden.
+COMO_OUT=''; COMO_RC=0; COMO_SUDO=0; COMO_TIMEOUT=''; COMO_NICE=''; COMO_ERR=''
 como() {
   local u="$1"; shift
-  COMO_SUDO=0; COMO_OUT=''; COMO_RC=0
+  local -a pre=()
+  COMO_SUDO=0; COMO_OUT=''; COMO_RC=0; COMO_ERR=''
+  [ -z "$COMO_TIMEOUT" ] || pre=(timeout "$COMO_TIMEOUT")
+  [ -z "$COMO_NICE" ] || pre=(nice -n 19 "${pre[@]}")
   if [ -z "$u" ] || [ "$u" = "$YO" ]; then
-    COMO_OUT="$("$@" 2>/dev/null)"; COMO_RC=$?; return 0
+    COMO_OUT="$("${pre[@]}" "$@" 2>"$ERRF")"; COMO_RC=$?; COMO_ERR="$(head -n1 "$ERRF" 2>/dev/null)"; return 0
   fi
   if ! command -v sudo >/dev/null 2>&1; then COMO_SUDO=1; COMO_RC=127; return 0; fi
-  COMO_OUT="$(sudo -n -H -u "$u" -- "$@" 2>"$ERRF")"; COMO_RC=$?
-  if [ "$COMO_RC" -ne 0 ] && head -n1 "$ERRF" 2>/dev/null | grep -q '^sudo:'; then COMO_SUDO=1; fi
+  COMO_OUT="$("${pre[@]}" sudo -n -H -u "$u" -- "$@" 2>"$ERRF")"; COMO_RC=$?
+  COMO_ERR="$(head -n1 "$ERRF" 2>/dev/null)"
+  if [ "$COMO_RC" -ne 0 ] && printf '%s\n' "$COMO_ERR" | grep -q '^sudo:'; then COMO_SUDO=1; fi
   return 0
 }
 # Un `usuario=` que NO existe en esta máquina es un fallo firme (su sesión no puede existir), no un
@@ -173,7 +218,9 @@ ultimo_sello() { # rol
         ts = cab; sub(/ .*$/, "", ts)
         rol = substr(cab, index(cab, "[rol: ") + 6); sub(/\].*$/, "", rol)
         mk = substr(cab, index(cab, "[marcador: ") + 11); sub(/\]$/, "", mk)
-        if (rol == ENVIRON["TA_ROL_Q"]) { u = ts "\t" mk }
+        # Los SEG-* los firma el cron de `doctor.sh --seguridad` con el rol del CEO: son sellos de la medición, no de la
+        # sesión del CEO (no escalan, no acreditan ni refrescan el menú). Solo seg_sello_hora (lib-seguridad.sh) los lee.
+        if (rol == ENVIRON["TA_ROL_Q"] && mk !~ /^SEG-/) { u = ts "\t" mk }
       }
     }
     END { if (u != "") print u }' "$BUS" 2>/dev/null)"
@@ -480,6 +527,7 @@ ctx_de_captura() { # stdin = captura → N · rc 1 sin match (UNKNOWN: jamás se
 check_modelo_actor() {
   local tipo="$1" id="$2" usr="$3" cap="$4" model label
   if [ "$tipo" = ceo ]; then tipo=ceo; else tipo=coordinador; fi
+  # shellcheck disable=SC2016 # Código literal para el proceso del propietario.
   como "$usr" bash -c '. "$1"; tco_modelo_read "$2"' _ "$SKILLS/talent-channel-operation/scripts/lib-modelos.sh" "$tipo"
   if [ "$COMO_RC" -ne 0 ]; then noverif modelo "$id" 'registro del usuario ausente o inválido; ejecutar resolver-modelos.sh como ese usuario'; return; fi
   model="$COMO_OUT"
@@ -650,6 +698,9 @@ check_modelo_desarrollo() { # id usuario contenedor pane
   check_modelo_auditor "$1" "$2" "$3" "$4" "$fase"
 }
 
+# Canales/runners RUNNING en esta máquina con usuario de canal resuelto: los miden las sondas de seguridad; los
+# RUNNING que se quedan fuera (identidad sin resolver) se anotan en SEG_C_EXC para no omitirlos en silencio.
+declare -a SEG_C_ID=() SEG_C_USR=() SEG_C_CONT=() SEG_C_EXC=()
 check_canales() {
   local t f id maq cont attrs usr st bin pane comms
   for t in canal runner; do
@@ -674,6 +725,11 @@ check_canales() {
       if [ -z "$st" ]; then falla canal "$id" "contenedor \"$cont\" ausente"; continue; fi
       if [ "$st" != RUNNING ]; then falla canal "$id" "contenedor \"$cont\" en estado $st (no RUNNING)"; continue; fi
       ok canal "$id" "contenedor \"$cont\" RUNNING"
+      if [ "${IDENT_OK:-0}" -eq 1 ] && usuario_ok "${CUSER-}"; then
+        SEG_C_ID+=("$id"); SEG_C_USR+=("$usr"); SEG_C_CONT+=("$cont")
+      else
+        SEG_C_EXC+=("$id")
+      fi
       [ "$t" = canal ] || continue
       # El binario del auditor sale de la identidad del canal: si ésta no se resolvió, el FALLA de
       # `identidad` ya cierra la puerta y no se inventa un segundo fallo sobre un dato que no existe.
@@ -692,8 +748,11 @@ check_canales() {
       if [ "$COMO_RC" -ne 0 ]; then noverif auditor "$id" 'identidad real del pane no comprobable'; continue; fi
       comms="$COMO_OUT"
       if printf '%s\n' "$comms" | grep -qxF "$bin"; then
-        ok auditor "$id" "pane de auditoría con el binario $bin"
-        case "$bin" in *claude*) check_modelo_auditor "$id" "$usr" "$cont" "$pane" ;; esac
+        # Ley del lead (7-nov): el revisor es SIEMPRE Codex. Un auditor que no lo es no se mide: se declara FALLA (se PARA y se escala).
+        case "$bin" in
+          codex|codex-root) ok auditor "$id" "pane de auditoría con el binario $bin" ;;
+          *) falla auditor "$id" "el pane de auditoría ejecuta $bin y Codex es obligatorio como revisor: se PARA y se escala" ;;
+        esac
       else
         falla auditor "$id" "el pane de auditoría no ejecuta $bin (procesos: $(printf '%s' "$comms" | tr '\n' ' '))"
       fi
@@ -736,12 +795,37 @@ check_sellado() {
   done
 }
 
+# Modo escritor: identidad y canales (salida descartada: solo llenan CUSER, IDENT_OK y la lista de canales), el
+# manifiesto, la búsqueda y su sello. No ejecuta el resto del doctor.
+if [ "$SEGURIDAD" -eq 1 ]; then
+  { check_identidad; check_canales; } >/dev/null
+  desvio_init
+  seg_escritor; exit $?
+fi
 check_identidad
 check_bus
 check_crons
 check_actores
 check_canales
 check_sellado
+
+[ "$REMEDIOS_OK" -eq 1 ] || falla doctor.d remedios 'tabla de remedios ausente o inválida'
+desvio_init
+check_version
+check_nucleo
+check_miembros
+check_modelos_rol
+check_guardas
+check_sondas_alcance
+check_node
+check_litellm_resultado
+check_zombis
+check_doctor_extra
+[ "$INFORME" -eq 0 ] || desvio_informe
+if [ "$INFORME" -eq 1 ] && [ "$N_AVISO" -gt 0 ]; then
+  printf '\nAvisos informativos (no cierran la puerta):\n| aviso | gravedad | cómo volver |\n|---|---|---|\n'
+  printf '%s\n' "${D_AVISOS[@]}"
+fi
 
 TOTAL=$((N_OK + N_FALLA + N_NOVERIF))
 [ "$TOTAL" -gt 0 ] || die2 "el perfil no declara nada que comprobar; un doctor que no comprueba nada no da verde"

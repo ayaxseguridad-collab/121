@@ -1,4 +1,4 @@
-INV-PM-001	SKILL.md	MUST	Sonnet vigente	politica-rodante-pm
+INV-PM-001	SKILL.md	MUST	Opus vigente	politica-rodante-pm
 INV-PM-002	SKILL.md	MUST	capa META	jerarquia-pm-contraparte-ceo-TAL-3650
 INV-PM-003	references/04-gobernanza-del-lead.md	MUST	UNA pregunta por turno	regla-una-pregunta-por-turno
 INV-PM-004	references/04-gobernanza-del-lead.md	MUST	texto listo para pegar	relevo-verbatim-del-lead
@@ -10,7 +10,7 @@ INV-PM-009	references/02-pre-revision-y-dictamenes.md	MUST	independiente ANTES d
 INV-PM-010	references/06-interfaz-ceo-pm.md	MUST	no puede ser un freno	doctrina-lead-2026-07-30-no-freno
 INV-PM-011	references/06-interfaz-ceo-pm.md	MUST_NOT	El PM supervisa la ejecuci	anti-patron-pm-vigia-jamas-prescrito
 INV-PM-012	references/06-interfaz-ceo-pm.md	MUST	capacidad disponible que comunica	M5-capacidad-dinamica-del-ceo-TAL-3650
-INV-PM-013	SKILL.md	MUST	skill-creator/assets/package\.manifest	paquete-D3-puntero-manifiesto
+INV-PM-013	SKILL.md	MUST	scripts/paquete/package\.manifest	paquete-D3-puntero-manifiesto
 INV-PM-014	references/04-gobernanza-del-lead.md	MUST_NOT	[Cc]loses	regimen-referencia-sin-autocierre
 INV-PM-015	references/04-gobernanza-del-lead.md	MUST	cierre de issues lo decide el lead	cierre-decision-del-lead
 INV-PM-016	references/04-gobernanza-del-lead.md	MUST	SIN reversión automática	M3-secuencia-post-squash-sin-revert-TAL-3650

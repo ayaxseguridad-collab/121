@@ -1,0 +1,8 @@
+{
+  "gh": [{"number": 17, "body": "closes ABC-42", "baseRefName": "main", "mergedAt": "2020-01-02T00:00:00Z", "mergeCommit": {"oid": "1234567890abcdef1234567890abcdef12345678"}}],
+  "linear": {"data": {"issue": {"identifier": "ABC-42", "description": "Grupo PRODUCTO-X1: https://example.invalid/groups/123"}}},
+  "release": {"dateReleased": "2020-01-03T00:00:00Z"},
+  "sentry": {"id": "123", "shortId": "PRODUCTO-X1", "status": "unresolved", "firstSeen": "2020-01-01T00:00:00Z"},
+  "railway": {"name": "producto-ejemplo", "latestDeployment": {"status": "SUCCESS"}},
+  "bus": "2020-01-03T04:00:00Z [rol: vigia] [marcador: SENTRY-VERIFICA-ABC-42-OK] release=producto@12345678 ancla=2020-01-03T00:00:00Z ventana=3h eventos_nuevos=0\n"
+}

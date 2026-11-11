@@ -6,7 +6,7 @@ XY="${1:?uso: v <XY>  (XY = maquina+channel, p.ej. 01)}"
 HOST="__PREFIX__${XY}"
 REPO="/home/__CUSER__/__REPO_DIR__"
 LEFT_INPUT='__LEFT__'; RIGHT_INPUT='__RIGHT__'
-# Solo Claude requiere el registro del usuario que lanza; otro proveedor conserva su orden.
+# Claude exige el registro; Codex lo consume si está disponible y sin argumentos explícitos.
 launcher_model_args() {
   local cmd="$1" role="$2" exe model
   exe="${cmd%% *}"; exe="${exe##*/}"
@@ -16,6 +16,12 @@ launcher_model_args() {
       . '__MODELOS_LIB__' || return 1
       model="$(tco_modelo_read "$role")" && [ -n "$model" ] || return 1
       printf '%s --model %s' "$cmd" "$model" ;;
+    codex|codex-root)
+      if [[ $cmd =~ (^|[[:space:]])(--model|-m|--config)(=|[[:space:]]|$) ]]; then printf '%s' "$cmd"; return; fi
+      # shellcheck source=/dev/null
+      if . '__MODELOS_LIB__' && tco_modelos_read 2>/dev/null && [ "$TCO_ROL_AUDIT" = codex:sol ]; then
+        printf '%s --model %s --config model_reasoning_effort=%s' "$cmd" "$TCO_SOL_VIGENTE" "$TCO_AUDIT_EFFORT"
+      else printf '%s' "$cmd"; fi ;;
     *) printf '%s' "$cmd" ;;
   esac
 }

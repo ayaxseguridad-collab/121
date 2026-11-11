@@ -1,0 +1,22 @@
+PARTE-GUARDIA tree=TREE instant=INSTANT estado=NOVEDAD causas=sentry-issues-nuevas,github-alertas-nuevas
+tree=TREE instant=INSTANT metric=doctor_puerta value=abierta rc="0"
+tree=TREE instant=INSTANT metric=post_despliegue_ventana value=sin-ancla motivo="SENTRY_MAIN_MOVIDO no declarado"
+== issues nuevas (Sentry) ==
+tree=TREE instant=INSTANT metric=sentry_consulta_nuevas value=ok
+tree=TREE instant=INSTANT metric=sentry_unresolved_total value=2000
+tree=TREE instant=INSTANT metric=sentry_nuevos_desde_ultimo_parte value=3
+tree=TREE instant=INSTANT metric=sentry_nuevos_post_despliegue value=NA
+tree=TREE instant=INSTANT metric=sentry_issue_nueva value=PROY-1998 eventos="141" usuarios="7" first_seen="2026-09-14T17:20:00+00:00" origen="ultimo-parte" titulo="fallo nuevo 1998 tras el despliegue" enlace="https://example.invalid/g1998"
+tree=TREE instant=INSTANT metric=sentry_issue_nueva value=PROY-1999 eventos="141" usuarios="7" first_seen="2026-09-14T17:20:00+00:00" origen="ultimo-parte" titulo="fallo nuevo 1999 tras el despliegue" enlace="https://example.invalid/g1999"
+tree=TREE instant=INSTANT metric=sentry_issue_nueva value=PROY-2000 eventos="141" usuarios="7" first_seen="2026-09-14T17:20:00+00:00" origen="ultimo-parte" titulo="fallo nuevo 2000 tras el despliegue" enlace="https://example.invalid/g2000"
+== alertas de seguridad (GitHub) ==
+tree=TREE instant=INSTANT metric=github_estado value=vigilada
+tree=TREE instant=INSTANT metric=github_abiertas value=301
+tree=TREE instant=INSTANT metric=github_nuevas_desde_ultimo_parte value=2
+tree=TREE instant=INSTANT metric=github_alerta_nueva value=dependabot:299 nivel="S2" titulo="paquete-299: vulnerabilidad 299" enlace="https://example.invalid/repo-ejemplo/security/dependabot/299"
+tree=TREE instant=INSTANT metric=github_alerta_nueva value=dependabot:300 nivel="S2" titulo="paquete-300: vulnerabilidad 300" enlace="https://example.invalid/repo-ejemplo/security/dependabot/300"
+== dinero (solo lectura) ==
+tree=TREE instant=INSTANT metric=dinero_estado value=configurado
+tree=TREE instant=INSTANT metric=dinero_ventas_atascadas value=0
+tree=TREE instant=INSTANT metric=cadencia_min value=15
+tree=TREE instant=INSTANT metric=silencio_previo value=5 umbral_min="30"

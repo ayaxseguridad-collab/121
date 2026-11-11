@@ -1,0 +1,14 @@
+[
+  {
+    "ghsa_id": "GHSA-mmmm-nnnn-oooo", "cve_id": null, "state": "triage", "severity": "high",
+    "summary": "Elusion de autorizacion en el modulo de ejemplo",
+    "created_at": "2026-10-07T10:00:00Z",
+    "html_url": "https://example.invalid/org-ejemplo/repo-ejemplo/security/advisories/GHSA-mmmm-nnnn-oooo"
+  },
+  {
+    "ghsa_id": "GHSA-pppp-qqqq-rrrr", "cve_id": null, "state": "closed", "severity": "critical",
+    "summary": "Advisory ya cerrada",
+    "created_at": "2026-08-07T10:00:00Z",
+    "html_url": "https://example.invalid/org-ejemplo/repo-ejemplo/security/advisories/GHSA-pppp-qqqq-rrrr"
+  }
+]

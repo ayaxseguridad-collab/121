@@ -14,12 +14,20 @@
 #   --restart    Además recicla codex (kill por PID host-side con bash -c, NO su -c; relaunch del
 #                alias). RESETEA el contexto pero NO el repo. Trabajo en vuelo → RE-BRIEFEO por el
 #                coordinador (talent-channel-operation ref 11). El relaunch RESPETA el freeze de MOVE.
+#                [issue 10264] El relaunch usa el lanzador DECLARADO del auditor: TC_CODEX_RELAUNCH, si no
+#                TCO_AUDIT_CLI exportado, si no el TCO_AUDIT_CLI de agents.conf (como el resto de scripts del canal), si
+#                no `codex` (con su sandbox): NUNCA `codex-root` fijado a mano, que anularía en silencio lo que
+#                declaró la instalación. LISTA BLANCA: el valor que se relanza (venga de donde venga) solo puede ser
+#                `codex` o `codex-root`; con otro el script PARA (Codex es obligatorio como revisor) sin relanzar nada.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 . "$HERE/00-config.sh"
 # shellcheck source=/dev/null
 . "$HERE/lib.sh"
+RELAUNCH="${TC_CODEX_RELAUNCH:-${TCO_AUDIT_CLI:-$(tc_auditor_declarado)}}" || tc_die "Codex es obligatorio como revisor: la declaración de agents.conf no es Codex; no se relanza nada"; RELAUNCH="${RELAUNCH:-codex}"
+case "$RELAUNCH" in codex|codex-root) ;; *) tc_die "Codex es obligatorio como revisor: el lanzador de relanzamiento ('${RELAUNCH:0:40}') debe ser codex o codex-root; no se relanza nada" ;; esac
+[[ $RELAUNCH =~ ^[A-Za-z0-9._-]{1,40}$ ]] || tc_die "lanzador de relanzamiento inválido (un solo ejecutable de [A-Za-z0-9._-])"
 
 SRC="$HOST_HOME/.codex/auth.json"
 [ -f "$SRC" ] || tc_die "El host no tiene $SRC (haz 'codex login' en el host con la cuenta destino primero)."
@@ -69,7 +77,7 @@ for ch in "${targets[@]}"; do
     # en un Codex activo. Helper con kill host-side (bash -c) que casa el EJECUTABLE `codex` (TAL-8042).
     if tc_kill_wait "$ch" codex "$CUSER"; then
       incus exec "$ch" -- su - "$CUSER" -c \
-        "tmux send-keys -t '${TC_CODEX_PANE:-v:.1}' '${TC_CODEX_RELAUNCH:-codex-root}' C-m" 2>/dev/null \
+        "tmux send-keys -t '${TC_CODEX_PANE:-v:.1}' '$RELAUNCH' C-m" 2>/dev/null \
         || tc_info "    $ch: no pude relanzar el alias en '${TC_CODEX_PANE:-v:.1}' (sesion tmux distinta?) — relanza a mano"
       echo "    (reciclado: contexto reseteado, repo intacto) — RE-BRIEFEAR si tenia trabajo en vuelo"
     else

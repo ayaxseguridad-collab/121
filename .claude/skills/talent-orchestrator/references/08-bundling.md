@@ -49,7 +49,7 @@ calidad de ESE perfil (citarlo, no hardcodearlo). Repo sin perfil ⇒ instruir c
 
 ```bash
 # Paso 1: correr el auditor (token de LINEAR_API_KEY/env/.env.local; cero --config en el helper)
-npx tsx .claude/skills/talent-issue-craft/scripts/issue_craft_helper.ts \
+bash scripts/tsx.sh .claude/skills/talent-issue-craft/scripts/issue_craft_helper.ts \
   --action audit-issue --issue TAL-N --min-score <umbral-del-perfil> 2>&1 \
   | tee /tmp/audit-TAL-N.txt; helper_rc=${PIPESTATUS[0]}
 

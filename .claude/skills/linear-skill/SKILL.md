@@ -79,7 +79,7 @@ local que declara `scripts/linear-client.ts` es solo una vista del script). Deta
 |--------|-------|----------------|
 | `@linear/sdk` (npm) | **93.0.1** | `npm view @linear/sdk version` — 2026-09-05 |
 | Linear GraphQL API | `https://api.linear.app/graphql`, sin versionado en URL | 2026-09-05 — `references/03-graphql-cheatsheet.md` |
-| Node.js (repo) | `>=24.0.0 <25.0.0` (`.nvmrc` → 24.20.0) | 2026-09-04 — `package.json` / `.nvmrc` (TAL-5329) |
+| Node.js (repo) | `>=24.0.0 <25.0.0` (`.nvmrc` → 24.22.1) | 2026-10-22 — `package.json` / `.nvmrc` (TAL-5329); 24.22.1 = suelo de parche del aviso de Node del 21-oct-2026 |
 | TypeScript (repo) | 6.0.3 | 2026-07-18 — `package.json` |
 | Runner de scripts | `tsx` 4.22.4 (ya en `devDependencies` raíz) | 2026-07-18 — `package.json` |
 
@@ -105,7 +105,7 @@ console.log(me.viewer);
 ```
 
 Implementación de referencia completa (paginación, clasificación de errores, CircuitBreaker):
-`scripts/linear-client.ts` — corre `npx tsx scripts/linear-client.ts --help` y `--action selftest`.
+`scripts/linear-client.ts` — corre `bash <raíz-del-repo>/scripts/tsx.sh scripts/linear-client.ts --help` y `--action selftest`.
 
 **GraphQL es agnóstico de lenguaje** — no hace falta `@linear/sdk` (ni ningún SDK) para hablar con
 Linear, solo HTTP. Ejemplo mínimo con `curl`, mismo patrón que usa este repo de verdad (token-only,
@@ -480,10 +480,8 @@ Si te falta contexto crítico (a qué initiative o project asignar, qué priorid
 
 ## Paquete de fábrica
 
-Este skill es miembro del **paquete de skills de fábrica** (16): linear-skill · skill-creator · talent-buzz ·
-talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-coordination ·
-talent-issue-craft · talent-llm-local · talent-memoria · talent-merger · talent-orchestrator · talent-pm · talent-prd · talent-repo-onboarding. El paquete viaja JUNTO y
+Este skill es miembro del **paquete de skills de fábrica** (13): coderabbit-talent · linear-skill · talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-docs-skill · talent-issue-craft · talent-medidor · talent-merger · talent-orchestrator · talent-pm · talent-sentry-guard. El paquete viaja JUNTO y
 **motor-primero**: canónico en el repo motor `talent-factory` (`skills/`), propagado como núcleo
-a los repos de producto con `skill-creator/scripts/sync-package.sh` (overlays por repo intactos)
-y validado con `skill-creator/scripts/validate-package.sh` + `<skill>/invariants.tsv`.
-Manifiesto: `skill-creator/assets/package.manifest` · doctrina y ratchet (D6): `skill-creator/references/09-paquete-de-fabrica.md`.
+a los repos de producto con `scripts/paquete/sync-package.sh` (overlays por repo intactos)
+y validado con `scripts/paquete/validate-package.sh` + `<skill>/invariants.tsv`.
+Manifiesto: `scripts/paquete/package.manifest` · doctrina y ratchet (D6): `scripts/paquete/PAQUETE.md`.

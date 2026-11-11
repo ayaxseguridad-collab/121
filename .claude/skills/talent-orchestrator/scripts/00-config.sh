@@ -54,7 +54,6 @@ fi
 : "${TORRE_SESSION_PREFIX:=torre-}"     # sesiones tmux torre-<actor> (runbook torre-de-control)
 : "${TORRE_BUSY_REGEX:=esc to interrupt}"  # marcador semantico de actividad del TUI
 : "${TORRE_USAGE_REGEX:=approaching.*limit|usage limit|resets at}"  # aviso de limite de cuenta (barra)
-: "${TORRE_CTX_THRESHOLD:=60}"          # % de contexto que dispara compact-60 (protocolo del lead)
 : "${TORRE_LIVE_WINDOW:=90}"            # ventana (s) para considerar VIVO un transcript (mtime==ahora)
 : "${TORRE_VERIFY_MAX:=30}"             # ventana (s) de verificacion de entrega de un relay
 : "${TORRE_IDLE_MAX:=120}"              # espera maxima (s) a idle estable antes de un relay
@@ -78,12 +77,12 @@ fi
 # Precedencia: TORC_HOST_ENV (env, absoluto) > scripts/repo-identity.conf (TORC_HOST_ENV_REL,
 # relativo a $HOST_HOME, data-only sin `source`) > ERROR fail-closed.
 # [Review PR #13 del motor] Validación ESTRUCTURAL de la ruta REL EN EL LOADER, antes de leer
-# archivo alguno — contrato idéntico a pkg_validate_env_rel (skill-creator/scripts/lib-package.sh);
+# archivo alguno — contrato idéntico a pkg_validate_env_rel (scripts/paquete/lib-package.sh);
 # duplicado CONSCIENTE: este loader runtime no sourcea lib-package.sh (pkg_die2 haría exit del
 # shell del orquestador). Sin esto, un conf manipulado con `../../otra/.env.local` escapa de
 # $HOST_HOME y carga el LINEAR_API_KEY de otra fábrica en silencio.
 # [TAL-8037/M3, n2] El marcador a rechazar es SOLO el del .example: el valor COMPLETO PENDIENTE-<CLAVE> (anclado, mayúsculas);
-# jamás subcadenas ni palabras sueltas (mismo criterio que pkg_es_marcador_example de skill-creator/lib-package.sh;
+# jamás subcadenas ni palabras sueltas (mismo criterio que pkg_es_marcador_example de scripts/paquete/lib-package.sh;
 # duplicado CONSCIENTE: este loader runtime no sourcea esa lib).
 torc_es_marcador_example() { [[ $1 =~ ^PENDIENTE-[A-Z][A-Z0-9_]*$ ]]; }
 torc_validate_env_rel() {

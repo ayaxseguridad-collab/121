@@ -334,8 +334,9 @@ sudo bash scripts/auth-move.sh move <cuenta> host:<host> channel:<canal>
   corruptas y colgado; el md5 lo caza.
 - **`--restart`** recicla el agente para que la cuenta nueva tome efecto: mata el proceso **por PID
   host-side** (`bash -c`, **no** `su - -c`: `su -c` propaga el `exit 137` del kill y aborta el bucle
-  — validado en producción) y relanza el alias (`claude-root`/`codex-root`; pane y alias configurables
-  con `TC_CLAUDE_PANE`/`TC_CLAUDE_RELAUNCH` y `TC_CODEX_PANE`/`TC_CODEX_RELAUNCH`).
+  — validado en producción) y relanza el alias (`claude-root`; el de Codex es el lanzador declarado del
+  auditor (`TCO_AUDIT_CLI` exportado o el de `agents.conf`; sin declaración, `codex` con su sandbox) y **nunca `codex-root`
+  fijado a mano**; pane y alias configurables con `TC_CLAUDE_PANE`/`TC_CLAUDE_RELAUNCH` y `TC_CODEX_PANE`/`TC_CODEX_RELAUNCH`).
 - **El repo se preserva**: kill+relaunch resetea el contexto de conversación del agente, **no** el
   working tree ni los commits (validado con carriles que tenían WIP sin commitear). Por eso los
   carriles con **trabajo en vuelo** necesitan un **re-briefeo de reanudación** (rama, commit/PR, qué
@@ -585,11 +586,11 @@ suite, corrida fuera de un espacio de PID propio, mató agentes reales de otras 
 
 **Cuenta Codex ÚNICA (instalación de un tercero).** Con **una sola cuenta Codex** el login vive en **un solo
 lugar a la vez** (refresh de un solo uso): se **MUEVE** `host:<máquina>` → `channel:<canal-auditor>` con
-`auth-move.sh move` —nunca se copia a N canales— y hay **un auditor Codex a la vez**. Para los demás canales la
-auditoría sigue siendo **Claude con rol adversarial** (`TCO_AUDIT_TOPOLOGY=mismo-adversarial` en
-`talent-channel-operation`): la garantía es de **rol**, no de proveedor, y queda declarada y visible en cada
-despacho (`AUDITOR: <ejecutable> · topología: <valor>`). Un canal cuyo auditor debía ser de otro agente y
-resulta ser el mismo **detiene** el despacho (topología `distinto`, el default).
+`auth-move.sh move` —nunca se copia a N canales— y hay **un auditor Codex a la vez**. Los demás canales ESPERAN
+su turno de Codex: la auditoría con Claude de revisor no existe (ley del lead del 7-nov; se retiró la
+auditoría degradada en la 2.0). Un canal cuyo auditor no es Codex, o es el mismo agente que el dev,
+**detiene** el despacho (topología `distinto`, la única) y se escala; el despacho imprime
+`AUDITOR: <ejecutable> · topología: <valor>`.
 
 ## Doble línea por pozo (sistema de reserva del lead)
 

@@ -224,7 +224,34 @@ STOP-AUDIT viaja por fichero (TAL-3619):
    Con `tool_result` de **rechazo** (`is_error`, «The user doesn't want to proceed…») el plan está
    RECHAZADO: **exit 19**; con `tool_result` de aprobación («User has approved your plan…») ya
    está APROBADO, nada que gatear: **exit 20**; con un mensaje humano posterior sin `tool_result`
-   está OBSOLETO: **exit 19**. Ninguno de los tres cae a la pantalla (mostraría el mismo plan).
+   está OBSOLETO: **exit 19**. Ninguno de los tres cae a la pantalla (mostraría el mismo plan), con UNA
+   excepción acotada: el CLI 2.1.318 no vuelca al transcript el ExitPlanMode PENDIENTE hasta que llega su
+   `tool_result` (que solo da el humano al contestar el diálogo), así que tras un rechazo el plan re-presentado
+   no está en el transcript. Con el transcript en RECHAZADO u OBSOLETO y la sesión en `status: "waiting"` (lo
+   persiste el propio CLI en `sessions/<pid>.json`; sin ese estado no se captura nada y sale el **exit 19** de
+   siempre) se hace UNA captura de detección (la escalera 2000/4000/8000 del nivel 3 solo sube si el bloque no
+   cabe en la ventana) y se cae al nivel 3 solo si el diálogo de aprobación del plan (`Would you like to
+   proceed?`) está abierto y completo al final de la captura, sin compositor debajo, y el `PLAN-FIN` está pegado
+   a él (`lib.sh` `tco_plan_dialog_head_from`; no teclea). El bloque que se corta es SOLO el pegado al diálogo
+   (desde el `PLAN-FIN` anterior): un bloque viejo del scrollback nunca se gatea en lugar del pendiente, y un
+   pendiente sin su `PLAN-INICIO <ENC>` da el exit 11. El respaldo de pantalla sin estado `waiting` gana una
+   guarda de alcance concreto: tras la última ancla `PLAN-INICIO <ENC>` de la captura solo cabe el `PLAN-FIN` que
+   cierra ese bloque; si hay otro `PLAN-FIN` después (un bloque viejo con su `PLAN-FIN` y un plan reciente con
+   su propio `PLAN-FIN` pero sin ancla) sale el exit 11. Sin diálogo de plan abierto, además, tras el `PLAN-FIN`
+   aceptado solo puede quedar el chrome del prompt: líneas vacías y, a lo sumo, UNA línea-resumen del turno
+   (`✻ Crunched for 43s · done …` en Claude, `Worked for 43s • …` en Codex), medido sobre la región de transcript
+   (lo que hay encima del compositor); cualquier otro texto (un plan reciente sin ancla y sin `PLAN-FIN`) da el
+   exit 11, y la prosa del dev tras el `PLAN-FIN` también (el operador pide re-presentar sin ella). Con un
+   diálogo de plan abierto en el respaldo, el bloque es el pegado al diálogo, como con rc 6. El origen se loguea, con el diálogo detectado, como
+   `origen=pantalla (transcript sin volcar)`. Si ese plan es idéntico al de una ronda ya AUDITADA del ledger
+   (`plan-<carril>-<ENC>-r*.norm`): **exit 21** («plan idéntico al de la ronda K ya auditado»), que no se gatea
+   otra vez; un plan que el humano rechazó pero nunca se auditó SÍ se gatea. «Idéntico» = el mismo sha256 del
+   texto normalizado SOLO en espacios en blanco (espacios finales, CRLF, saltos finales): ningún signo, acento
+   ni mayúscula se ignora (un `<` frente a un `>` es otro plan y se audita). El ledger guarda el texto que se
+   gateó (el de pantalla, con la sangría del TUI, o el crudo del transcript): un plan renderizado de pantalla
+   contra uno crudo casi nunca casa y se audita de más, nunca de menos; el 21 sale sobre todo de pantalla
+   contra pantalla. Ante un exit 21 el operador contesta el diálogo con la opción 3 pidiendo un plan distinto y
+   no aprueba. Con el diálogo abierto y un plan que no vale, los exits son los del nivel 3 (11, 12, 13).
    Cualquier centinela POSTERIOR al ExitPlanMode elegido vuelve su **vigencia indeterminada**:
    **exit 19**, «vigencia indeterminada: línea ilegible posterior al ExitPlanMode — re-pedir la
    presentación». No se intenta texto ni pantalla, aunque haya un resultado legible o texto nuevo.
@@ -241,7 +268,7 @@ STOP-AUDIT viaja por fichero (TAL-3619):
 si no puede responder: sin sesión viva resoluble (CLI sin esa superficie —p. ej. Codex—, PID
 muerto), `sessionId` inválido, transcript ilegible, o ni un ExitPlanMode legible (esquema alterado:
 sin `id`/`plan` string) ni texto de turno con ancla. Un nivel que **responde en negativo NO cae**
-(decisión sellada): ExitPlanMode rechazado/aprobado/obsoleto o de vigencia indeterminada (19/20), plan de OTRO encargo (11),
+(decisión sellada, con la única excepción del ExitPlanMode pendiente sin volcar descrita arriba: estado `waiting` y diálogo de plan abierto): ExitPlanMode rechazado/aprobado/obsoleto o de vigencia indeterminada (19/20), plan de OTRO encargo (11),
 sin `PLAN-FIN` (12), ancla anidada (13) o chrome del TUI (18) se rechazan por contenido, nunca por
 tamaño de pantalla ni cayendo a otra fuente hasta que alguna «acepte». Texto de turno **sin** ancla
 (un preámbulo) no es una presentación: no hace «disponible» al nivel 2.
@@ -706,4 +733,4 @@ Dos situaciones sacan un encargo del pipeline normal de esta estación:
   `tco_linear_gql`/`commentCreate`), no un resumen interpretado — el lead retoma con el estado
   exacto, sin re-derivar. Un canal liberado sin ese volcado es un canal perdido para el retome.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.

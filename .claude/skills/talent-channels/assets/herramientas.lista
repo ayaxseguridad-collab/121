@@ -1,0 +1,8 @@
+# Herramientas npm del paquete que resuelve scripts/resolver-herramientas.sh (issue 9564). Formato: paquete<TAB>uso
+#   global = el golden las instala con npm install -g (versión del lock) · npx = solo se resuelve y se registra (la usa scripts/tsx.sh)
+@anthropic-ai/claude-code	global
+@openai/codex	global
+@railway/cli	global
+convex	global
+supabase	global
+tsx	npx

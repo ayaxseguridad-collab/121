@@ -1,5 +1,12 @@
 # Doctrina Compact-60 y Checkpoint Limpio — Complete Reference
 
+> Camino por defecto: compact vivo (`07-compact-vivo.md`), autocompact al 60 % de
+> 200K tokens (CEO/PM 300K), banco construido por hooks y lectura obligatoria de estado.md.
+> La coreografía manual de esta referencia se conserva como modo degradado SIN hooks.
+> La barra ctx: mide la ventana completa del modelo; con ventana fijada el watcher avisa
+> de RETRASO, pues el autocompact debió disparar antes. No decide el compact vivo.
+
+
 Cubre el umbral del 60 %, por qué 60 y no 70+, y la definición de "checkpoint limpio" por rol.
 Doctrina del lead 2026-07-08 (supersede el >70 % previo); validada 2026-07-17.
 

@@ -100,7 +100,7 @@ tco_modelos_error() {
 # Versión visible: componentes numéricos cortos contiguos; el sufijo conserva su ID.
 tco_modelo_version_visible() {
   local model="${1:-}" rest part version=''
-  [[ $model =~ ^claude-(opus|sonnet)-[0-9]+([.-][a-z0-9]+)*$ ]] || return 1
+  [[ $model =~ ^claude-(opus|sonnet|fable)-[0-9]+([.-][a-z0-9]+)*$ ]] || return 1
   rest="${model#claude-}"; rest="${rest#*-}"; rest="${rest//./-}"
   while [ -n "$rest" ]; do
     part="${rest%%-*}"
@@ -117,7 +117,7 @@ tco_modelo_etiqueta_is() { # ID; stdin = etiqueta visible
   local model="$1" family version labels
   version="$(tco_modelo_version_visible "$model")" || return 1
   family="${model#claude-}"; family="${family%%-*}"
-  labels="$(grep -oiE '(^|\[)(opus|sonnet)[[:space:]]+[0-9]+(\.[0-9]+)*' | tr -d '[' | tr '[:upper:]' '[:lower:]')" || return 1
+  labels="$(grep -oiE '(^|\[)(opus|sonnet|fable)[[:space:]]+[0-9]+(\.[0-9]+)*' | tr -d '[' | tr '[:upper:]' '[:lower:]')" || return 1
   [ "$labels" = "$family $version" ]
 }
 # Primera columna de familia y versión exacta; Default nunca es una familia.
@@ -130,9 +130,13 @@ tco_modelo_picker_alias() {
 tco_modelos_read() {
   local f="${1:-$(tco_modelos_path)}" line k v
   local opus='' sonnet='' fecha='' cli='' opus_alias='' sonnet_alias=''
+  local sol='' mando='' esfuerzo=medium plan=claude:opus code=claude:sonnet sensible=claude:opus audit=claude:sonnet
   local -A vistos=()
   TCO_OPUS_VIGENTE=''; TCO_SONNET_VIGENTE=''
   TCO_MODELOS_FECHA=''; TCO_MODELOS_CLI=''
+  TCO_SOL_VIGENTE=''; TCO_MANDO_MODEL=''; TCO_AUDIT_EFFORT=''
+  TCO_ROL_PLAN=''; TCO_ROL_CODE=''; TCO_ROL_CODE_SENSIBLE=''; TCO_ROL_AUDIT=''
+  TCO_MODELOS_CLAVES=''
   [ -f "$f" ] && [ -r "$f" ] && [ ! -L "$f" ] || { tco_modelos_error; return 1; }
   while IFS= read -r line || [ -n "$line" ]; do
     [[ $line =~ ^([A-Z_]+)=\"([^\"]+)\"$ ]] || { tco_modelos_error; return 1; }
@@ -145,6 +149,12 @@ tco_modelos_read() {
       CLI_VERSION) [[ $v =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { tco_modelos_error; return 1; }; cli="$v" ;;
       OPUS_PICKER_ALIAS) opus_alias="$v" ;;
       SONNET_PICKER_ALIAS) sonnet_alias="$v" ;;
+      SOL_MODEL) [[ $v =~ ^gpt-[0-9]+(\.[0-9]+)*-sol$ ]] || { tco_modelos_error; return 1; }; sol="$v" ;;
+      MANDO_MODEL) [[ $v =~ ^claude-(opus|sonnet|fable)-[0-9]+([.-][a-z0-9]+)*$ ]] || { tco_modelos_error; return 1; }; mando="$v" ;;
+      AUDIT_EFFORT) case "$v" in low|medium|high|xhigh) esfuerzo="$v" ;; *) tco_modelos_error; return 1 ;; esac ;;
+      PLAN|CODE|CODE_SENSIBLE|AUDIT)
+        case "$v" in claude:opus|claude:sonnet|codex:sol) ;; *) tco_modelos_error; return 1 ;; esac
+        case "$k" in PLAN) plan="$v" ;; CODE) code="$v" ;; CODE_SENSIBLE) sensible="$v" ;; AUDIT) audit="$v" ;; esac ;;
       *) tco_modelos_error; return 1 ;;
     esac
   done < "$f"
@@ -153,28 +163,77 @@ tco_modelos_read() {
   # Registros anteriores de cuatro claves siguen siendo datos válidos; se derivan igual.
   [ -z "$opus_alias" ] || [ "$opus_alias" = "$(tco_modelo_picker_alias "$opus")" ] || { tco_modelos_error; return 1; }
   [ -z "$sonnet_alias" ] || [ "$sonnet_alias" = "$(tco_modelo_picker_alias "$sonnet")" ] || { tco_modelos_error; return 1; }
+  if [[ "$plan $code $sensible $audit" = *codex:sol* ]] && [ -z "$sol" ]; then tco_modelos_error; return 1; fi
   TCO_OPUS_VIGENTE="$opus"; TCO_SONNET_VIGENTE="$sonnet"
   TCO_MODELOS_FECHA="$fecha"; TCO_MODELOS_CLI="$cli"
+  export TCO_SOL_VIGENTE="$sol" TCO_MANDO_MODEL="$mando" TCO_AUDIT_EFFORT="$esfuerzo"
+  export TCO_ROL_PLAN="$plan" TCO_ROL_CODE="$code" TCO_ROL_CODE_SENSIBLE="$sensible" TCO_ROL_AUDIT="$audit"
+  TCO_MODELOS_CLAVES=" ${!vistos[*]} "
 }
-tco_modelo_read() {
-  tco_modelos_read || return 1
+tco_modelo_rol_actual() {
   case "${1:-}" in
-    ceo|plan|replan|fallback) printf '%s\n' "$TCO_OPUS_VIGENTE" ;;
-    coding|audit|coordinador|merge|salud) printf '%s\n' "$TCO_SONNET_VIGENTE" ;;
+    ceo|pm) printf 'claude:opus\n' ;;
+    plan|replan) printf '%s\n' "$TCO_ROL_PLAN" ;;
+    fallback|code_sensible) printf '%s\n' "$TCO_ROL_CODE_SENSIBLE" ;;
+    code|coding) printf '%s\n' "$TCO_ROL_CODE" ;;
+    audit) printf '%s\n' "$TCO_ROL_AUDIT" ;;
+    coordinador|merge|salud) printf 'claude:sonnet\n' ;;
     *) printf 'ERROR modelos: rol desconocido\n' >&2; return 1 ;;
   esac
+}
+tco_modelo_read() {
+  local rol
+  tco_modelos_read || return 1
+  rol="$(tco_modelo_rol_actual "${1:-}")" || return 1
+  case "${1:-}" in ceo|pm) if [ -n "$TCO_MANDO_MODEL" ]; then printf '%s\n' "$TCO_MANDO_MODEL"; return; fi ;; esac
+  case "$rol" in claude:opus) printf '%s\n' "$TCO_OPUS_VIGENTE" ;; claude:sonnet) printf '%s\n' "$TCO_SONNET_VIGENTE" ;; codex:sol) printf '%s\n' "$TCO_SOL_VIGENTE" ;; esac
+}
+tco_modelo_proveedor() {
+  local rol
+  tco_modelos_read || return 1
+  rol="$(tco_modelo_rol_actual "${1:-}")" || return 1
+  printf '%s\n' "${rol%%:*}"
+}
+tco_modelos_guarda_proveedores() {
+  local exe proveedor auditor="${TCO_ROL_AUDIT%%:*}" rol
+  for rol in "$TCO_ROL_PLAN" "$TCO_ROL_CODE" "$TCO_ROL_CODE_SENSIBLE"; do
+    [ "$rol" != codex:sol ] || { echo 'ERROR modelos: despacho con dev Codex no soportado por el paquete 2.0' >&2; return 1; }
+  done
+  [ -n "${TCO_AUDIT_CLI:-}" ] || return 0
+  # [issue 10264] LISTA BLANCA: primer token sin ruta y sin UN solo `-root` (igual que tco_cli_exe; este fichero se carga sin
+  # lib.sh, de ahí el recorte en línea). Solo `codex` EXACTO es Codex (vale `codex` y `codex-root`, el lanzador real de los canales);
+  # `claude*` conserva su camino y acaba en error; cualquier otro valor (codexx, codex-evil, gemini…) PARA.
+  exe="${TCO_AUDIT_CLI%% *}"; exe="${exe##*/}"; exe="${exe%-root}"
+  case "$exe" in claude*) proveedor=claude ;; codex) proveedor=codex ;; *) echo 'ERROR modelos: Codex es obligatorio como revisor; el auditor declarado no es Codex y el despacho se PARA y se escala (no hay auditor de reserva)' >&2; return 1 ;; esac
+  # Ley del lead (7-nov): el revisor es SIEMPRE Codex. Con otro auditor, o con una topología que no sea `distinto`
+  # (auditoría con el mismo agente que desarrolla), el despacho PARA y se escala: nunca cae a un revisor Claude.
+  [ "$proveedor" = codex ] || { echo 'ERROR modelos: Codex es obligatorio como revisor; sin él el despacho se PARA y se escala (no hay auditor de reserva)' >&2; return 1; }
+  [ "${TCO_AUDIT_TOPOLOGY:-distinto}" = distinto ] || { echo 'ERROR modelos: la auditoría solo admite la topología distinto (auditor Codex, desarrollo Claude); sin Codex el despacho se PARA y se escala' >&2; return 1; }
+  if [[ $TCO_MODELOS_CLAVES = *' AUDIT '* ]]; then
+    [ "$auditor" = "$proveedor" ] || { echo 'ERROR modelos: AUDIT no coincide con el proveedor del binario auditor' >&2; return 1; }
+  else auditor="$proveedor"; fi
+  for rol in "$TCO_ROL_PLAN" "$TCO_ROL_CODE" "$TCO_ROL_CODE_SENSIBLE"; do
+    [ "$auditor" != "${rol%%:*}" ] || { echo 'ERROR modelos: el auditor y el que desarrolla no pueden ser el mismo proveedor' >&2; return 1; }
+  done
 }
 tco_modelos_config() {
   TCO_PLAN_MODEL=''; TCO_FALLBACK_MODEL=''; TCO_DEV_MODEL=''
   TCO_DEV_MODEL_ARGS=''
-  case "${TCO_AUDIT_CLI:-}" in *claude*) TCO_AUDIT_MODEL_ARGS='' ;; esac
   tco_modelos_read || return 1
-  TCO_PLAN_MODEL="$TCO_OPUS_VIGENTE"; TCO_FALLBACK_MODEL="$TCO_OPUS_VIGENTE"
-  TCO_DEV_MODEL="$TCO_SONNET_VIGENTE"; TCO_DEV_MODEL_ARGS="--model $TCO_SONNET_VIGENTE"
-  case "${TCO_AUDIT_CLI:-}" in *claude*) TCO_AUDIT_MODEL_ARGS="--model $TCO_SONNET_VIGENTE" ;; esac
+  TCO_PLAN_MODEL="$(tco_modelo_read plan)" || return 1
+  TCO_FALLBACK_MODEL="$(tco_modelo_read fallback)" || return 1
+  TCO_DEV_MODEL="$(tco_modelo_read code)" || return 1
+  TCO_DEV_MODEL_ARGS="--model $TCO_DEV_MODEL"
+  if [ -z "${TCO_AUDIT_MODEL_ARGS:-}" ]; then
+    local aexe="${TCO_AUDIT_CLI:-}"; aexe="${aexe%% *}"; aexe="${aexe##*/}"; aexe="${aexe%-root}"   # [issue 10264] mismo recorte que la guarda: codex EXACTO
+    case "$aexe" in
+      codex) [ "$TCO_ROL_AUDIT" != codex:sol ] || TCO_AUDIT_MODEL_ARGS="--model $TCO_SOL_VIGENTE --config model_reasoning_effort=$TCO_AUDIT_EFFORT" ;;
+    esac
+  fi
+  tco_modelos_guarda_proveedores
 }
 # Verifica el ID solicitado contra la autoridad actual en el propio punto de uso.
 tco_modelo_require() {
   tco_modelos_read || return 1
-  if [ -z "${1:-}" ] || { [ "$1" != "$TCO_OPUS_VIGENTE" ] && [ "$1" != "$TCO_SONNET_VIGENTE" ]; }; then tco_modelos_error; return 1; fi
+  if [ -z "${1:-}" ] || { [ "$1" != "$TCO_OPUS_VIGENTE" ] && [ "$1" != "$TCO_SONNET_VIGENTE" ] && [ "$1" != "$TCO_MANDO_MODEL" ]; }; then tco_modelos_error; return 1; fi
 }

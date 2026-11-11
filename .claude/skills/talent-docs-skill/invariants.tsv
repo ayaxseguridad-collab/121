@@ -1,0 +1,8 @@
+INV-DOC-001	SKILL.md	MUST	Diátaxis \(4 tipos: Tutorial, How-to, Reference, Explanation\)	diataxis-cuatro-tipos-orientacion
+INV-DOC-002	SKILL.md	MUST	Los ADRs son \*\*inmutables\*\*	adr-inmutable-seccion-adrs
+INV-DOC-003	SKILL.md	MUST	crear nuevo ADR con status `supersedes	adr-sustitucion-seccion-adrs
+INV-DOC-004	SKILL.md	MUST	Usar template MADR 4\.0	plantilla-adr-seccion-adrs
+INV-DOC-005	SKILL.md	MUST	Frontmatter YAML obligatorio	metadatos-seccion-escritura
+INV-DOC-006	SKILL.md	MUST	la documentación va en el mismo PR que el código	docs-mismo-pr-gotcha-5
+INV-DOC-007	SKILL.md	MUST	`references/templates\.md`	plantillas-trazables-referencias
+INV-DOC-008	SKILL.md	MUST	scripts/paquete/package\.manifest	paquete-D3-puntero-manifiesto

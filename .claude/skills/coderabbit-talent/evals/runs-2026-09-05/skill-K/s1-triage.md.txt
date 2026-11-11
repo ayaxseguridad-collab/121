@@ -1,0 +1,142 @@
+# Triage — PR #2182 (`ejemplo/repo`)
+
+`feat(portal): ABC-5258 encuestas por formación Next con día del directo + ABC-5064 quiz M1 Vibe Agents (tren)`
+— **MERGED** (squash `f89ff5a01`). Metodología: `scripts/fetch_cr_comments.sh` (GraphQL,
+`reviewThreads`) para los comentarios inline, más una lectura completa de las `reviews` y los
+`issueComments` del PR (el walkthrough con `pre_merge_checks` es también contenido de
+CodeRabbit y no aparece en `fetch_cr_comments.sh`, que solo mira threads inline). Cada hallazgo
+se contrastó contra el código real del repo en el estado actual (no solo el diff).
+
+## Resumen
+
+| Origen | Cantidad | Bloqueante por política del repo (regla 16 CLAUDE.md) |
+|---|---|---|
+| Review thread inline (`reviewThreads`, vía GraphQL) | 1 | Sí, por etiqueta propia de CR (🟠 Major / Functional Correctness) |
+| `pre_merge_checks` del walkthrough de CodeRabbit | 2 fallidos (de 9) | 1 sí (Breaking Changes), 1 no (Docstring Coverage) |
+| Finding del CR-CLI (Mergeador), relayado en comentario humano — **no es un comentario nativo de la App en GitHub** | 1 | Discutible; ver caveat de trazabilidad abajo |
+
+**El repo opera con la política de severidad de la regla 16**: solo bloquean secret leak, RLS
+faltante, OWASP, bug funcional del flujo, regresión, contrato roto, concurrencia, auth/authz
+defectuosa, fallo operacional o breaking change no documentado. Todo lo demás (nitpick/estilo)
+no bloquea merge. Uso esa vara para "válido y bloqueante" vs. "válido pero no bloqueante" vs.
+"falso positivo".
+
+---
+
+## 1. Comentario inline — `supabase/migrations/20271331000000_abc5064_seed_quiz_modulo1_vibe_agents.sql:42-43`
+
+**Thread:** `PRRT_kwDOSUMvGs6ewPoc` (resuelto). Categoría CR: `🎯 Functional Correctness | 🟠 Major | 🏗️ Heavy lift`. Incluye "🤖 Prompt for AI Agents".
+
+**Texto (resumen):** "Incluya contenido no vacío para `en` y `pt-BR`" — título/descripción/preguntas/opciones del quiz solo tienen `es`; según CR, "los usuarios con inglés o portugués seleccionado reciben contenido vacío o sin localizar".
+
+**Veredicto: FALSO POSITIVO en la consecuencia afirmada — razón tipificada: "impacto sobreestimado / contexto de runtime no visto por el reviewer".**
+
+Verifiqué dos cosas directamente en el código de este repo:
+
+1. **El dato es correcto**: el archivo (líneas 40-41 y todo el bloque de `quiz_questions`/`quiz_options`)
+   efectivamente solo rellena `es`; `en`/`pt-BR` quedan vacíos en el título/descripción y ni
+   siquiera se incluyen como claves en preguntas/opciones (`grep` cuenta 122 ocurrencias de
+   `"es"` contra 1 de `"en"` y 1 de `"pt-BR"` en todo el archivo).
+2. **Pero la consecuencia que CR afirma es falsa**: `src/lib/i18n/jsonb.ts` — el helper `translate()`
+   que TODO el portal usa para leer estos campos — hace fallback explícito `[locale, "es", "en"]`
+   y solo devuelve `""` si NINGUNA de esas tres claves tiene un string no vacío. Un usuario con
+   locale `en` o `pt-BR` que abre este quiz **ve el contenido en español** (no vacío, no roto),
+   exactamente igual que en el resto de las 9 migraciones-seed de quiz precedentes del repo que
+   siguen el mismo patrón (confirmé el mismo shape `{"es":"...","en":"","pt-BR":""}` en
+   `20271303000000_abc4993_seed_quiz_modulo1_vibe_marketer.sql`, la migración-hermana citada en
+   la propia descripción del PR como "réplica del contrato"). CodeRabbit no vio `jsonb.ts` (no
+   estaba en el diff) y por eso no pudo saber que el fallback existe.
+3. Además, el encabezado de la propia migración declara la intención explícita: "20
+   single_choice × 4 opciones (1 correcta + explicación), **SOLO ES**" — es un patrón de diseño
+   documentado y repetido (9+ migraciones-seed de quiz en el repo usan `SOLO ES` en su comentario
+   de cabecera), no un olvido puntual.
+
+**¿Era bloqueante?** Por la etiqueta propia de CR (Major/Functional Correctness) sí encajaba
+prima facie en el bucket "bug funcional del flujo" de la regla 16. Con la evidencia de arriba, mi
+lectura es que **no debería haber bloqueado**: el "bug" no se manifiesta en runtime.
+
+**Cómo se gestionó en el PR (y por qué me parece parcialmente insuficiente):** la respuesta
+humana en el thread ("`example-reviewer`", 03:45:01Z) dio como razón que la migración "ya está
+aplicada en producción" y que es "deuda editorial" — una razón *procedimental* válida para no
+reabrir la migración, pero **no la razón técnica más fuerte disponible** (el fallback de
+`translate()`, que refuta directamente la premisa de CR de que hay contenido vacío). Además esa
+respuesta intentó `@coderabbitai resolve` como **reply de un review thread**, y el bot contestó
+correctamente que ese comando solo funciona como **comentario de nivel superior nuevo** en el PR
+— por lo que ese intento concreto de resolve falló (el thread terminó igualmente marcado
+`isResolved: true`, presumiblemente resuelto por otra vía, p. ej. `resolve_thread.sh`/GraphQL).
+
+**Plan de fix por fichero:**
+
+- `supabase/migrations/20271331000000_abc5064_seed_quiz_modulo1_vibe_agents.sql` — **no tocar**
+  este fichero (ya aplicado en prod; el repo no permite editar migraciones ya corridas). Si el
+  equipo decide que SÍ quiere traducciones reales de `en`/`pt-BR` para este quiz, la vía correcta
+  es una **migración nueva** que haga `UPDATE` sobre las filas ya insertadas (quiz, preguntas,
+  opciones) añadiendo los textos en los otros dos locales — exactamente el "issue de seguimiento"
+  que la respuesta humana dice haber abierto en Linear (no pude verificar esa issue desde aquí:
+  fuera del alcance de las herramientas de esta tarea).
+- `.coderabbit.yaml` de este repo — añadir un `path_instructions` para
+  `supabase/migrations/**seed_quiz**` (o equivalente) documentando el patrón "SOLO ES" y el
+  fallback de `translate()`, para que CR dexe de reabrir el mismo falso positivo en las próximas
+  migraciones-seed de quiz (ya son 9+ instancias del mismo patrón). Es el mismo mecanismo que la
+  skill recomienda para "CR repetitivo"/"CR alucina": corregir con contexto en vez de re-explicar
+  a mano en cada PR.
+- Si se vuelve a challengear un comentario equivalente en el futuro, usar `challenge_thread.sh`
+  citando `src/lib/i18n/jsonb.ts` (`translate()`) como evidencia — es más convincente y duradero
+  (CR aprende del repo) que "ya está en producción".
+
+---
+
+## 2. Pre-merge check — "Breaking Changes Documentados" (⚠️ failed)
+
+Parte del comentario-walkthrough de CodeRabbit (issue comment, no thread inline): la migración
+elimina `public.get_pending_surveys_for_user(text)` y crea la firma
+`get_pending_surveys_for_user(text, uuid)`; CR pide una sección `## Breaking changes` explícita en
+la descripción del PR con el detalle del cambio de firma, plan de migración y compatibilidad.
+
+**Veredicto: VÁLIDO y BLOQUEANTE por política del repo** (regla 16 incluye explícitamente
+"breaking change no documentado" en la lista de categorías que sí deben atenderse). Verifiqué el
+body real del PR (`gh pr view --json body`) y **no contiene** la cadena "breaking" en ninguna
+forma — el check tiene razón, la sección nunca se añadió, y el PR se mergeó sin ella.
+
+**Plan de fix por fichero:**
+
+- No hay un "fichero de código" que arreglar — el fix vive en la **descripción del PR** (ya
+  mergeado, así que esto es ahora deuda de documentación retroactiva, no algo accionable en el
+  PR mismo). Recomendación: documentar el breaking change post-hoc donde el repo lo espera
+  (`talent-docs-skill`: un ADR o entrada de runbook si el cambio de firma tiene implicaciones para
+  otros consumidores del RPC) y, para el próximo PR que cambie una firma pública, incluir la
+  sección `## Breaking changes` ANTES de abrir el PR — el propio `pre_merge_checks` de este
+  template ya lo pide, solo falta seguirlo.
+- Si el equipo considera que esta categoría de warning no debería ser bloqueante para este tipo
+  de cambios internos (RPC entre capas propias, no un contrato público de terceros), la vía es
+  bajar `Breaking Changes Documentados` explícitamente a `mode: warning` documentado en
+  `.coderabbit.yaml` — pero dado que la regla 16 lo lista como categoría bloqueante por defecto,
+  yo no haría ese cambio sin una decisión explícita del lead (regla 7: no decidir política de
+  severidad unilateralmente).
+
+## 3. Pre-merge check — "Docstring Coverage" (⚠️ failed, 50% < 80%)
+
+**Veredicto: NO BLOQUEANTE por política del repo** — cae en la categoría "docstring/estilo" que
+la regla 16 suprime explícitamente (`.coderabbit.yaml` está configurado para no generar/atender
+comentarios minor/docstring cosmético). No requiere acción salvo que el equipo decida
+voluntariamente subir cobertura de documentación; no lo marcaría como bloqueante ni le asignaría
+plan de fix.
+
+## 4. (Caveat de trazabilidad) Finding "major" del CR-CLI sobre `tests/unit/portal/pending-surveys.test.ts`
+
+Un comentario humano (`example-reviewer`, 04:22:43Z) resume una corrida del **CodeRabbit CLI**
+(no la App) que encontró 1 finding "major": pide que ante `PGRST202` con `p_program_id` la función
+devuelva `null` sin ejecutar el fallback legado. **No pude verificar este finding de forma
+independiente**: no es un comentario nativo de CodeRabbit visible por GraphQL/REST en el PR (vive
+solo en los artefactos locales `.cr-review-result.json`/`.cr-review-findings.jsonl` referenciados
+por ruta y hash, a los que esta sesión no tiene acceso). Lo incluyo por transparencia, no como un
+hallazgo que haya podido auditar de primera mano.
+
+**Sobre el razonamiento dado (no bloqueante, deuda declarada vía ABC-5259):** es internamente
+coherente con la regla 16 tal como está descrita en el comentario — el propio autor documenta que
+el fallback es diseño explícito y temporal, que el comportamiento sin acotar ya es el de `main`
+hoy (no es una regresión nueva), y que la ventana de exposición se cierra en el mismo turno del
+apply a producción. No tengo forma de confirmar independientemente esos hechos (el estado de
+`main` antes del PR, o el timing real del apply) sin acceso a los artefactos citados, así que la
+clasifico como **"no verificable con las herramientas de esta tarea, argumento coherente en su
+propio relato"**, no como "válida" ni "falsa" en sentido pleno.

@@ -48,7 +48,10 @@ command -v "$GH_BIN" >/dev/null 2>&1 || { echo "[verify-handoff] falta gh (o VH_
 
 # ── Allowlist de superficies: fuente única = manifiesto de la fábrica (TAL-2288, decisión 7) ──
 # Resolución FAIL-CLOSED, sin allowlist embebida: env TF_MANIFEST (ruta absoluta) → copia
-# local .claude/tf-manifest.conf (la empuja el despacho/provisioning al canal; gitignored).
+# local .claude/tf-manifest.conf (la empuja el despacho/provisioning al canal; gitignored) →
+# TAL-5503: autodescubrimiento manifiestos/<basename-del-repo>.conf (convención de
+# self-onboarding del MOTOR — manifiestos/talent-factory.conf en un clon .../talent-factory;
+# inerte en repos de producto, que no tienen directorio manifiestos/ propio).
 # Sin manifiesto resoluble ⇒ exit 2: un gate sin fuente real de allowlist no puede dar verde.
 # El manifiesto NO se ejecuta (sin `source`): es un fichero empujable al canal y este script
 # corre también en la estación de merge — solo se EXTRAE la línea TF_SENSITIVE_SURFACES.
@@ -66,10 +69,13 @@ if [ -n "${TF_MANIFEST:-}" ]; then
 elif [ -f "$ROOT/.claude/tf-manifest.conf" ]; then
   manifest_path="$ROOT/.claude/tf-manifest.conf"
   manifest_origin="copia local del canal ($manifest_path)"
+elif [ -f "$ROOT/manifiestos/$(basename "$ROOT").conf" ]; then
+  manifest_path="$ROOT/manifiestos/$(basename "$ROOT").conf"
+  manifest_origin="autodescubierto por convención ($manifest_path)"
 else
   {
-    echo "[verify-handoff] SIN manifiesto de fábrica: ni env TF_MANIFEST ni copia local $ROOT/.claude/tf-manifest.conf (fail-closed)."
-    echo "[verify-handoff] Provisión requerida: el despacho empuja .claude/tf-manifest.conf al canal, o exporta TF_MANIFEST=/ruta/absoluta/al/manifiesto."
+    echo "[verify-handoff] SIN manifiesto de fábrica: ni env TF_MANIFEST, ni copia local $ROOT/.claude/tf-manifest.conf, ni $ROOT/manifiestos/$(basename "$ROOT").conf (fail-closed)."
+    echo "[verify-handoff] Provisión requerida: el despacho empuja .claude/tf-manifest.conf al canal, exporta TF_MANIFEST=/ruta/absoluta/al/manifiesto, o (self-onboarding del motor) coloca manifiestos/$(basename "$ROOT").conf en el propio repo."
   } >&2
   exit 2
 fi
@@ -180,7 +186,13 @@ else
 fi
 
 decl_sha="$(jq -r '.head_sha // ""' <<<"$handoff")"
-if printf '%s' "$decl_sha" | grep -Eq '^[0-9a-f]{40}$'; then
+# TAL-5430: match nativo de bash, no `printf | grep -q` — un `grep -q` que ACIERTA cierra su
+# lector antes de que `printf` termine de escribir; con `pipefail`, el `printf` muerto por
+# SIGPIPE (rc=141) hace que la TUBERÍA ENTERA devuelva no-cero aunque `grep` haya encontrado la
+# coincidencia — falso negativo. `decl_sha` es corto en la práctica, pero es la MISMA clase de
+# fallo que las tuberías de más abajo sobre `$pr_body` (que sí puede ser grande) — se corrige
+# igual en las tres por consistencia, no por riesgo diferenciado.
+if [[ "$decl_sha" =~ ^[0-9a-f]{40}$ ]]; then
   if [ "$decl_sha" = "$head_oid" ]; then
     ok "head_sha declarado == headRefOid"
   else
@@ -278,11 +290,32 @@ fi
 # viola el invariante sellado; la coordinadora terminal cierra tras el --execute real.
 # Nota: hay múltiples líneas con closes/fixes/resolves en este bloque §4 (mensajes + regex);
 # todas están confinadas aquí — no hay enforcement de cierre en ningún otro punto del script.
+# TAL-5430: match nativo de bash (`[[ =~ ]]`), no `printf "$pr_body" | grep -Eiq ...`. Medido en
+# vivo: un `pr_body` con la señal PRESENTE cerca del inicio seguido de ~200 KB de relleno hacía
+# que `grep -q` acertara y cerrara su lector antes de que `printf` terminara de escribir — el
+# `printf` muere por SIGPIPE (rc=141) y, bajo `pipefail`, la tubería entera devuelve no-cero
+# pese al acierto de `grep`: un falso negativo justo en el instrumento con el que se acreditan
+# las entregas. `[[ =~ ]]` no crea subproceso ni tubería — SIGPIPE queda estructuralmente
+# imposible, no solo mitigado. `nocasematch` reemplaza la `-i` de grep; el patrón vive en una
+# variable (nunca literal en el `[[ ]]`) porque bash consume `\b` si el patrón está inline.
+# AUDITORÍA TAL-5430 (r1, hallazgo MAYOR): `grep -Eiq` procesa el body LÍNEA A LÍNEA — el magic
+# word y el issue ID solo casaban si compartían línea. Evaluar `[[ "$pr_body" =~ $pat ]]` contra
+# la cadena COMPLETA amplía `[[:space:]]+` para que también consuma saltos de línea, aceptando
+# "closes\nTAL-N" como si fuera "closes TAL-N" — ensancha el gate de cierre (y, en sentido
+# contrario, en data-op-sin-cierre convierte en "cierre prohibido" un caso que antes no lo era).
+# Se evalúa el patrón contra CADA LÍNEA por separado (mismo alcance que grep), sin tubería.
+_vh_nocasematch_was_on=false
+shopt -q nocasematch && _vh_nocasematch_was_on=true
+shopt -s nocasematch
 while IFS= read -r issue; do
   [ -n "$issue" ] || continue
   has_close=false; has_ref=false
-  printf '%s' "$pr_body" | grep -Eiq "\b(closes|fixes|resolves)[[:space:]]+#?${issue}\b" && has_close=true
-  printf '%s' "$pr_body" | grep -Eiq "\brefs[[:space:]]+#?${issue}\b" && has_ref=true
+  close_pat="\b(closes|fixes|resolves)[[:space:]]+#?${issue}\b"
+  ref_pat="\brefs[[:space:]]+#?${issue}\b"
+  while IFS= read -r pr_line || [ -n "$pr_line" ]; do
+    if [ "$has_close" = false ] && [[ "$pr_line" =~ $close_pat ]]; then has_close=true; fi
+    if [ "$has_ref" = false ] && [[ "$pr_line" =~ $ref_pat ]]; then has_ref=true; fi
+  done <<< "$pr_body"
   if [ "$data_op" = true ]; then
     if [ "$has_close" = true ]; then
       bad "INVARIANTE data-op-sin-cierre violado: el body CIERRA $issue (closes/fixes/resolves) — un data-op NUNCA cierra vía el canal autor; usa 'Refs $issue' y deja el cierre a la coordinadora terminal tras el --execute real"
@@ -299,6 +332,7 @@ while IFS= read -r issue; do
     fi
   fi
 done < <(jq -r '(.issues // [])[]' <<<"$handoff" 2>/dev/null)
+[ "$_vh_nocasematch_was_on" = true ] || shopt -u nocasematch
 
 # ── Veredicto ───────────────────────────────────────────────────────────────
 if [ "$errors" -eq 0 ]; then

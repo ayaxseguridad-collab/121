@@ -99,7 +99,7 @@ Forma rápida de obtenerlos:
 # El cliente resuelve la clave solo: LINEAR_API_KEY exportada > fichero de TA_OPERATION_ENV >
 # .env.local de la raíz del repo (no la teclees en la shell: quedaría en el historial). Se ejecuta
 # desde el repo, por ruta absoluta, para que la raíz del repo sea la del proyecto.
-npx tsx ~/.claude/skills/linear-skill/scripts/linear-client.ts --action whoami
+bash <raíz-del-repo>/scripts/tsx.sh ~/.claude/skills/linear-skill/scripts/linear-client.ts --action whoami
 ```
 
 Esto imprime tu workspace info. Luego ejecuta queries puntuales contra GraphQL para obtener los UUIDs específicos. Las queries están listadas dentro del JSON en el campo `queries_to_fill_uuids`.
@@ -299,11 +299,11 @@ Si alguna de estas reglas te molesta, probablemente estés intentando un anti-pa
 ## Contribuir
 
 Este skill es miembro del paquete de fábrica: el canónico vive en el repo motor `talent-factory`
-(`skills/linear-skill`) y se propaga a los repos de producto con `skill-creator/scripts/sync-package.sh`.
+(`skills/linear-skill`) y se propaga a los repos de producto con `scripts/paquete/sync-package.sh`.
 Las mejoras se hacen PRIMERO en el canónico; la vía de espejo —corregir en el producto y subirlo al
 motor con su issue de sincronización inversa— es la que la fábrica usa hoy para la doctrina, y va
 igualmente por revisión. Nunca se editan copias sueltas. **La regla vigente de propagación y su
-estado viven en `skill-creator/references/09-paquete-de-fabrica.md`; aquí no se re-enuncia.**
+estado viven en `scripts/paquete/PAQUETE.md`; aquí no se re-enuncia.**
 
 **`sync-package.sh --apply` está VETADO mientras haya divergencia declarada** (portador `TAL-5757`):
 es destructivo en las dos direcciones y borra sin avisar lo que el otro lado acaba de arreglar. La

@@ -1,0 +1,15 @@
+✔ You approved codex to run rg -n "^|$" '.github/PULL_REQUEST_TEMPLATE.md' this time
+✔ You approved codex to run rg -n "^|$" 'scripts/draft-handoff.sh' this time
+✔ You approved codex to run rg -n "^|$" 'scripts/verify-handoff.sh' this time
+✔ You approved codex to run rg -n "^|$" 'docs/templates/handoff-pr-draft.md' this time
+• Running rg -n "^|$" 'docs/index.md'
+  Would you like to run the following command?
+  Environment: local
+  Reason: ¿Permites leer este archivo canónico para contrastar el plan de auditoría?
+  $ rg -n "^|$" '.claude/skills/talent-issue-craft/references/02-verificaciones.md'
+› 1. Yes, proceed (y)
+  2. Yes, and don't ask again for commands that start with `rg -n "^|$" '.claude/skills/talent-issue-craft/
+     references/02-verificaciones.md'` (p)
+  3. No, and tell Codex what to do differently (esc)
+  Press enter to confirm or esc to cancel
+

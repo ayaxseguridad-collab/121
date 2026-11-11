@@ -24,7 +24,7 @@ optimización, no dependencia**: la fábrica debe poder armarse sin ella (modo m
 mecánica completa de migración (arranque de sesiones, checklist post-resume, seguridad) vive
 en el runbook `docs/runbooks/torre-de-control.md`; aquí va la doctrina de operación del
 Orquestador. **Helpers versionados (TAL-2278)**: la operación torre-\* está script-ificada en
-`scripts/` — `torre-sweep.sh`, `torre-relay.sh`, `torre-compact.sh`, `torre-resume.sh` (puras
+`scripts/` — `torre-sweep.sh`, `torre-relay.sh`, `torre-resume.sh` (puras
 testeables en `lib-torre.sh`); los comandos manuales quedan como fallback.
 
 ## Modo dual (torre ↔ manual)
@@ -105,25 +105,14 @@ ni una lista numerada bastan para ese aviso.
 
 Vía canónica: `scripts/torre-relay.sh <actor> --text '…'|--file <ruta>` — implementa TODA esta
 doctrina (pre-check del composer, post-paste PRE-submit, entrega verificada; rc 3 = cola real
-escalar, rc 4 = mismatch/no-clobbear). El protocolo compact-60 va por `scripts/torre-compact.sh`
-(`check` gatea por ctx%, `run` ejecuta los 4 pasos con nonce anti-stale). La doctrina (umbral 60 %,
-checkpoint limpio, fichero de regreso, paso-0) es canónica en `talent-context`.
+escalar, rc 4 = mismatch/no-clobbear). El compact vivo usa los hooks del CLI,
+banco fuera del repo y rescate por niveles (`talent-context/references/07-compact-vivo.md`).
+Autocompact: 200K × 60 %; CEO/PM 300K × 60 %. Tras compactar, Read completo de estado.md
+sin limit ni offset; guarda A recuerda la lectura pendiente. El watcher solo avisa de retraso.
 
-**Handoff de compact-60 por FICHERO (TAL-8039)**: con el TUI en pantalla alternada `capture-pane` es solo
-el viewport, así que un handoff largo pierde su `HANDOFF-INICIO` (compact-60 de C1 al 92 %: bloque en
-~369 s frente a `TORRE_HANDOFF_MAX=300`). `torre-compact.sh run` crea ANTES el dir 0700
-`$TORRE_HANDOFF_DIR` y ordena al actor **escribir con Write**
-`$TORRE_HANDOFF_DIR/<actor>.<TS>.pending.md` con el bloque entre `HANDOFF-INICIO <nonce>` y
-`HANDOFF-FIN <nonce>` (el mismo patrón de STOP-AUDIT, TAL-3619). La recogida
-(`lib-torre.sh` `torc_torre_collect_handoff`) lee el **fichero primero** — `torc_torre_read_handoff_file`
-verifica el CONTENIDO: nonce exacto, bloque completo (rc 4 si INICIO sin FIN), `mtime` no anterior a la
-petición (un fichero de otra ejecución no cuenta), no symlink; rc 2 = ausente/antiguo/otro nonce — y
-cae a la **pantalla de respaldo** (el mismo extractor `torc_torre_extract_handoff`, rc 0/2/4). Si el
-plazo base (`TORRE_HANDOFF_MAX`, 300 s) vence con el turno **vivo** (`torc_torre_busy`), prorroga
-`TORRE_HANDOFF_EXTEND` (60 s) cada vez hasta `TORRE_HANDOFF_HARD_MAX` (1200 s); un turno **parado** o un
-pane/sesión muerto (captura fallida: `torc_torre_alive`) no prorroga. El dir de handoffs debe ser propio,
-0700 y NO un enlace simbólico (se rechaza antes de pedir). Sin handoff verificado: «ABORTO ANTES de /compact», rc ≠ 0 — jamás `/compact` sin handoff
-guardado fuera. Cada nivel loguea `origen=fichero|pantalla`.
+Los helpers puros de handoff `lib-torre.sh` se conservan para el modo degradado sin hooks:
+nonce exacto, bloque completo, mtime no anterior, no symlink y prórroga con tope. Su futura
+limpieza se registra para 2.1. No se envía /compact desde una torre.
 
 - **Distinguir ghost-text de cola real con `capture-pane -e`** (escape codes): un texto en el
   input prefijado por `^[[2m` (dim/gris) es **autocompletado** del CLI, NO un mensaje
@@ -326,4 +315,4 @@ sin capturar corrompe el estado del pane:
   puede citar). Familia completa (clave exacta / efecto / detector disjunto) con evidencia
   medida en `talent-merger/references/07-gotchas.md` §6-7.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.

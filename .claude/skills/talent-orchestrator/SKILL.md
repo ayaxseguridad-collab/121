@@ -8,7 +8,7 @@ description: >
   Token-only, NO MCP. NO maneja canales ni mergea. Recibe bounce-to-pool. Trigger: "orquestador",
   "orchestrator", "talent-orchestrator", "curar batch", "curar bundle", "encargo", "bundling",
   "repartir issues", "orden de trabajo", "proyecto coordinación", "registro de flota", "bounce to
-  pool", "cola del Mergeador", "torre de control", "torre-sweep", "torre-relay", "torre-compact",
+  pool", "cola del Mergeador", "torre de control", "torre-sweep", "torre-relay",
   "torre-resume", "compact-60", "sweep de panes", "resume canonico", "ghost text", "exit fantasma".
 ---
 
@@ -16,7 +16,7 @@ description: >
 
 *v2.12 (TAL-3650, 2026-07-30) — capa META con PM: jerarquía PM ⇄ CEO como contrapartes
 (el PM define la carga; rol en el skill `talent-pm`, 12.º miembro del paquete), tabla de modelos
-con CEO=Opus vigente y PM=Sonnet vigente — todo en ref 11; detalle en
+con CEO=Opus vigente y PM=Opus vigente — todo en ref 11; detalle en
 `CHANGELOG.md` §v2.12. Base v2.11 (TAL-3394, 2026-07-23) — reconciliación guardia 15-16 jul: D7 ownership de limpieza de
 refs + umbral de reciclaje <10 min (ref 05), D8 issue ya-satisfecha sin makework (ref 08),
 compact-60 canónico en `talent-context`; detalle en `CHANGELOG.md` §v2.11. Base
@@ -186,17 +186,11 @@ aplica a su capa y los propaga a coordinadores y Mergeador:
       posterior (clasificación trabajo-genuino-vs-idle-real en ref 09 §Supervisión sin interrumpir).
       Los turnos **terminan cosechando** (pull del siguiente encargo, cerrar órdenes `Done`,
       re-pickear `bounced`), **nunca esperando pasivo**.
-- **Compact-60 (en cascada)**: al llegar el contexto de un actor (o del propio Orquestador) al **60 %**
-  (supersede el >70 % previo), y solo en checkpoint limpio: (1) el supervisor exige al actor el
-  **fichero de regreso** (estado exacto, en-vuelo, próximos pasos, IDs/refs) escrito FUERA de la
-  sesión y VERIFICADO (nunca "copiar fuera→`/compact`→pegar" a secas — ese resumen omite el gate);
-  (2) `/compact`; (3) al volver, **paso-0 como primer acto**, nunca autoevaluado por el actor
-  recién compactado, que retoma del fichero. En modo Torre lo vigila el Orquestador (barra `ctx:`
-  del pane); en modo manual, cada actor se auto-vigila y avisa al lead. Coordinadores y Mergeador
-  aplican el MISMO protocolo con sus canales (dev y auditor). Complementa (no sustituye) la
-  verificación de identidad y la purga de TaskList stale del post-resume (ref 09 + runbook Torre).
-  Doctrina canónica en `talent-context`; implementación ejecutable en `scripts/torre-*`
-  (ctx-watcher `torre-compact.sh check`).
+- **Compact vivo**: banco por hooks + autocompact al 60 % de 200K tokens (CEO/PM 300K).
+  Tras compactar se inyecta el rescate y se exige leer ENTERO estado.md antes de actuar.
+  El watcher por ctx% avisa de RETRASO; la barra mide la ventana completa del modelo.
+  Sin hooks se conserva checkpoint limpio, fichero de regreso verificado y paso-0.
+  Doctrina canónica: `talent-context/references/07-compact-vivo.md`.
 
 ## Quick Start
 
@@ -224,7 +218,6 @@ bash scripts/orchestrate.sh --project <uuid> --coordinador coord-talent --cap 4 
 bash scripts/torre-resume.sh <actor> --cwd <pwd-exacto> [--list|--uuid <uuid>|--dry-run]  # resume canónico
 bash scripts/torre-sweep.sh [actor…] [--ansi]                    # cosecha read-only + resumen busy/ctx/flags
 bash scripts/torre-relay.sh <actor> --text '…'|--file <ruta>     # relevo anti-fantasma (post-paste verificado)
-bash scripts/torre-compact.sh check|run <actor>                  # protocolo compact-60 (nonce anti-stale)
 ```
 
 Config en `scripts/00-config.sh`; los IDs del setup gated van en el escrow
@@ -247,7 +240,7 @@ CLI/Linear por token, no una API multi-lenguaje.*
 | `references/08-bundling.md` | **Fábrica v2**: algoritmo de curado de encargos/bundles, **cross-declaration cross-milestone + qué queda FUERA + pre-flag editorial-GO + allowlist-a-lead**, prioridad de la cola del Mergeador, **bounce-to-pool (Decisión 6: Backlog + label `bounced` + comentario)**, heads-up pre-emptivo, findings-por-origen |
 | `references/09-torre-de-control.md` | **Torre de Control** (capa opcional): modo dual, detección de sesión, sweep, send-keys anti-fantasma, **postura host vs contenedor + sin MCP heredado + Regla 0 extendida (`tco_ensure_model`) + "Press up" dos causas**, monitor, doctrinas D1/D2/D3; helpers versionados `scripts/torre-*.sh` (TAL-2278) |
 | `references/10-cuentas-y-pozos.md` | **Cuentas y pozos** (TAL-2294): ledger como fuente de verdad, pozos derivados de las claves (nunca enumerar), cosecha=MOVE un-login-un-lugar (Codex), política reset-7d-más-cercano, los 4 muros (puntero), coordinador único; **§7 (VIGENTE 2026-09-01): tokens de larga duración por cuenta en escrow + lectores de cuota + rotación automática por reset semanal (`scripts/pozos-*.sh`)** |
-| `references/11-multi-fabrica-y-ceo.md` | **Multi-fábrica + capa CEO** (TAL-2296): jerarquía CEO→orquestadores→(coordinadores+mergeador), doctrina de modelos (CEO Opus vigente, PM Sonnet vigente; coordinación `Sonnet vigente` `high`; **canales por fase** — plan Opus-`xhigh` / coding Sonnet-`high` / fallback Opus vigente`high` a 5 rondas, TAL-2675), retarget = drain+recycle+manifiesto, intake de proyectos desde la matriz; sync-espejo con el README del motor |
+| `references/11-multi-fabrica-y-ceo.md` | **Multi-fábrica + capa CEO** (issue 2296): jerarquía CEO→orquestadores→(coordinadores+mergeador), doctrina de modelos (CEO Opus vigente, PM Opus vigente; coordinación `Sonnet vigente` `high`; **canales por fase** — plan Opus-`xhigh` / coding Sonnet-`high` / fallback Opus vigente`high` a 5 rondas, issue 2675), retarget = drain+recycle+manifiesto, intake de proyectos desde la matriz; sync-espejo con el README del motor |
 
 ## Next Steps
 
@@ -307,12 +300,10 @@ CLI/Linear por token, no una API multi-lenguaje.*
 
 ## Paquete de fábrica
 
-Este skill es miembro del **paquete de skills de fábrica** (16): linear-skill · skill-creator · talent-buzz ·
-talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-coordination ·
-talent-issue-craft · talent-llm-local · talent-memoria · talent-merger · talent-orchestrator · talent-pm · talent-prd · talent-repo-onboarding. El paquete viaja JUNTO y
+Este skill es miembro del **paquete de skills de fábrica** (13): coderabbit-talent · linear-skill · talent-ceo · talent-channel-operation · talent-channels · talent-context · talent-docs-skill · talent-issue-craft · talent-medidor · talent-merger · talent-orchestrator · talent-pm · talent-sentry-guard. El paquete viaja JUNTO y
 **motor-primero**: canónico en el repo motor `talent-factory` (`skills/`), propagado como núcleo
-a los repos de producto con `skill-creator/scripts/sync-package.sh` (overlays por repo intactos)
-y validado con `skill-creator/scripts/validate-package.sh` + `<skill>/invariants.tsv`.
-Manifiesto: `skill-creator/assets/package.manifest` · doctrina y ratchet (D6): `skill-creator/references/09-paquete-de-fabrica.md`.
+a los repos de producto con `scripts/paquete/sync-package.sh` (overlays por repo intactos)
+y validado con `scripts/paquete/validate-package.sh` + `<skill>/invariants.tsv`.
+Manifiesto: `scripts/paquete/package.manifest` · doctrina y ratchet (D6): `scripts/paquete/PAQUETE.md`.
 
-Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; CEO y plan/fallback usan Opus vigente, los demás roles y salud Sonnet vigente. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.
+Registro de modelos: `~/.config/talent-channel-operation/modelos.conf` del usuario del rol; los roles se resuelven por proveedor con `tco_modelo_read` (tabla en `talent-channel-operation`, ref 11): CEO, PM, plan, re-plan y código sensible usan Opus vigente; código y coordinación, Sonnet vigente; el auditor es de otro proveedor. Resolver tras acreditar Claude con `talent-channel-operation/scripts/resolver-modelos.sh`.

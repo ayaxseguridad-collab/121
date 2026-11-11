@@ -1,0 +1,70 @@
+$ cat /tmp/cr-evals/skill-Q/SKILL.md
+  -> Leído completo. Skill coderabbit-talent, workflow App+CLI, gate pre-push ABC-1518, 6 comandos conceptuales.
+
+$ ls /tmp/cr-evals/skill-Q/scripts/ /tmp/cr-evals/skill-Q/references/ /tmp/cr-evals/skill-Q/assets/coderabbit-templates/
+  -> Inventario de scripts (8), references (9), plantillas yaml (9).
+
+$ cat /tmp/cr-evals/skill-Q/scripts/fetch_cr_comments.sh
+  -> Leído: obtiene review threads via GraphQL + issue comments + review bodies, clasifica categoria/severidad por regex.
+
+$ cat /tmp/cr-evals/skill-Q/references/comment-taxonomy.md
+  -> Leído completo: dos ejes oficiales (categoria/severidad), matriz heredada, rubrica de triage, falsos positivos tipificados, formato de informe.
+
+$ export $(cat <token-file>) && gh auth status
+  -> Logueado como example-reviewer, scopes read:org/repo/workflow.
+
+$ gh repo view ejemplo/repo --json name,owner
+  -> Repo confirmado, owner ejemplo.
+
+$ gh pr view 2182 --repo ejemplo/repo --json number,title,state,url,author,createdAt
+  -> PR #2182 MERGED, tren ABC-5258+ABC-5064.
+
+$ bash /tmp/cr-evals/skill-Q/scripts/fetch_cr_comments.sh ejemplo/repo 2182 --sources all > pr2182_raw.jsonl
+  -> rc=0. 3 entradas: 1 review thread inline (functional/major, isResolved:true) + 1 issue comment (walkthrough) + 1 review body.
+     Guardado en /tmp/cr-evals/runs/skill-Q/pr2182_raw.jsonl.
+
+$ jq -r '[.thread_id, .source // "inline", .category, .severity, .path, .line] | @tsv' pr2182_raw.jsonl
+  -> Confirmado: único hallazgo accionable en supabase/migrations/20271331000000_abc5064_seed_quiz_modulo1_vibe_agents.sql:43.
+
+$ (repo TA2026, solo lectura) sed -n '1,80p' supabase/migrations/20271331000000_abc5064_seed_quiz_modulo1_vibe_agents.sql
+  -> Confirmado: header documenta "SOLO ES" a proposito (patron talent-quiz-builder); title/description/preguntas solo con clave "es".
+
+$ grep -rl "4993" supabase/migrations/
+  -> Localizada migracion hermana ABC-4993 (vibe-marketer-next) con el mismo patron.
+
+$ sed -n '1,45p' supabase/migrations/20271303000000_abc4993_seed_quiz_modulo1_vibe_marketer.sql
+  -> Confirmado: mismo shape {"es":...,"en":"","pt-BR":""} y mismo comentario "SOLO ES" -> patron repetido, no descuido puntual.
+     Conclusion: comentario de CR es falso positivo tipo "Convencion del repo".
+
+$ export $(cat <token-file>) && gh pr view 2182 --repo ejemplo/repo --json body -q .body
+  -> Leido el body del PR: seccion "## Migraciones" documenta el cambio de firma de get_pending_surveys_for_user
+     (sin el heading exacto "## Breaking changes" que pide el pre-merge check) -> falso positivo tipo "ya cubierto".
+
+$ grep -n "^describe\|^it(\|^test(\|beforeEach\|afterEach" tests/unit/portal/pending-surveys.test.ts
+  -> Confirmado beforeEach/describe en el archivo de test tocado por el PR -> consistente con el gotcha documentado
+     de pre_merge_checks.docstrings contando callbacks de test como "funciones sin JSDoc".
+
+$ cat /tmp/cr-evals/skill-Q/assets/coderabbit-templates/base-talent.yaml
+$ cat /tmp/cr-evals/skill-Q/assets/coderabbit-templates/node-typescript.yaml
+  -> Leidas ambas plantillas para construir s2-coderabbit.yaml (base = node-typescript.yaml + pre_merge_checks/finishing_touches de base-talent.yaml).
+
+$ sed -n '1,120p' /tmp/cr-evals/skill-Q/references/yaml-reference.md
+  -> Confirmado schema v2: 10 propiedades top-level, reviews.profile enum quiet|chill|assertive.
+
+$ which coderabbit && coderabbit --version && coderabbit --help
+  -> CLI instalado en ~/.local/bin/coderabbit, version 0.7.6. Comando "config" disponible.
+
+$ cp s2-coderabbit.yaml .coderabbit.yaml && coderabbit config validate   (cwd: /tmp/cr-evals/runs/skill-Q)
+  -> "✔ .coderabbit.yaml is valid against the current CodeRabbit schema." Validado sin correr review. Copia temporal borrada despues.
+
+$ cat /tmp/cr-evals/skill-Q/references/troubleshooting.md
+  -> Leido completo: usado §3 (push bloqueado/sentinel), §5 (status FAILURE no es veredicto), §6 (--type retirada en 0.7.0) para s3-diagnostico.md.
+
+$ grep -n "^#\|^##\|sentinel\|OID\|rama\|seat_fp" /tmp/cr-evals/skill-Q/references/gate-cli-del-repo.md
+  -> Confirmado contrato de sentinels: Ruta B (.cr-review-ok, solo OID) vs Ruta A draft (.draft-handoff, OID+rama);
+     push a main rechazado incondicionalmente sin mirar sentinel.
+
+NOTA: No se ejecuto "coderabbit review" en ningun momento (prohibido por el brief). Solo se usaron
+--help, "config validate" y lectura (gh/curl/jq/cat/grep/sed) contra datos ya publicados en GitHub.
+No se comento en el PR #2182 ni en ningun otro PR. No se modifico el repo del proyecto (Example Project 2026):
+todas las escrituras fueron dentro de /tmp/cr-evals/runs/skill-Q/.

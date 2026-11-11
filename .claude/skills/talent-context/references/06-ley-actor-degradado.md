@@ -100,4 +100,4 @@ fabricó autoridad.
 - Para el eje de actor SANO (compactar) → `references/01-doctrina-y-checkpoint-limpio.md`
 - Para el paso-0 de verificación (principio de no delegar al recién relevado) →
   `references/03-paso-0-post-relevo.md`
-- Puntero cross-skill desde `talent-coordination` → su sección "Verificación por nivel"
+- Puntero cross-skill desde `talent-channel-operation` → `references/04-protocolo-auditoria.md`, "Verificación por nivel"

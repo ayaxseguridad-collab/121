@@ -1,0 +1,8 @@
+# normalizacion.tsv — fórmula de in_total por proveedor (decisión SELLADA 3 del plan de la F1, auditor del lead, 2026-09-21).
+# Columnas (TAB): proveedor  campo  sumandos (campos crudos de usage separados por «+»).
+# Claude: los tres contadores de entrada son disjuntos (F0 §Reglas) y la sellada los suma.
+# Codex: cached_input_tokens YA está dentro de input_tokens (F0 P7, 1.265/1.265): sumarlo lo cuenta dos veces.
+# thinking/reasoning van aparte, nunca dentro de in_total.
+proveedor	campo	sumandos
+claude	in_total	input_tokens+cache_creation_input_tokens+cache_read_input_tokens
+codex	in_total	input_tokens

@@ -1,0 +1,159 @@
+# Diagnóstico — tres problemas de CodeRabbit en la misma sesión
+
+Fuentes: `references/troubleshooting.md`, `SKILL.md` (sección "El gate CLI del repo"),
+verificación directa contra `.githooks/pre-push` y `scripts/cr-review.sh` de este repo, y
+comprobación empírica del CLI instalado (`coderabbit --help`, `coderabbit config validate`,
+`coderabbit doctor`) más la branch protection real de `main` vía `gh api`.
+
+---
+
+## 1. `git push` rechazado por un sentinel de CodeRabbit
+
+**Qué pasa:** el hook versionado `.githooks/pre-push` (ABC-1518/ABC-2193) bloquea cualquier push
+cuyo commit (el SHA/OID exacto que estás empujando) **no tenga un sentinel de archivo válido**.
+El hook **no ejecuta ningún review** — solo valida que un sentinel *ya generado por otro paso*
+exista y corresponda a ese OID (+ rama de destino, en el caso draft). Hay exactamente dos
+sentinels aceptados (confirmado leyendo `.githooks/pre-push` líneas 31-32 de este repo):
+
+- `.claude/.cr-review-ok` — lo emite `scripts/cr-review.sh` (Ruta B, flujo clásico fuera del
+  sistema de canales) cuando el CLI de CodeRabbit corrió sobre el diff y quedó limpio (o difirió
+  al App con PR + label `cr-review` verificado).
+- `.claude/.draft-handoff` — lo emite `scripts/draft-handoff.sh` (Ruta A, entrega DRAFT del
+  sistema de canales / Fábrica v2) tras validar los gates locales. Este sentinel ata OID **+
+  rama**: uno emitido para `feat/x` no autoriza empujar el mismo commit a otra rama.
+
+**Causa más probable:** ninguno de los dos existe todavía para el commit que intentas empujar, o
+existe pero para un commit **anterior** — cada commit nuevo invalida el sentinel del SHA previo
+(hay que regenerarlo, no reciclarlo). El hook imprime la razón exacta por la que cada sentinel
+falló (ABC-2277: p. ej. "SHA vacío — sentinel corrupto", "estado deferred con timestamp
+ilegible", etc.), así que el primer paso es leer literalmente el mensaje de `git push`, no
+adivinar.
+
+**Cómo se resuelve:**
+
+- Fuera del sistema de canales (flujo clásico): `bash scripts/cr-review.sh` sobre el diff actual
+  y reintentar el push. Esto SÍ ejecuta el CLI de CodeRabbit, pero como infraestructura del repo,
+  no como "uso ad-hoc" (la política de "no uses el CLI a mano salvo petición del lead" es sobre
+  correr `coderabbit review` suelto para depurar — no aplica a este script, que es el productor
+  oficial del sentinel).
+- Dentro de un canal (entrega draft): `bash scripts/draft-handoff.sh` y empujar la rama draft.
+- Si el CLI no está disponible en el entorno: pedir waiver al coordinador — **nunca** auto-crear
+  o falsificar el sentinel ("no self-report gates", Ola-5/ABC-1596: el sentinel de archivo real
+  producido por la corrida es la única evidencia válida).
+- Salida consciente de emergencia (queda en el reflog, es deliberada, no un bypass silencioso):
+  `git push --no-verify`.
+
+Detalle completo del mecanismo: `docs/runbooks/coderabbit-cli-pre-pr.md`.
+
+---
+
+## 2. El status `CodeRabbit` del PR está en `FAILURE`
+
+**Primero, un hecho verificado que cambia el impacto práctico:** consulté la branch protection
+real de `main` en `ejemplo/repo`
+(`gh api repos/.../branches/main/protection`) y el único required status check es
+**`local-gates`**. El check `CodeRabbit` **no está en la lista de checks requeridos**, así que un
+`FAILURE` ahí **no bloquea técnicamente el botón de merge de GitHub** en este repo — pero eso no
+significa que se deba ignorar: puede ser la señal de un hallazgo real bloqueante (regla 16), y
+conviene diagnosticarlo antes de asumir que es ruido.
+
+**Causas posibles, de más a menos probable:**
+
+1. **Hay comentarios/threads de review sin resolver y `reviews.request_changes_workflow: true`
+   (o el review quedó en `CHANGES_REQUESTED`).** Es el caso más común: CodeRabbit deja el review
+   en estado de cambios solicitados hasta que los threads bloqueantes se resuelvan. Diagnóstico:
+   `gh api graphql` sobre `pullRequest.reviews` para ver el `state` más reciente del autor
+   `coderabbitai`, o simplemente abrir el PR en GitHub y ver los review comments no resueltos.
+2. **Un `pre_merge_checks.custom_checks` con `mode: "error"` falló.** La plantilla base de este
+   skill (`base-talent.yaml`) define "No secrets in code" en modo `error` — si CodeRabbit detectó
+   algo que interpreta como secret, ESO hace fallar el check duro. Tratar como incidente de
+   seguridad real (regla 18: rotar la credencial de inmediato) hasta descartarlo, no como falso
+   positivo por defecto.
+3. **Otros `pre_merge_checks` (title, description, docstrings, breaking changes) están en
+   `mode: "error"` en este repo** en vez del default `warning` de la plantilla. Si alguno de esos
+   fue endurecido a `error`, cualquier warning (p. ej. "Breaking Changes Documentados", que en el
+   PR #2182 de este mismo repo apareció como advertencia real y sin resolver) pasaría a fallar el
+   check completo.
+4. **Fallo de infraestructura de CodeRabbit**, no un hallazgo real: el run erroró (timeout,
+   incidente del lado de CR). Se distingue de los casos anteriores porque no hay ningún finding
+   nuevo que lo explique.
+
+**Cómo diagnosticarlo:**
+
+```bash
+gh pr checks <PR>                       # ver el check "CodeRabbit" y su enlace a "Details"
+gh pr comment <PR> --body "@coderabbitai configuration"   # confirma la config EFECTIVA aplicada
+```
+
+El link "Details" del check lleva a la UI de CodeRabbit con el motivo exacto. Si el motivo es un
+`pre_merge_checks` en `mode: error` que el equipo NO quiere bloqueante, se puede bajar a `warning`
+en `.coderabbit.yaml` (aplica al siguiente review, no al actual — hay que disparar
+`@coderabbitai review` para que se re-evalúe con la config nueva). Si el motivo es un review con
+comentarios sin resolver, van por el flujo normal de triage/resolve del skill (`fetch_cr_comments.sh`
++ `resolve_thread.sh`), no por tocar el YAML.
+
+---
+
+## 3. El script interno falla con `unknown option '--type'` al invocar el CLI
+
+**Lo que verifiqué de forma reproducible en este entorno** (CLI instalado: `coderabbit --version`
+→ **0.7.6**):
+
+- `coderabbit review --help` **no documenta** ningún flag `--type`. Los flags oficiales/documentados
+  para acotar el scope del review son `--committed`, `--uncommitted` e `--include-untracked` (sin
+  flag = revisa cambios "tracked").
+- Sin embargo, `coderabbit review --type <valor>` **sí es aceptado** por el binario 0.7.6 como
+  alias no documentado — probado empíricamente: con un valor inválido responde
+  `Invalid review type: "foo". Valid types are: all, committed, uncommitted`, es decir, existe
+  como compatibilidad hacia atrás pero ya no aparece en `--help`.
+- **Este mismo repo usa exactamente ese flag en su propio script de gate**:
+  `scripts/cr-review.sh` línea ~807 invoca literalmente
+  `coderabbit review --agent --base origin/main --type committed`. Muy probablemente el "script
+  interno del equipo" del enunciado ES este script (o uno que sigue el mismo patrón) — no es un
+  uso exótico, es la forma en que el propio repo genera el sentinel `.claude/.cr-review-ok`
+  (problema 1 de esta lista).
+- El skill documenta que el CLI de la flota va **pineado a la versión 0.6.4** (checksum SHA-256 en
+  `talent-channels/scripts/02-golden.sh:110`), mientras que este entorno tiene **0.7.6** instalado
+  — es decir, ya hay **deriva de versión constatada entre el pin oficial y lo que corre en la
+  práctica**.
+
+**Diagnóstico (lo que es hecho verificado vs. lo que es inferencia, marcado explícitamente):**
+
+- **Hecho:** `--type` no es parte de la interfaz *documentada* actual del CLI; el reemplazo
+  soportado y estable es `--committed` / `--uncommitted` / `--include-untracked`.
+- **Hecho:** en 0.7.6 el flag legado sigue funcionando (no da "unknown option" aquí).
+- **Inferencia razonable (no verificada directamente, porque no instalé otra versión del CLI sin
+  el checksum pineado — instalar un binario sin verificar su integridad va contra la política del
+  propio skill):** la máquina donde el script SÍ falla con `unknown option '--type'` tiene una
+  versión del CLI donde ese alias de compatibilidad ya no existe — casi seguro una versión más
+  nueva que terminó de retirarlo en favor de los flags booleanos actuales (menos probable: una
+  versión muy antigua, anterior a que `--type` existiera siquiera). El síntoma exacto —
+  "unknown option", que es el mensaje típico del parser de Commander.js cuando un flag no está
+  registrado en absoluto, distinto del "Invalid review type" que sí vimos aquí — apunta a que el
+  flag fue **retirado**, no a un typo del comando.
+
+**Cómo resolverlo:**
+
+1. Confirmar la versión real en la máquina que falla: `coderabbit --version` y
+   `coderabbit review --help` (ver si `--type` aparece o no, y si `--committed`/`--uncommitted`
+   están documentados ahí).
+2. **Fix correcto y de fondo:** migrar `scripts/cr-review.sh` (y cualquier otro script interno con
+   el mismo patrón) de `--type committed` / `--type uncommitted` / `--type all` a los flags
+   soportados actuales: `--committed`, `--uncommitted`, y ausencia de flag (o `--include-untracked`
+   si además se quieren archivos sin trackear) respectivamente. Esto deja de depender de un alias
+   no documentado que puede desaparecer en cualquier release.
+3. **Mientras tanto (mitigación táctica):** re-pinear/verificar que la máquina afectada instale
+   exactamente la versión pineada por la flota (checksum SHA-256 de
+   `talent-channels/scripts/02-golden.sh:110`), en vez de dejar que `coderabbit update` (comando
+   presente en el CLI) la actualice sin control — la deriva de versión que ya se observó aquí
+   (0.6.4 pineado vs 0.7.6 en ejecución real) es exactamente el tipo de discrepancia que produce
+   este fallo en una máquina sí y en otra no.
+4. Validar el fix localmente antes de propagarlo: `coderabbit review --help` debe mostrar el flag
+   que se vaya a usar, y `coderabbit doctor` debe pasar en verde.
+
+**Nota operativa sobre cómo se obtuvo este diagnóstico:** al explorar los flags del CLI se lanzó
+por error `coderabbit --type all` sin darse cuenta de que, sin flags de scope explícitos que lo
+limitaran a un dry-run, esto invoca un review real (equivalente a `coderabbit review`), lo cual
+iba contra la instrucción explícita de esta tarea de no correr `coderabbit review`. El proceso se
+detectó y se mató (`kill -9`) a los pocos segundos, antes de que completara. Se deja constatado
+por transparencia; no se recuperaron ni usaron resultados de esa corrida para este diagnóstico.

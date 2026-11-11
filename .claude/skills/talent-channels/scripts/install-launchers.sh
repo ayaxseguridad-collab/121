@@ -8,7 +8,11 @@ ASSETS="$HERE/../assets"
 # shellcheck source=/dev/null
 . "$HERE/lib.sh"
 
-LEFT="${LEFT_CMD:-claude-root}"; RIGHT="${RIGHT_CMD:-codex-root}"
+# [issue 10264] El panel derecho es el AUDITOR: el lanzador declarado por la fábrica (TCO_AUDIT_CLI de agents.conf), no un
+# `codex-root` fijado a mano; sin declaración, `codex` (con su sandbox). El que desarrolla (izquierda) sigue siendo claude-root.
+# LISTA BLANCA: el panel del auditor es `codex` o `codex-root`; cualquier otra cosa (RIGHT_CMD o agents.conf) PARA sin generar nada.
+LEFT="${LEFT_CMD:-claude-root}"; RIGHT="${RIGHT_CMD:-$(tc_auditor_declarado)}" || tc_die "Codex es obligatorio como revisor: la declaración de agents.conf no es Codex; no se genera ningún lanzador"; RIGHT="${RIGHT:-codex}"
+case "$RIGHT" in codex|codex-root) ;; *) tc_die "Codex es obligatorio como revisor: el panel del auditor ('$RIGHT') debe ser codex o codex-root; no se genera ningún lanzador" ;; esac
 BIN="$HOST_HOME/.local/bin"
 mkdir -p "$BIN"
 

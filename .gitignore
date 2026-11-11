@@ -11,6 +11,8 @@ node_modules/
 .claude/.draft-handoff
 .claude/.cr-review-ok
 .claude/.cr-review-*
+.claude/.gotcha-candidates.jsonl
+.claude/.distill-*.json
 .claude/tf-manifest.conf
 .env.local
 # fabrica:fin

@@ -1,0 +1,26 @@
+INV-PQ-003	validate_skill.py	MUST	MAX_SKILL_MD_LINES	limite-500-lineas
+INV-PQ-004	validate-package.sh	MUST	^set -euo pipefail$	validador-pulso-propio
+INV-PQ-005	lib-package.sh	MUST	A-Za-z0-9\._/-	M3-charset-cerrado
+INV-PQ-007	package.manifest	MUST	^member=linear-skill$	R2-ancla-member
+INV-PQ-009	package.manifest	MUST	^member=talent-channel-operation$	R2-ancla-member
+INV-PQ-010	package.manifest	MUST	^member=talent-channels$	R2-ancla-member
+INV-PQ-012	package.manifest	MUST	^member=talent-issue-craft$	R2-ancla-member
+INV-PQ-013	package.manifest	MUST	^member=talent-merger$	R2-ancla-member
+INV-PQ-014	package.manifest	MUST	^member=talent-orchestrator$	R2-ancla-member
+INV-PQ-016	package.manifest	MUST	^overlay=talent-channel-operation:scripts/repo-identity\.conf$	R2-ancla-overlay
+INV-PQ-017	package.manifest	MUST	^overlay=talent-orchestrator:scripts/repo-identity\.conf$	R2-ancla-overlay
+INV-PQ-018	package.manifest	MUST	^overlay-prefix=talent-channel-operation:references/anexo-$	R2-ancla-overlay
+INV-PQ-019	package.manifest	MUST	^overlay-prefix=talent-merger:references/anexo-$	R2-ancla-overlay
+INV-PQ-023	package.manifest	MUST	^member=talent-context$	R2-ancla-member-10o-miembro-f0-2026-07-23
+INV-PQ-025	package.manifest	MUST	^member=talent-pm$	R2-ancla-member-12o-miembro-TAL-3650
+INV-PQ-028	package.manifest	MUST	^member=talent-ceo$	R2-ancla-member-16o-miembro-TAL-5444
+INV-PQ-029	package.manifest	MUST	^overlay-prefix=talent-ceo:references/anexo-$	R2-ancla-overlay-16o-miembro-TAL-5444
+INV-PQ-030	validate-package.sh	MUST	pkg_parse_identity_conf "\$ROOT/talent-channel-operation/scripts/repo-identity.conf"	anexo-adjudicado-8041
+INV-PQ-031	validate-package.sh	MUST	F59-instancia-anexo-sin-match	anexo-must-fail-closed-8041
+INV-PQ-032	validate-package.sh	MUST	PROC-M13 no aplica al stack	anexo-aplicabilidad-stack-8041
+INV-PQ-033	validate-package.sh	MUST	F64-instancia-stack-invalido	anexo-stack-fail-closed-8041
+INV-PQ-038	validate-package.sh	MUST	F68-reparto-con-version-fija	gate-modelos-doctrina-sin-versiones
+INV-PQ-039	validate-package.sh	MUST	F77-captura-no-declarada-roja	excepcion-personal-nominal-no-por-directorio
+INV-PQ-040	package.manifest	MUST	^member=talent-sentry-guard$	alta-estructural-vigia-plan-v2-P1
+INV-PQ-041	validate-package.sh	MUST	F82-codex-id-fijo	gate-sol-fijo
+INV-PQ-042	package.manifest	MUST	^member=talent-medidor$	alta-estructural-medidor-f1-miembro-13

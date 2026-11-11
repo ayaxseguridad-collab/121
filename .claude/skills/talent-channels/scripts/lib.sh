@@ -38,6 +38,23 @@ tc_wait_net() {
 # Asegura el directorio de escrow (0700).
 tc_secret_dir() { mkdir -p "$SECRET_DIR" && chmod 700 "$SECRET_DIR"; }
 
+# [issue 10264] Lanzador del auditor DECLARADO por la fábrica: TCO_AUDIT_CLI de agents.conf (lo escribe el instalador en
+# $HOST_HOME/.config/talent-channel-operation/agents.conf), como el resto de scripts del canal; los lanzadores y el relanzamiento de Codex
+# lo usan en lugar de fijar `codex-root` a mano. LISTA BLANCA: imprime el valor SOLO si es `codex` o `codex-root`. Si la
+# declaración es de gramática válida ([A-Za-z0-9._-], hasta 40) pero NO es Codex, no imprime nada, avisa por stderr y devuelve
+# rc 1 (Codex es obligatorio como revisor). Ausente, enlace, ilegible o fuera de gramática: nada y rc 0, y quien llama cae a
+# `codex`, con su sandbox.
+tc_auditor_declarado() {
+  local f="${TC_AGENTS_CONF:-${HOST_HOME:-}/.config/talent-channel-operation/agents.conf}" v
+  [ -f "$f" ] && [ ! -L "$f" ] || return 0
+  v="$(sed -n 's/^TCO_AUDIT_CLI="\{0,1\}\([A-Za-z0-9._-]\{1,40\}\)"\{0,1\}$/\1/p' "$f" | tail -n 1)"
+  case "$v" in
+    '') return 0 ;;
+    codex|codex-root) printf '%s\n' "$v" ;;
+    *) tc_err "TCO_AUDIT_CLI='$v' en agents.conf no es Codex: Codex es obligatorio como revisor"; return 1 ;;
+  esac
+}
+
 # Pide un secreto sin eco, valida (regex opcional), lo escribe 0600 en $SECRET_DIR/<file>.
 # Uso: tc_prompt_secret <file> "mensaje" [regex] [required:yes|no]
 # NUNCA imprime el valor. Si ya existe, lo conserva (borrar el archivo para re-preguntar).
